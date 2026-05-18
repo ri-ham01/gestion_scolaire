@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Tableau d'Affichage — EduNova{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero"
+  style="min-height: 40vh; align-items: center; justify-content: center; text-align: center; padding-top: 6rem;">
+  <div class="hero-inner" style="max-width: 800px;">
+    <h1 class="hero-title" data-aos="fade-up">Tableau d'<span class="gradient-text">Affichage</span></h1>
+    <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="100">
+      Restez informé des dernières nouvelles, événements et directives officielles de l'établissement.
+    </p>
+  </div>
+</section>
+
+<!-- Content Section -->
+<section class="section-inner" data-aos="fade-up" data-aos-delay="200"
+  style="max-width: 1000px; margin: 0 auto 4rem auto;">
+  <div style="display: flex; flex-direction: column; gap: 2rem;">
+    {% for annonce in annonces.items %}
+    <article class="card glass-card"
+      style="position: relative; overflow: hidden; {% if annonce.est_epinglee %}border-left: 4px solid var(--s-warning);{% endif %}">
+      {% if annonce.est_epinglee %}
+      <div style="position: absolute; top: 1rem; right: 1.5rem; color: var(--s-warning);" title="Annonce épinglée">
+        <i class="fa-solid fa-thumbtack"></i>
+      </div>
+      {% endif %}
+
+      <div style="padding: 2rem;">
+        <h3
+          style="margin-bottom: 0.5rem; color: {% if annonce.est_epinglee %}var(--s-warning){% else %}var(--c-nova-cyan){% endif %}; padding-right: 2rem;">
+          {{ annonce.titre }}
+        </h3>
+        <p class="text-muted" style="font-size: 0.85rem; font-family: var(--font-mono); margin-bottom: 1.5rem;">
+          <i class="fa-regular fa-clock"></i> Publié le {{ annonce.date_publication.strftime('%d %B %Y') }}
+        </p>
+
+        <div style="line-height: 1.8; color: var(--text-main); margin-bottom: 1.5rem;">
+          {{ annonce.contenu | safe }}
+        </div>
+
+        {% if annonce.fichiers.count() > 0 %}
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">Pièces jointes :</h4>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            {% for fichier in annonce.fichiers %}
+            <a href="{{ url_for('static', filename=fichier.fichier_url.replace('\\', '/').split('static/')[-1]) }}"
+              target="_blank" class="btn btn-glass btn-sm"
+              style="display: inline-flex; align-items: center; gap: 0.5rem;">
+              <i class="fa-solid fa-paperclip"></i> {{ fichier.nom_fichier or 'Document' }}
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </article>
+    {% else %}
+    <div class="card glass-card" style="text-align: center; padding: 4rem;">
+      <i class="fa-regular fa-newspaper fa-3x mb-2" style="color: var(--text-muted);"></i>
+      <p class="text-muted" style="font-size: 1.2rem;">Aucune annonce publiée pour le moment.</p>
+    </div>
+    {% endfor %}
+
+    <!-- Pagination -->
+    {% if annonces.pages > 1 %}
+    <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 2rem;">
+      {% for page_num in annonces.iter_pages(left_edge=1, left_current=2, right_current=3, right_edge=1) %}
+      {% if page_num %}
+      {% if annonces.page == page_num %}
+      <span class="btn btn-primary" style="pointer-events: none;">{{ page_num }}</span>
+      {% else %}
+      <a href="{{ url_for('public.annonces', page=page_num) }}" class="btn btn-glass">{{ page_num }}</a>
+      {% endif %}
+      {% else %}
+      <span style="color: var(--text-muted); padding: 0.5rem;">...</span>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Animation script from home -->
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    AOS.init({ duration: 800, once: true, offset: 50 });
+  });
+</script>
+{% endblock %}

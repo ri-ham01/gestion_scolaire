@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Publications — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-bullhorn"></i> Mes Publications</h1>
+    <p class="text-muted">Communiquez avec vos étudiants (annonces, rappels, discussions).</p>
+  </div>
+</div>
+
+<div class="section-inner" style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start;">
+  
+  <!-- Flux des posts -->
+  <div class="card glass-card">
+    <h3 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-stream"></i> Fil d'actualité</h3>
+    
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      {% for post in posts %}
+      <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.8rem;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--c-aurora-indigo); display: flex; align-items: center; justify-content: center; font-weight: bold;">
+              <i class="fa-solid fa-user-tie"></i>
+            </div>
+            <div>
+              <strong style="color: #fff;">Moi (Prof. {{ post.professeur.nom }})</strong><br>
+              <small class="text-muted">{{ post.created_at.strftime('%d/%m/%Y à %H:%M') }}</small>
+            </div>
+          </div>
+          {% if post.type_public == 'tous' %}
+            <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981;"><i class="fa-solid fa-earth-americas"></i> Public (Tous mes étudiants)</span>
+          {% else %}
+            <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--s-warning);"><i class="fa-solid fa-lock"></i> Section : {{ post.affectation.section.nom }}</span>
+          {% endif %}
+        </div>
+        
+        <p style="color: var(--text-main); line-height: 1.6; margin-bottom: 1rem; white-space: pre-wrap;">{{ post.contenu }}</p>
+        
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; display: flex; gap: 1rem; align-items: center;">
+          <span class="text-muted" style="font-size: 0.9rem;"><i class="fa-regular fa-comment"></i> {{ post.commentaires.count() }} commentaire(s)</span>
+        </div>
+      </div>
+      {% else %}
+      <div style="text-align: center; color: var(--text-muted); padding: 3rem;">
+        <i class="fa-solid fa-comment-slash fa-3x mb-2"></i>
+        <p>Vous n'avez publié aucun post.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Formulaire Nouveau Post -->
+  <div class="card glass-card">
+    <h3 style="margin-bottom: 1.5rem; color: var(--c-nova-cyan);"><i class="fa-solid fa-pen-nib"></i> Exprimez-vous</h3>
+    <form action="{{ url_for('professeur.ajouter_post') }}" method="POST">
+      
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <textarea name="contenu" class="form-input" rows="4" placeholder="Quoi de neuf pour vos étudiants ?" required style="resize: vertical;"></textarea>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Visibilité</label>
+        <select name="type_public" id="typePublic" class="form-input" onchange="toggleAff()">
+          <option value="tous">Tous mes étudiants (Toutes sections)</option>
+          <option value="section">Une section spécifique</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="affSelectGroup" style="display: none; margin-bottom: 1.5rem;">
+        <label class="form-label">Choisir la section</label>
+        <select name="aff_id" class="form-input">
+          {% for aff in affs %}
+            <option value="{{ aff.id }}">{{ aff.matiere.nom }} ({{ aff.section.nom }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-paper-plane"></i> Publier</button>
+    </form>
+  </div>
+
+</div>
+
+{% block scripts %}
+<script>
+function toggleAff() {
+  const select = document.getElementById('typePublic');
+  const affGroup = document.getElementById('affSelectGroup');
+  if (select.value === 'section') {
+    affGroup.style.display = 'block';
+  } else {
+    affGroup.style.display = 'none';
+  }
+}
+</script>
+{% endblock %}
+{% endblock %}

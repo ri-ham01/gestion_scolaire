@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% block title %}Notes & Évaluations — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-pen-to-square"></i> Gestion des Notes</h1>
+    <p class="text-muted">Saisissez les notes de vos étudiants. Sauvegarde automatique en temps réel.</p>
+  </div>
+</div>
+
+<div class="section-inner">
+  <!-- Sélection de l'affectation -->
+  <div class="card glass-card mb-2">
+    <form method="GET" action="{{ url_for('professeur.notes') }}" class="flex-form">
+      <div class="form-group flex-1">
+        <label for="aff_id" class="form-label">Sélectionnez une matière et une section</label>
+        <select name="aff_id" id="aff_id" class="form-input" onchange="this.form.submit()">
+          <option value="">-- Choisir une affectation --</option>
+          {% for aff in affs %}
+          <option value="{{ aff.id }}" {% if aff_selectionnee and aff_selectionnee.id==aff.id %}selected{% endif %}>
+            {{ aff.matiere.nom }} — {{ aff.section.niveau.nom }} ({{ aff.section.code_section }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if aff_selectionnee %}
+      <div class="form-group flex-1">
+        <label for="q" class="form-label">Rechercher un étudiant</label>
+        <div class="input-wrapper">
+          <input type="text" name="q" id="q" class="form-input" placeholder="Matricule ou Username..."
+            value="{{ request.args.get('q','') }}">
+          <button type="submit" class="btn btn-primary"
+            style="position:absolute; right:5px; top:5px; bottom:5px; padding:0 15px;"><i
+              class="fa-solid fa-search"></i></button>
+        </div>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Le Tableur (Spreadsheet) -->
+  {% if aff_selectionnee %}
+  <div class="spreadsheet-container">
+    <table class="spreadsheet-table" id="notesSpreadsheet">
+      <thead>
+        <tr>
+          <th style="width: 250px;">Étudiant</th>
+          <th>Devoir 1 (/20)</th>
+          <th>Devoir 2 (/20)</th>
+          <th>Éval. Continue (/20)</th>
+          <th>Examen (/20)</th>
+          <th style="width: 100px; text-align: center;">Moyenne</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in etudiants_notes %}
+        <tr data-etu-id="{{ item.etudiant.id }}">
+          <td class="cell-readonly">
+            {{ item.etudiant.prenom }} {{ item.etudiant.nom }}
+            <span class="username">@{{ item.etudiant.utilisateur.username }}</span>
+          </td>
+          <td>
+            <input type="number" step="0.25" min="0" max="20" class="cell-input" data-field="d1"
+              value="{{ item.note.devoir1 if item.note and item.note.devoir1 is not none else '' }}" placeholder="-">
+          </td>
+          <td>
+            <input type="number" step="0.25" min="0" max="20" class="cell-input" data-field="d2"
+              value="{{ item.note.devoir2 if item.note and item.note.devoir2 is not none else '' }}" placeholder="-">
+          </td>
+          <td>
+            <input type="number" step="0.25" min="0" max="20" class="cell-input" data-field="ec"
+              value="{{ item.note.evaluation_continue if item.note and item.note.evaluation_continue is not none else '' }}"
+              placeholder="-">
+          </td>
+          <td>
+            <input type="number" step="0.25" min="0" max="20" class="cell-input" data-field="ex"
+              value="{{ item.note.examen if item.note and item.note.examen is not none else '' }}" placeholder="-">
+          </td>
+          <td class="cell-readonly" style="text-align: center; font-weight: bold; color: var(--c-nova-cyan);">
+            <span class="moyenne-display">{{ item.note.moyenne if item.note and item.note.moyenne is not none else '-'
+              }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-2 text-muted" style="font-size: 0.85rem; text-align: right;">
+    <i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarde automatique activée
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if aff_selectionnee %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const inputs = document.querySelectorAll('.cell-input');
+    const affId = {{ aff_selectionnee.id }
+  };
+  let typingTimer;
+  const doneTypingInterval = 1000; // 1 seconde de debounce
+
+  inputs.forEach(input => {
+    // Navigation clavier (flèches) style Excel
+    input.addEventListener('keydown', (e) => {
+      const tr = input.closest('tr');
+      const td = input.closest('td');
+      const cellIndex = Array.from(tr.children).indexOf(td);
+      const rowIndex = Array.from(tr.parentElement.children).indexOf(tr);
+
+      let nextInput = null;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextRow = tr.parentElement.children[rowIndex + 1];
+        if (nextRow) nextInput = nextRow.children[cellIndex].querySelector('.cell-input');
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevRow = tr.parentElement.children[rowIndex - 1];
+        if (prevRow) nextInput = prevRow.children[cellIndex].querySelector('.cell-input');
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const nextCell = tr.children[cellIndex + 1];
+        if (nextCell) nextInput = nextCell.querySelector('.cell-input');
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const prevCell = tr.children[cellIndex - 1];
+        if (prevCell) nextInput = prevCell.querySelector('.cell-input');
+      }
+      if (nextInput) nextInput.focus();
+    });
+
+    // Auto-save logic
+    input.addEventListener('input', () => {
+      input.classList.remove('cell-saved', 'cell-error');
+      input.classList.add('cell-saving');
+
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => {
+        saveRow(input.closest('tr'), input);
+      }, doneTypingInterval);
+    });
+  });
+
+  function saveRow(tr, currentInput) {
+    const etuId = tr.getAttribute('data-etu-id');
+    const data = {
+      aff_id: affId,
+      etu_id: etuId,
+      d1: tr.querySelector('[data-field="d1"]').value,
+      d2: tr.querySelector('[data-field="d2"]').value,
+      ec: tr.querySelector('[data-field="ec"]').value,
+      ex: tr.querySelector('[data-field="ex"]').value
+    };
+
+    fetch("{{ url_for('professeur.ajax_save_note') }}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+      .then(response => response.json())
+      .then(res => {
+        currentInput.classList.remove('cell-saving');
+        if (res.success) {
+          currentInput.classList.add('cell-saved');
+          setTimeout(() => currentInput.classList.remove('cell-saved'), 2000);
+        } else {
+          currentInput.classList.add('cell-error');
+          console.error(res.error);
+        }
+      })
+      .catch(err => {
+        currentInput.classList.remove('cell-saving');
+        currentInput.classList.add('cell-error');
+      });
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

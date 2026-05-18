@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}EduNova — L'excellence académique redéfinie{% endblock %}
+
+{% block content %}
+<!-- ── HERO SECTION ────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge" data-aos="fade-up">
+      <div class="badge-dot"></div>
+      <span>Portail Académique Intelligent v2.0</span>
+    </div>
+    
+    <h1 class="hero-title" data-aos="fade-up" data-aos-delay="100">
+      L'avenir de la <span class="gradient-text">Gestion Scolaire</span>
+    </h1>
+    
+    <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="200">
+      Une plateforme unifiée réunissant professeurs, étudiants et parents. Consultez vos emplois du temps, cours, examens et résultats en temps réel.
+    </p>
+
+    <!-- 4 QUICK ACCESS CARDS (2x2 Grid) -->
+    <div class="hero-cards" data-aos="fade-up" data-aos-delay="300">
+      <a href="{{ url_for('public.emploi_du_temps') }}" class="hero-card">
+        <i class="fa-solid fa-clock"></i>
+        <h3>Toutes les sections</h3>
+        <p>Consultez et téléchargez les emplois du temps de toutes les spécialités en PDF.</p>
+      </a>
+      
+      <a href="{{ url_for('public.examens') }}" class="hero-card">
+        <i class="fa-solid fa-clipboard-list"></i>
+        <h3>Calendrier des Examens</h3>
+        <p>Dates, horaires et salles pour l'ensemble des évaluations prévues.</p>
+      </a>
+      
+      <a href="{{ url_for('public.annonces') }}" class="hero-card">
+        <i class="fa-solid fa-bullhorn"></i>
+        <h3>Tableau d'Affichage</h3>
+        <p>Dernières annonces et nouveautés officielles de l'administration.</p>
+      </a>
+      
+      <a href="{{ url_for('auth.login') }}" class="hero-card">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <h3>Espace Numérique</h3>
+        <p>Accès sécurisé pour la consultation des cours, notes, et absences.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER MAP & CONTACT ────────────────────────────────── -->
+<section class="footer-map-section" data-aos="fade-up">
+  <div class="map-card">
+    <div class="map-wrapper">
+      <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d102341.35378772709!2d3.0336214041793646!3d36.7212002220468!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x128fad6796cdab13%3A0x3b1c676d6c97abfb!2sAlger!5e0!3m2!1sfr!2sdz!4v1700000000000!5m2!1sfr!2sdz" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+    <div class="contact-strip">
+      <a href="https://maps.google.com/?q=Alger,Algeria" target="_blank" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-location-arrow"></i> Itinéraire (GPS)
+      </a>
+      <a href="mailto:contact@edunova.dz" class="contact-item">
+        <i class="fa-solid fa-envelope"></i> contact@edunova.dz
+      </a>
+      <a href="https://facebook.com/edunova" target="_blank" class="contact-item">
+        <i class="fa-brands fa-facebook"></i> EduNova Officiel
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<!-- Animation on Scroll -->
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out-cubic',
+      once: true,
+      offset: 50
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Corrections d'Examens — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-spell-check"></i> Corrections d'Examens</h1>
+    <p class="text-muted">Consultez les corrigés-types publiés par vos professeurs.</p>
+  </div>
+</div>
+
+<div class="section-inner">
+  <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+    {% for item in corrections_list %}
+    <div class="card glass-card">
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+        <h3 style="margin: 0; color: var(--c-nova-cyan);"><i class="fa-solid fa-layer-group"></i> {{ item.matiere.nom }}
+        </h3>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+        {% for corr in item.corrections %}
+        <div
+          style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem; text-align: center; transition: all 0.3s ease;"
+          class="corr-card">
+          {% if corr.type_fichier == 'pdf' %}
+          <i class="fa-solid fa-file-pdf fa-3x" style="color: var(--s-danger); margin-bottom: 1rem;"></i>
+          {% elif corr.type_fichier == 'word' %}
+          <i class="fa-solid fa-file-word fa-3x" style="color: #2563eb; margin-bottom: 1rem;"></i>
+          {% else %}
+          <i class="fa-solid fa-file-image fa-3x" style="color: var(--s-success); margin-bottom: 1rem;"></i>
+          {% endif %}
+
+          <h4 style="margin-bottom: 0.5rem; font-size: 1.1rem; color: #fff;">{{ corr.titre }}</h4>
+          <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">
+            Type: <strong>{{ corr.type_evaluation|capitalize }}</strong><br>
+            Publié le: {{ corr.date_publication.strftime('%d/%m/%Y') }}
+          </p>
+          <a href="{{ url_for('etudiant.telecharger_correction', corr_id=corr.id) }}" class="btn btn-primary btn-block">
+            <i class="fa-solid fa-download"></i> Télécharger
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="card glass-card" style="text-align: center; padding: 4rem;">
+      <i class="fa-solid fa-folder-open fa-3x mb-2" style="color: var(--text-muted);"></i>
+      <p class="text-muted" style="font-size: 1.1rem;">Aucune correction n'est disponible pour le moment.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<style>
+  .corr-card:hover {
+    transform: translateY(-5px);
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  }
+</style>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des Emplois du Temps — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-calendar-days"></i> Emplois du Temps & Examens</h1>
+    <p class="text-muted">Uploadez les fichiers PDF officiels (Emplois du temps hebdomadaires ou Calendriers d'examens).
+    </p>
+  </div>
+</div>
+
+<div class="section-inner" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; align-items: start;">
+
+  <!-- Formulaire Upload -->
+  <div class="card glass-card">
+    <h3 style="margin-bottom: 1.5rem; color: var(--c-nova-cyan);"><i class="fa-solid fa-cloud-arrow-up"></i> Uploader un
+      PDF</h3>
+
+    <form action="{{ url_for('admin.uploader_edt') }}" method="POST" enctype="multipart/form-data">
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Type de Document <span style="color:var(--s-danger);">*</span></label>
+        <select name="type_pdf" class="form-input" required>
+          <option value="hebdomadaire">Emploi du temps hebdomadaire</option>
+          <option value="examens">Calendrier des examens</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Spécialité concernée <span style="color:var(--s-danger);">*</span></label>
+        <select name="specialite_id" class="form-input" required>
+          {% for spe in specialites %}
+          <option value="{{ spe.id }}">{{ spe.code }} - {{ spe.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Semestre <span style="color:var(--s-danger);">*</span></label>
+        <select name="semestre_id" class="form-input" required>
+          {% for sem in semestres %}
+          <option value="{{ sem.id }}">{{ sem.label }} ({% if sem.est_actif %}Actif{% else %}Inactif{% endif %})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label class="form-label">Fichier PDF <span style="color:var(--s-danger);">*</span></label>
+        <input type="file" name="fichier" class="form-input" accept=".pdf" required
+          style="padding: 0.5rem; background: rgba(0,0,0,0.2);">
+        <small class="text-muted" style="display: block; margin-top: 0.5rem;"><i class="fa-solid fa-info-circle"></i>
+          Max 5MB. Si un PDF existe déjà pour ce combo, il sera écrasé.</small>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-upload"></i> Uploader et
+        Publier</button>
+    </form>
+  </div>
+
+  <!-- Liste des PDFs Existants -->
+  <div class="card glass-card">
+    <h3 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-file-pdf"></i> Documents Publiés</h3>
+    <div style="overflow-x: auto;">
+      <table class="data-table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr>
+            <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Document</th>
+            <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Cible</th>
+            <th style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Mise à jour
+            </th>
+            <th style="text-align: center; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Aperçu</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pdf in pdfs %}
+          <tr>
+            <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <strong
+                style="color: {% if pdf.type_pdf == 'examens' %}var(--s-warning){% else %}var(--c-nova-cyan){% endif %};">
+                {{ 'Examen' if pdf.type_pdf == 'examens' else 'Hebdomadaire' }}
+              </strong><br>
+              <small class="text-muted" style="font-family: var(--font-mono);">{{ pdf.nom_fichier }}</small>
+            </td>
+            <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+              Spé: <strong>{{ pdf.specialite.code }}</strong><br>
+              Sem: {{ pdf.semestre.label }}
+            </td>
+            <td
+              style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; font-size: 0.85rem; color: var(--text-muted);">
+              {{ pdf.updated_at.strftime('%d/%m/%Y %H:%M') }}
+            </td>
+            <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+              <a href="{{ url_for('static', filename=pdf.fichier_url.replace('\\', '/').split('static/')[-1]) }}"
+                target="_blank" class="btn btn-glass btn-sm" title="Voir le PDF">
+                <i class="fa-solid fa-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">Aucun PDF n'a été
+              uploadé.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

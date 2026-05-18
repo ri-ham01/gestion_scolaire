@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des Cours — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-book-open"></i> Espace Cours</h1>
+    <p class="text-muted">Partagez vos supports de cours, vidéos et documents avec vos étudiants.</p>
+  </div>
+</div>
+
+<div class="section-inner">
+  <!-- Sélecteur d'Affectation -->
+  <div class="card glass-card" style="margin-bottom: 2rem;">
+    <form action="{{ url_for('professeur.cours') }}" method="GET"
+      style="display: flex; gap: 1rem; align-items: flex-end;">
+      <div style="flex: 1; max-width: 400px;">
+        <label class="form-label">Sélectionner un module / classe :</label>
+        <select name="aff_id" class="form-input" onchange="this.form.submit()" required>
+          <option value="">-- Choisissez --</option>
+          {% for aff in affs %}
+          <option value="{{ aff.id }}" {% if aff_selectionnee and aff_selectionnee.id==aff.id %}selected{% endif %}>
+            {{ aff.matiere.nom }} ({{ aff.section.nom }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if aff_selectionnee %}
+      <div style="margin-left: auto;">
+        <button type="button" class="btn btn-primary"
+          onclick="document.getElementById('modalAjouterCours').showModal()">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Nouveau Support
+        </button>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+
+  {% if aff_selectionnee %}
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+    {% for c in cours_list %}
+    <div class="card glass-card" style="display: flex; flex-direction: column; padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <h4 style="margin: 0; color: var(--c-nova-cyan); line-height: 1.4;">{{ c.ordre }}. {{ c.titre }}</h4>
+        <span class="badge" style="background: rgba(255,255,255,0.1);"><i class="fa-regular fa-clock"></i> {{
+          c.date_publication.strftime('%d/%m') }}</span>
+      </div>
+
+      <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 1.5rem; flex-grow: 1;">
+        {{ c.description or 'Aucune description fournie.' }}
+      </p>
+
+      <div style="display: flex; gap: 0.5rem; margin-top: auto;">
+        {% if c.fichier_url %}
+        <a href="{{ url_for('static', filename=c.fichier_url.replace('\\', '/').split('static/')[-1]) }}"
+          target="_blank" class="btn btn-glass btn-sm" style="flex: 1; text-align: center;">
+          <i class="fa-solid fa-file-pdf text-danger"></i> Document
+        </a>
+        {% endif %}
+        {% if c.url_video %}
+        <a href="{{ c.url_video }}" target="_blank" class="btn btn-glass btn-sm" style="flex: 1; text-align: center;">
+          <i class="fa-solid fa-play text-primary"></i> Vidéo
+        </a>
+        {% endif %}
+        <form action="{{ url_for('professeur.supprimer_cours', cours_id=c.id) }}" method="POST"
+          onsubmit="return confirm('Supprimer ce cours ?');">
+          <button type="submit" class="btn btn-glass danger btn-sm" title="Supprimer"><i
+              class="fa-solid fa-trash"></i></button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="card glass-card" style="grid-column: 1 / -1; text-align: center; padding: 4rem;">
+      <i class="fa-solid fa-box-open fa-3x mb-2" style="color: var(--text-muted);"></i>
+      <p class="text-muted" style="font-size: 1.1rem;">Aucun support de cours n'a été publié pour ce module.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Modal Ajouter Cours -->
+  <dialog id="modalAjouterCours" class="edunova-dialog"
+    style="width: 100%; max-width: 600px; padding: 2rem; border-radius: 16px; border: var(--border-glass); background: var(--bg-midnight-slate); color: var(--text-main);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h3 style="margin: 0;"><i class="fa-solid fa-cloud-arrow-up"></i> Publier un Support</h3>
+      <button onclick="document.getElementById('modalAjouterCours').close()" class="btn btn-glass"
+        style="padding: 0.5rem;"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <form action="{{ url_for('professeur.ajouter_cours') }}" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="aff_id" value="{{ aff_selectionnee.id }}">
+
+      <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+        <div style="flex: 0 0 100px;">
+          <label class="form-label">Chapitre N° <span style="color:var(--s-danger);">*</span></label>
+          <input type="number" name="ordre" class="form-input" value="{{ cours_list|length + 1 }}" required>
+        </div>
+        <div style="flex: 1;">
+          <label class="form-label">Titre du cours <span style="color:var(--s-danger);">*</span></label>
+          <input type="text" name="titre" class="form-input" required placeholder="Ex: Introduction à l'algorithmique">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Description / Objectifs</label>
+        <textarea name="description" class="form-input" rows="3" placeholder="Résumé du contenu du cours..."></textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+          <label class="form-label">Support Document (PDF, PPT...)</label>
+          <input type="file" name="fichier" class="form-input" style="padding: 0.5rem;">
+        </div>
+        <div>
+          <label class="form-label">Lien Vidéo (YouTube, Drive...)</label>
+          <input type="url" name="url_video" class="form-input" placeholder="https://...">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+        <button type="button" class="btn btn-glass"
+          onclick="document.getElementById('modalAjouterCours').close()">Annuler</button>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Publier aux
+          étudiants</button>
+      </div>
+    </form>
+  </dialog>
+
+  {% else %}
+  <div class="card glass-card" style="text-align: center; padding: 4rem;">
+    <i class="fa-solid fa-book fa-3x mb-2" style="color: var(--text-muted);"></i>
+    <p class="text-muted" style="font-size: 1.2rem;">Sélectionnez une affectation pour gérer vos cours.</p>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+  dialog::backdrop {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+  }
+
+  .edunova-dialog {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    animation: slideInUp 0.3s ease-out;
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+{% endblock %}

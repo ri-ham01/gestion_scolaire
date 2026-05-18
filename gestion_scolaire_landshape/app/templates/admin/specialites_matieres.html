@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}Spécialités & Matières — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-layer-group"></i> Spécialités & Matières</h1>
+    <p class="text-muted">Gérez les filières d'études, les niveaux et le catalogue des matières.</p>
+  </div>
+</div>
+
+<div class="section-inner" style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start;">
+
+  <!-- Liste des Spécialités -->
+  <div class="card glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h3 style="margin: 0; color: var(--c-nova-cyan);"><i class="fa-solid fa-graduation-cap"></i> Spécialités</h3>
+      <button class="btn btn-primary btn-sm" onclick="document.getElementById('modalAjouterSpe').showModal()"><i
+          class="fa-solid fa-plus"></i> Nouvelle Spécialité</button>
+    </div>
+
+    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Code</th>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Nom de la
+            Spécialité</th>
+          <th style="text-align: center; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Statut</th>
+          <th style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for spe in spes %}
+        <tr>
+          <td
+            style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-weight: bold; color: #fff;">
+            {{ spe.code }}</td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">{{ spe.nom }}</td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+            {% if spe.est_active %}
+            <span class="badge" style="background: rgba(34,197,94,0.2); color: var(--s-success);">Active</span>
+            {% else %}
+            <span class="badge" style="background: rgba(239,68,68,0.2); color: var(--s-danger);">Inactive</span>
+            {% endif %}
+          </td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right;">
+            {% if spe.est_active %}
+            <form action="{{ url_for('admin.supprimer_specialite', spe_id=spe.id) }}" method="POST"
+              onsubmit="return confirm('Désactiver cette spécialité ?');" style="display:inline;">
+              <button type="submit" class="btn btn-glass danger btn-sm" title="Désactiver"><i
+                  class="fa-solid fa-trash"></i></button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">Aucune spécialité
+            trouvée.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Catalogue des Matières -->
+  <div class="card glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h3 style="margin: 0; color: var(--c-aurora-indigo);"><i class="fa-solid fa-book-bookmark"></i> Ajout Matière</h3>
+    </div>
+    <form action="{{ url_for('admin.ajouter_matiere') }}" method="POST">
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Code (Ex: MATH101) <span style="color:var(--s-danger);">*</span></label>
+        <input type="text" name="code" class="form-input" required>
+      </div>
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label class="form-label">Nom de la matière <span style="color:var(--s-danger);">*</span></label>
+        <input type="text" name="nom" class="form-input" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-plus"></i> Ajouter au
+        catalogue</button>
+    </form>
+
+    <div class="flash info" style="margin-top: 1.5rem;">
+      <i class="fa-solid fa-circle-info"></i>
+      <p style="font-size: 0.85rem; margin: 0;">Les matières créées ici seront disponibles globalement pour construire
+        les programmes de chaque spécialité/niveau.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal Ajouter Spécialité -->
+<dialog id="modalAjouterSpe" class="edunova-dialog"
+  style="width: 100%; max-width: 500px; padding: 2rem; border-radius: 16px; border: var(--border-glass); background: var(--bg-midnight-slate); color: var(--text-main);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h3 style="margin: 0;"><i class="fa-solid fa-plus-square"></i> Nouvelle Spécialité</h3>
+    <button onclick="document.getElementById('modalAjouterSpe').close()" class="btn btn-glass"
+      style="padding: 0.5rem;"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <form action="{{ url_for('admin.ajouter_specialite') }}" method="POST">
+    <div class="form-group" style="margin-bottom: 1rem;">
+      <label class="form-label">Code Court (Ex: INFO, MATH, BIO) <span style="color:var(--s-danger);">*</span></label>
+      <input type="text" name="code" class="form-input"
+        style="font-family: var(--font-mono); text-transform: uppercase;" required>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 1rem;">
+      <label class="form-label">Nom Complet (Français) <span style="color:var(--s-danger);">*</span></label>
+      <input type="text" name="nom" class="form-input" required>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+      <div style="flex: 1;">
+        <label class="form-label">Nom (Anglais)</label>
+        <input type="text" name="nom_en" class="form-input">
+      </div>
+      <div style="flex: 1;">
+        <label class="form-label">Nom (Arabe)</label>
+        <input type="text" name="nom_ar" class="form-input" dir="rtl">
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+      <button type="button" class="btn btn-glass"
+        onclick="document.getElementById('modalAjouterSpe').close()">Annuler</button>
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Créer la spécialité</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}

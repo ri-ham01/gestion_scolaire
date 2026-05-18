@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Résultats et Relevés — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-file-contract"></i> Résultats & Relevés</h1>
+    <p class="text-muted">Consultez et téléchargez les bulletins officiels de vos enfants.</p>
+  </div>
+</div>
+
+<div class="section-inner">
+  {% for enfant in enfants %}
+  <div class="card glass-card" style="margin-bottom: 2rem;">
+    <div
+      style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+      <h3 style="margin: 0; color: var(--c-aurora-indigo);"><i class="fa-solid fa-user-graduate"></i> {{ enfant.nom }}
+        {{ enfant.prenom }}</h3>
+      <span class="badge" style="background: rgba(255,255,255,0.1);"><i class="fa-solid fa-id-card"></i> {{
+        enfant.matricule }}</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+      {% set enfant_releves = releves.get(enfant.id, []) %}
+      {% for releve in enfant_releves %}
+      <div
+        style="background: rgba(0,0,0,0.2); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 12px; padding: 1.5rem; text-align: center; transition: all 0.3s ease;"
+        class="releve-card">
+        <i class="fa-solid fa-file-pdf fa-3x" style="color: var(--s-danger); margin-bottom: 1rem;"></i>
+        <h4 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Bulletin de Notes</h4>
+        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">
+          Semestre: <strong>{{ releve.semestre.label }}</strong><br>
+          Publié le: {{ releve.date_generation.strftime('%d/%m/%Y') }}
+        </p>
+        <a href="{{ url_for('parent.telecharger_releve', token=releve.qr_code_token) }}"
+          class="btn btn-primary btn-block">
+          <i class="fa-solid fa-download"></i> Télécharger
+        </a>
+      </div>
+      {% else %}
+      <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 2rem;">
+        <i class="fa-solid fa-folder-open fa-2x mb-1"></i><br>
+        Aucun relevé officiel n'a encore été publié pour cet étudiant.
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="card glass-card" style="text-align: center; padding: 3rem;">
+    <p class="text-muted"><i class="fa-solid fa-user-xmark fa-2x mb-2"></i><br>Aucun enfant rattaché à votre compte.</p>
+  </div>
+  {% endfor %}
+</div>
+
+<style>
+  .releve-card:hover {
+    transform: translateY(-5px);
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  }
+</style>
+{% endblock %}

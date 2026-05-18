@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Devoirs et Tâches — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-file-pen"></i> Espace Devoirs</h1>
+    <p class="text-muted">Publiez des devoirs pour vos étudiants et suivez leurs soumissions.</p>
+  </div>
+</div>
+
+<div class="section-inner" style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start;">
+
+  <!-- Liste des devoirs existants -->
+  <div class="card glass-card">
+    <h3 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-list-check"></i> Devoirs Publiés</h3>
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      {% for dev in devoirs %}
+      <div
+        style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+          <div>
+            <h4 style="margin: 0; color: var(--c-nova-cyan);">{{ dev.titre }}</h4>
+            <small class="text-muted" style="font-family: var(--font-mono);">
+              {{ dev.affectation.matiere.nom }} ({{ dev.affectation.section.nom }})
+            </small>
+          </div>
+          <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: var(--s-danger);">
+            <i class="fa-solid fa-stopwatch"></i> {{ dev.date_limite_soumission.strftime('%d/%m/%Y %H:%M') }}
+          </span>
+        </div>
+
+        <p class="text-muted" style="margin-bottom: 1rem;">{{ dev.description }}</p>
+
+        <div
+          style="display: flex; gap: 1rem; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+          <div>
+            {% if dev.fichier_url %}
+            <a href="{{ url_for('static', filename=dev.fichier_url.replace('\\', '/').split('static/')[-1]) }}"
+              target="_blank" class="btn btn-glass btn-sm">
+              <i class="fa-solid fa-paperclip"></i> Fichier joint
+            </a>
+            {% endif %}
+          </div>
+          <span class="text-muted" style="font-size: 0.9rem;">
+            <i class="fa-solid fa-inbox"></i> {{ dev.soumissions.count() }} soumission(s)
+          </span>
+        </div>
+      </div>
+      {% else %}
+      <div style="text-align: center; color: var(--text-muted); padding: 3rem;">
+        <i class="fa-solid fa-file-circle-xmark fa-3x mb-2"></i>
+        <p>Aucun devoir n'a été publié.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Formulaire pour ajouter un devoir -->
+  <div class="card glass-card">
+    <h3 style="margin-bottom: 1.5rem; color: var(--c-aurora-indigo);"><i class="fa-solid fa-plus-circle"></i> Nouveau
+      Devoir</h3>
+    <form action="{{ url_for('professeur.ajouter_devoir') }}" method="POST" enctype="multipart/form-data">
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Module / Classe <span style="color:var(--s-danger);">*</span></label>
+        <select name="aff_id" class="form-input" required>
+          {% for aff in affs %}
+          <option value="{{ aff.id }}">{{ aff.matiere.nom }} ({{ aff.section.nom }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Titre du Devoir <span style="color:var(--s-danger);">*</span></label>
+        <input type="text" name="titre" class="form-input" required>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Date Limite de Rendu <span style="color:var(--s-danger);">*</span></label>
+        <input type="datetime-local" name="date_limite" class="form-input" required>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Consignes / Description <span style="color:var(--s-danger);">*</span></label>
+        <textarea name="description" class="form-input" rows="4" required></textarea>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label class="form-label">Sujet (PDF, Image, Doc)</label>
+        <input type="file" name="fichier" class="form-input" style="padding: 0.5rem;">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-paper-plane"></i> Publier le
+        devoir</button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

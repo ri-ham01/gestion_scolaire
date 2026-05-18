@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Affectations d'Enseignement — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-folder-tree"></i> Affectations d'Enseignement</h1>
+    <p class="text-muted">Attribuez les professeurs aux sections et aux matières pour le semestre actif.</p>
+  </div>
+</div>
+
+<div class="section-inner">
+  {% if not semestre %}
+  <div class="flash danger mb-2">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <span>Impossible de créer des affectations. Aucun semestre n'est actif.</span>
+  </div>
+  {% else %}
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h3 style="color: var(--c-nova-cyan);"><i class="fa-solid fa-calendar-check"></i> Semestre Actif : {{ semestre.label
+      }}</h3>
+    <button class="btn btn-primary" onclick="document.getElementById('modalAjouterAffectation').showModal()"><i
+        class="fa-solid fa-plus"></i> Nouvelle Affectation</button>
+  </div>
+  {% endif %}
+
+  <div class="card glass-card" style="overflow-x: auto;">
+    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Professeur</th>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Section</th>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Matière</th>
+          <th style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for aff in affectations %}
+        <tr>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);"><strong>{{ aff.professeur.nom }}
+              {{ aff.professeur.prenom }}</strong></td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">{{ aff.section.nom }} (Niv. {{
+            aff.section.niveau.ordre }})</td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);"><span class="badge"
+              style="background: rgba(139,92,246,0.2); color: var(--c-aurora-indigo);">{{ aff.matiere.code }}</span> {{
+            aff.matiere.nom }}</td>
+          <td
+            style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; color: var(--text-muted); font-size: 0.85rem;">
+            {{ aff.date_affectation.strftime('%d/%m/%Y') }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+            <i class="fa-solid fa-folder-open fa-2x mb-1"></i><br>Aucune affectation trouvée pour ce semestre.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if semestre %}
+<!-- Modal Ajouter Affectation -->
+<dialog id="modalAjouterAffectation" class="edunova-dialog"
+  style="width: 100%; max-width: 500px; padding: 2rem; border-radius: 16px; border: var(--border-glass); background: var(--bg-midnight-slate); color: var(--text-main);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h3 style="margin: 0;"><i class="fa-solid fa-link"></i> Lier un Enseignement</h3>
+    <button onclick="document.getElementById('modalAjouterAffectation').close()" class="btn btn-glass"
+      style="padding: 0.5rem;"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <form action="{{ url_for('admin.ajouter_affectation') }}" method="POST">
+    <input type="hidden" name="semestre_id" value="{{ semestre.id }}">
+
+    <div class="form-group" style="margin-bottom: 1rem;">
+      <label class="form-label">Professeur <span style="color:var(--s-danger);">*</span></label>
+      <select name="professeur_id" class="form-input" required>
+        <option value="">Sélectionnez un professeur</option>
+        {% for prof in profs %}
+        <option value="{{ prof.id }}">{{ prof.nom }} {{ prof.prenom }} ({{ prof.utilisateur.username }})</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 1rem;">
+      <label class="form-label">Section de destination <span style="color:var(--s-danger);">*</span></label>
+      <select name="section_id" class="form-input" required>
+        <option value="">Sélectionnez une section</option>
+        {% for sec in sections %}
+        <option value="{{ sec.id }}">{{ sec.nom }} (Spé: {{ sec.specialite.code }}, Niv: {{ sec.niveau.ordre }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 1.5rem;">
+      <label class="form-label">Matière Enseignée <span style="color:var(--s-danger);">*</span></label>
+      <select name="matiere_id" class="form-input" required>
+        <option value="">Sélectionnez une matière</option>
+        {% for mat in matieres %}
+        <option value="{{ mat.id }}">{{ mat.code }} - {{ mat.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+      <button type="button" class="btn btn-glass"
+        onclick="document.getElementById('modalAjouterAffectation').close()">Annuler</button>
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Créer l'affectation</button>
+    </div>
+  </form>
+</dialog>
+{% endif %}
+{% endblock %}

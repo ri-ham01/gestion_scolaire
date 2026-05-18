@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des Professeurs — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-chalkboard-user"></i> Gestion des Professeurs</h1>
+    <p class="text-muted">Consultez, ajoutez ou désactivez les professeurs.</p>
+  </div>
+</div>
+
+<div class="section-inner">
+  <div
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <!-- Recherche -->
+    <form method="GET" action="{{ url_for('admin.professeurs') }}" class="search-form"
+      style="display: flex; gap: 0.5rem;">
+      <input type="text" name="q" value="{{ q }}" placeholder="Rechercher par nom, prénom, username..."
+        class="form-input" style="width: 300px;">
+      <button type="submit" class="btn btn-glass"><i class="fa-solid fa-search"></i></button>
+      {% if q %}<a href="{{ url_for('admin.professeurs') }}" class="btn btn-glass danger"><i
+          class="fa-solid fa-xmark"></i></a>{% endif %}
+    </form>
+
+    <button class="btn btn-primary" onclick="document.getElementById('modalAjouterProf').showModal()"><i
+        class="fa-solid fa-plus"></i> Nouveau Professeur</button>
+  </div>
+
+  <div class="card glass-card" style="overflow-x: auto;">
+    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Matricule</th>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Professeur</th>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Username</th>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Grade</th>
+          <th style="text-align: center; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Statut</th>
+          <th style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for prof in profs %}
+        <tr>
+          <td
+            style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">
+            {{ prof.matricule }}</td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);"><strong>{{ prof.nom }} {{
+              prof.prenom }}</strong></td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">{{ prof.utilisateur.username }}
+          </td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            {% if prof.grade %}<span class="badge"
+              style="background: rgba(255,255,255,0.1); color: var(--text-main);">{{ prof.grade }}</span>{% else %}-{%
+            endif %}
+          </td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+            {% if prof.est_actif %}
+            <span class="badge" style="background: rgba(34,197,94,0.2); color: var(--s-success);"><i
+                class="fa-solid fa-check-circle"></i> Actif</span>
+            {% else %}
+            <span class="badge" style="background: rgba(239,68,68,0.2); color: var(--s-danger);"><i
+                class="fa-solid fa-ban"></i> Inactif</span>
+            {% endif %}
+          </td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right;">
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+              <a href="{{ url_for('admin.modifier_professeur', prof_id=prof.id) }}" class="btn btn-glass btn-sm"
+                title="Modifier"><i class="fa-solid fa-pen"></i></a>
+              {% if prof.est_actif %}
+              <form action="{{ url_for('admin.supprimer_professeur', prof_id=prof.id) }}" method="POST"
+                onsubmit="return confirm('Êtes-vous sûr de vouloir désactiver ce professeur ?');">
+                <button type="submit" class="btn btn-glass danger btn-sm" title="Désactiver"><i
+                    class="fa-solid fa-trash"></i></button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+            <i class="fa-solid fa-folder-open fa-2x mb-1"></i><br>Aucun professeur trouvé.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Ajouter Professeur -->
+<dialog id="modalAjouterProf" class="edunova-dialog"
+  style="width: 100%; max-width: 500px; padding: 2rem; border-radius: 16px; border: var(--border-glass); background: var(--bg-midnight-slate); color: var(--text-main);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h3 style="margin: 0;"><i class="fa-solid fa-user-plus"></i> Nouveau Professeur</h3>
+    <button onclick="document.getElementById('modalAjouterProf').close()" class="btn btn-glass"
+      style="padding: 0.5rem;"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <form action="{{ url_for('admin.ajouter_professeur') }}" method="POST">
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+      <div style="flex: 1;">
+        <label class="form-label">Nom <span style="color:var(--s-danger);">*</span></label>
+        <input type="text" name="nom" class="form-input" required>
+      </div>
+      <div style="flex: 1;">
+        <label class="form-label">Prénom <span style="color:var(--s-danger);">*</span></label>
+        <input type="text" name="prenom" class="form-input" required>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 1rem;">
+      <label class="form-label">Spécialité (Pour la génération de l'Username) <span
+          style="color:var(--s-danger);">*</span></label>
+      <select name="specialite_code" class="form-input" required>
+        <option value="">Sélectionnez une spécialité</option>
+        {% for spe in specialites %}
+        <option value="{{ spe.code }}">{{ spe.code }} - {{ spe.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 1rem;">
+      <label class="form-label">Grade</label>
+      <input type="text" name="grade" class="form-input" placeholder="ex: Maître de Conférences, Assistant...">
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+      <div style="flex: 1;">
+        <label class="form-label">Date de naissance</label>
+        <input type="date" name="date_naissance" class="form-input">
+      </div>
+      <div style="flex: 1;">
+        <label class="form-label">Lieu de naissance</label>
+        <input type="text" name="lieu_naissance" class="form-input">
+      </div>
+    </div>
+
+    <div class="flash info" style="margin-bottom: 1.5rem;">
+      <i class="fa-solid fa-robot"></i>
+      <span>Le nom d'utilisateur (ex: ai001) et le mot de passe seront générés automatiquement et affichés à la
+        prochaine étape.</span>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+      <button type="button" class="btn btn-glass"
+        onclick="document.getElementById('modalAjouterProf').close()">Annuler</button>
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Créer le compte</button>
+    </div>
+  </form>
+</dialog>
+
+<style>
+  /* Reset basic dialog styles */
+  dialog::backdrop {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+  }
+
+  .edunova-dialog {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    animation: slideInUp 0.3s ease-out;
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+{% endblock %}

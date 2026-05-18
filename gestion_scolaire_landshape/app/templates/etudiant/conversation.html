@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block title %}Conversation — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-regular fa-comments"></i> Discussion</h1>
+    <p class="text-muted">
+      Avec le Professeur (Utilisateur #{{ conv.participant_b_id }})
+    </p>
+  </div>
+</div>
+
+<div class="section-inner">
+  <div class="chat-container">
+
+    <div class="chat-messages" id="chatBox">
+      {% for msg in msgs %}
+      <div
+        class="message {% if msg.expediteur_utilisateur_id == current_user.id %}message-sent{% else %}message-received{% endif %}">
+        <div class="message-content">
+          {{ msg.contenu }}
+        </div>
+        <div class="message-meta">
+          {{ msg.created_at.strftime('%H:%M') }}
+          {% if msg.expediteur_utilisateur_id == current_user.id %}
+          {% if msg.est_lu %}<i class="fa-solid fa-check-double text-primary"></i>{% else %}<i
+            class="fa-solid fa-check text-muted"></i>{% endif %}
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div class="text-center text-muted" style="margin-top: 2rem;">
+        <p>Envoyez le premier message pour démarrer la discussion.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <form class="chat-input-area" id="chatForm">
+      <input type="hidden" id="convId" value="{{ conv.id }}">
+      <input type="text" id="msgInput" class="form-input" placeholder="Tapez votre message..." required
+        autocomplete="off" style="border-radius: 20px;">
+      <button type="submit" class="btn btn-primary"
+        style="border-radius: 50%; width: 45px; height: 45px; padding: 0; display: flex; justify-content: center; align-items: center;">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </form>
+
+  </div>
+</div>
+
+<style>
+  .chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 60vh;
+    background: var(--bg-card-glass);
+    border: var(--border-glass);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .chat-messages {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .message {
+    max-width: 70%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .message-sent {
+    align-self: flex-end;
+  }
+
+  .message-received {
+    align-self: flex-start;
+  }
+
+  .message-content {
+    padding: 0.8rem 1.2rem;
+    border-radius: 16px;
+    color: #fff;
+  }
+
+  .message-sent .message-content {
+    background: var(--c-aurora-indigo);
+    border-bottom-right-radius: 4px;
+  }
+
+  .message-received .message-content {
+    background: rgba(255, 255, 255, 0.1);
+    border-bottom-left-radius: 4px;
+  }
+
+  .message-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+    text-align: right;
+  }
+
+  .chat-input-area {
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    gap: 1rem;
+  }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const chatBox = document.getElementById('chatBox');
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    if (typeof io !== 'undefined') {
+      const socket = io();
+      const convId = document.getElementById('convId').value;
+
+      socket.emit('join_conversation', { conv_id: convId });
+
+      socket.on('nouveau_message', function (data) {
+        if (data.conv_id == convId && data.expediteur_id != "{{ current_user.id }}") {
+          const msgDiv = document.createElement('div');
+          msgDiv.className = 'message message-received';
+          msgDiv.innerHTML = `
+          <div class="message-content">${data.contenu}</div>
+          <div class="message-meta">${data.heure}</div>
+        `;
+          chatBox.appendChild(msgDiv);
+          chatBox.scrollTop = chatBox.scrollHeight;
+        }
+      });
+    }
+
+    document.getElementById('chatForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const input = document.getElementById('msgInput');
+      const contenu = input.value.trim();
+      if (!contenu) return;
+
+      const formData = new FormData();
+      formData.append('conv_id', document.getElementById('convId').value);
+      formData.append('contenu', contenu);
+
+      fetch("{{ url_for('etudiant.envoyer_message') }}", {
+        method: 'POST',
+        body: formData
+      }).then(res => res.json()).then(data => {
+        if (data.ok) {
+          const msgDiv = document.createElement('div');
+          msgDiv.className = 'message message-sent';
+          const d = new Date();
+          const timeStr = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+          msgDiv.innerHTML = `
+          <div class="message-content">${contenu}</div>
+          <div class="message-meta">${timeStr} <i class="fa-solid fa-check text-muted"></i></div>
+        `;
+          chatBox.appendChild(msgDiv);
+          chatBox.scrollTop = chatBox.scrollHeight;
+          input.value = '';
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}Pointage des Présences — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-calendar-check"></i> Pointage des Présences</h1>
+    <p class="text-muted">Sélectionnez une classe et enregistrez les présences pour une séance donnée.</p>
+  </div>
+</div>
+
+<div class="section-inner">
+  <!-- Sélecteur d'Affectation -->
+  <div class="card glass-card" style="margin-bottom: 2rem;">
+    <form action="{{ url_for('professeur.presences') }}" method="GET"
+      style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+      <div style="flex: 1; min-width: 250px;">
+        <label class="form-label">Sélectionner un module / classe :</label>
+        <select name="aff_id" class="form-input" onchange="this.form.submit()" required>
+          <option value="">-- Choisissez --</option>
+          {% for aff in affs %}
+          <option value="{{ aff.id }}" {% if aff_selectionnee and aff_selectionnee.id==aff.id %}selected{% endif %}>
+            {{ aff.matiere.nom }} ({{ aff.section.nom }} - Niv. {{ aff.section.niveau.ordre }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if aff_selectionnee %}
+      <div style="flex: 0 0 300px;">
+        <label class="form-label">Rechercher un étudiant :</label>
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="text" name="q" value="{{ request.args.get('q', '') }}" placeholder="Username, nom..."
+            class="form-input">
+          <button type="submit" class="btn btn-glass"><i class="fa-solid fa-search"></i></button>
+        </div>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+
+  {% if aff_selectionnee %}
+  <!-- Formulaire d'enregistrement -->
+  <form action="{{ url_for('professeur.enregistrer_presences') }}" method="POST">
+    <input type="hidden" name="aff_id" value="{{ aff_selectionnee.id }}">
+
+    <div class="card glass-card" style="margin-bottom: 2rem; border: 1px solid var(--c-nova-cyan);">
+      <h3 style="margin-bottom: 1.5rem; color: var(--c-nova-cyan);"><i class="fa-solid fa-clock"></i> Détails de la
+        Séance</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <div>
+          <label class="form-label">Date</label>
+          <input type="date" name="date_seance" class="form-input" required id="dateInput">
+        </div>
+        <div>
+          <label class="form-label">Heure Début</label>
+          <input type="time" name="heure_debut" class="form-input" required>
+        </div>
+        <div>
+          <label class="form-label">Heure Fin</label>
+          <input type="time" name="heure_fin" class="form-input" required>
+        </div>
+        <div>
+          <label class="form-label">Type</label>
+          <select name="type_seance" class="form-input" required>
+            <option value="cours">Cours Magistral</option>
+            <option value="td">Travaux Dirigés (TD)</option>
+            <option value="tp">Travaux Pratiques (TP)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Liste des étudiants -->
+    <div class="card glass-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="margin: 0;"><i class="fa-solid fa-users"></i> Liste d'appel</h3>
+        <div style="display: flex; gap: 1rem;">
+          <button type="button" class="btn btn-glass btn-sm" onclick="marquerTous('present')"><i
+              class="fa-solid fa-check"></i> Tous Présents</button>
+          <button type="button" class="btn btn-glass btn-sm danger" onclick="marquerTous('absent')"><i
+              class="fa-solid fa-xmark"></i> Tous Absents</button>
+        </div>
+      </div>
+
+      <div style="overflow-x: auto; margin-bottom: 2rem;">
+        <table class="data-table" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Matricule
+              </th>
+              <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Étudiant</th>
+              <th
+                style="text-align: center; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); min-width: 200px;">
+                Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for etu in etudiants %}
+            <tr>
+              <td
+                style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">
+                {{ etu.matricule }}</td>
+              <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);"><strong>{{ etu.nom }} {{
+                  etu.prenom }}</strong></td>
+              <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                <input type="hidden" name="etudiant_id" value="{{ etu.id }}">
+                <div style="display: flex; justify-content: center; gap: 1rem;">
+                  <label class="radio-label"
+                    style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; color: var(--s-success);">
+                    <input type="radio" name="statut_{{ etu.id }}" value="present" checked> Présent
+                  </label>
+                  <label class="radio-label"
+                    style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; color: var(--s-warning);">
+                    <input type="radio" name="statut_{{ etu.id }}" value="retard"> Retard
+                  </label>
+                  <label class="radio-label"
+                    style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; color: var(--s-danger);">
+                    <input type="radio" name="statut_{{ etu.id }}" value="absent"> Absent
+                  </label>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="3" style="padding: 2rem; text-align: center; color: var(--text-muted);">Aucun étudiant trouvé
+                dans cette section.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="text-align: right;">
+        <button type="submit" class="btn btn-primary btn-lg"><i class="fa-solid fa-save"></i> Enregistrer les
+          présences</button>
+      </div>
+    </div>
+  </form>
+
+  {% else %}
+  <div class="card glass-card" style="text-align: center; padding: 4rem;">
+    <i class="fa-solid fa-list-check fa-3x mb-2" style="color: var(--text-muted);"></i>
+    <p class="text-muted" style="font-size: 1.2rem;">Veuillez sélectionner un module et une classe pour afficher la
+      liste d'appel.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% block scripts %}
+<script>
+  // Pré-remplir la date d'aujourd'hui
+  document.addEventListener('DOMContentLoaded', () => {
+    const dateInput = document.getElementById('dateInput');
+    if (dateInput && !dateInput.value) {
+      dateInput.value = new Date().toISOString().split('T')[0];
+    }
+  });
+
+  function marquerTous(valeur) {
+    const radios = document.querySelectorAll(`input[type="radio"][value="${valeur}"]`);
+    radios.forEach(r => r.checked = true);
+  }
+</script>
+{% endblock %}
+{% endblock %}

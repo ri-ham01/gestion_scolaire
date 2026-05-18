@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des Étudiants — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-user-graduate"></i> Gestion des Étudiants</h1>
+    <p class="text-muted">Consultez, ajoutez ou désactivez les étudiants (l'année scolaire active doit être définie).
+    </p>
+  </div>
+</div>
+
+<div class="section-inner">
+  <div
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <!-- Recherche -->
+    <form method="GET" action="{{ url_for('admin.etudiants') }}" class="search-form"
+      style="display: flex; gap: 0.5rem;">
+      <input type="text" name="q" value="{{ q }}" placeholder="Rechercher par nom, prénom, username..."
+        class="form-input" style="width: 300px;">
+      <button type="submit" class="btn btn-glass"><i class="fa-solid fa-search"></i></button>
+      {% if q %}<a href="{{ url_for('admin.etudiants') }}" class="btn btn-glass danger"><i
+          class="fa-solid fa-xmark"></i></a>{% endif %}
+    </form>
+
+    <button class="btn btn-primary" onclick="document.getElementById('modalAjouterEtudiant').showModal()"><i
+        class="fa-solid fa-plus"></i> Nouvel Étudiant</button>
+  </div>
+
+  <div class="card glass-card" style="overflow-x: auto;">
+    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Matricule</th>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Étudiant</th>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Username</th>
+          <th style="text-align: center; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Sexe</th>
+          <th style="text-align: center; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Statut</th>
+          <th style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for etu in etus %}
+        <tr>
+          <td
+            style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">
+            {{ etu.matricule }}</td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);"><strong>{{ etu.nom }} {{
+              etu.prenom }}</strong></td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">{{ etu.utilisateur.username }}
+          </td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+            {% if etu.sexe == 'M' %}<i class="fa-solid fa-mars" style="color:var(--c-nova-cyan);"></i>
+            {% elif etu.sexe == 'F' %}<i class="fa-solid fa-venus" style="color:var(--s-warning);"></i>
+            {% else %}-{% endif %}
+          </td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+            {% if etu.est_actif %}
+            <span class="badge" style="background: rgba(34,197,94,0.2); color: var(--s-success);"><i
+                class="fa-solid fa-check-circle"></i> Actif</span>
+            {% else %}
+            <span class="badge" style="background: rgba(239,68,68,0.2); color: var(--s-danger);"><i
+                class="fa-solid fa-ban"></i> Inactif</span>
+            {% endif %}
+          </td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right;">
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+              {% if etu.est_actif %}
+              <form action="{{ url_for('admin.supprimer_etudiant', etu_id=etu.id) }}" method="POST"
+                onsubmit="return confirm('Désactiver cet étudiant ?');">
+                <button type="submit" class="btn btn-glass danger btn-sm" title="Désactiver"><i
+                    class="fa-solid fa-trash"></i></button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+            <i class="fa-solid fa-users-slash fa-2x mb-1"></i><br>Aucun étudiant trouvé.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Ajouter Étudiant -->
+<dialog id="modalAjouterEtudiant" class="edunova-dialog"
+  style="width: 100%; max-width: 500px; padding: 2rem; border-radius: 16px; border: var(--border-glass); background: var(--bg-midnight-slate); color: var(--text-main);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h3 style="margin: 0;"><i class="fa-solid fa-user-plus"></i> Nouvel Étudiant</h3>
+    <button onclick="document.getElementById('modalAjouterEtudiant').close()" class="btn btn-glass"
+      style="padding: 0.5rem;"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  {% if not annee %}
+  <div class="flash danger mb-2">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <span>Impossible de créer un étudiant. Aucune année scolaire n'est active !</span>
+  </div>
+  {% elif not sections %}
+  <div class="flash warning mb-2">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <span>Impossible de créer un étudiant. Créez d'abord une section.</span>
+  </div>
+  {% else %}
+  <form action="{{ url_for('admin.ajouter_etudiant') }}" method="POST">
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+      <div style="flex: 1;">
+        <label class="form-label">Nom <span style="color:var(--s-danger);">*</span></label>
+        <input type="text" name="nom" class="form-input" required>
+      </div>
+      <div style="flex: 1;">
+        <label class="form-label">Prénom <span style="color:var(--s-danger);">*</span></label>
+        <input type="text" name="prenom" class="form-input" required>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 1rem;">
+      <label class="form-label">Section (Inscription automatique) <span style="color:var(--s-danger);">*</span></label>
+      <select name="section_id" class="form-input" required>
+        <option value="">Sélectionnez une section</option>
+        {% for sec in sections %}
+        <option value="{{ sec.id }}">{{ sec.nom }} ({{ sec.specialite.code }} - Niveau {{ sec.niveau.ordre }})</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+      <div style="flex: 1;">
+        <label class="form-label">Date de naissance</label>
+        <input type="date" name="date_naissance" class="form-input">
+      </div>
+      <div style="flex: 1;">
+        <label class="form-label">Sexe</label>
+        <select name="sexe" class="form-input">
+          <option value="">Non spécifié</option>
+          <option value="M">Masculin</option>
+          <option value="F">Féminin</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 1.5rem;">
+      <label class="form-label">Lieu de naissance</label>
+      <input type="text" name="lieu_naissance" class="form-input">
+    </div>
+
+    <div class="flash info" style="margin-bottom: 1.5rem;">
+      <i class="fa-solid fa-robot"></i>
+      <span>Le nom d'utilisateur (ex: 22ai01) sera généré dynamiquement basé sur l'année scolaire ({{ annee.annee_debut
+        }}), la spécialité et le niveau de la section choisie.</span>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+      <button type="button" class="btn btn-glass"
+        onclick="document.getElementById('modalAjouterEtudiant').close()">Annuler</button>
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Créer et Inscrire</button>
+    </div>
+  </form>
+  {% endif %}
+</dialog>
+
+<style>
+  /* Re-use from professeurs.html or place in css */
+  dialog::backdrop {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+  }
+
+  .edunova-dialog {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    animation: slideInUp 0.3s ease-out;
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+{% endblock %}

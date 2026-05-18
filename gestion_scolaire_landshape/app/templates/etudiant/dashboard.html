@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Espace Étudiant — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-graduation-cap"></i> Bonjour, {{ etu.prenom }} {{ etu.nom }}</h1>
+    <p class="text-muted">Accédez à vos cours, devoirs, notes et annonces.</p>
+  </div>
+</div>
+
+<div class="section-inner" style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start;">
+
+  <!-- Main Content -->
+  <div>
+    {% if notifs_count > 0 %}
+    <div class="flash info mb-2"
+      style="background: rgba(139, 92, 246, 0.2); border-left: 3px solid var(--c-aurora-indigo);">
+      <i class="fa-solid fa-bell"></i>
+      <span>Vous avez <strong>{{ notifs_count }}</strong> notification(s) non lue(s).</span>
+    </div>
+    {% endif %}
+
+    <div class="card glass-card" style="margin-bottom: 2rem;">
+      <h3 style="margin-bottom: 1.5rem; color: var(--c-nova-cyan);"><i class="fa-solid fa-newspaper"></i> Fil
+        d'actualité de vos professeurs</h3>
+
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        {% for post in posts %}
+        <div
+          style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+              <div
+                style="width: 40px; height: 40px; border-radius: 50%; background: var(--c-aurora-indigo); display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                <i class="fa-solid fa-user-tie"></i>
+              </div>
+              <div>
+                <strong style="color: #fff;">Prof. {{ post.professeur.nom }}</strong><br>
+                <small class="text-muted">{{ post.created_at.strftime('%d/%m/%Y à %H:%M') }}</small>
+              </div>
+            </div>
+            {% if post.affectation %}
+            <span class="badge" style="background: rgba(255,255,255,0.1);"><i class="fa-solid fa-book"></i> {{
+              post.affectation.matiere.nom }}</span>
+            {% else %}
+            <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981;">Général</span>
+            {% endif %}
+          </div>
+
+          <p style="color: var(--text-main); line-height: 1.6; margin-bottom: 1rem; white-space: pre-wrap;">{{
+            post.contenu }}</p>
+        </div>
+        {% else %}
+        <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+          <i class="fa-solid fa-inbox fa-3x mb-2"></i>
+          <p>Aucune publication récente de vos professeurs.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div>
+    <div class="card glass-card" style="margin-bottom: 2rem;">
+      <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;"><i
+          class="fa-solid fa-address-card"></i> Dossier Scolaire</h3>
+      <p style="margin-bottom: 0.5rem;"><i class="fa-solid fa-id-badge text-muted"></i> <strong>Matricule:</strong>
+        <span style="font-family: var(--font-mono);">{{ etu.matricule }}</span></p>
+
+      {% if insc %}
+      <p style="margin-bottom: 0.5rem;"><i class="fa-solid fa-graduation-cap text-muted"></i>
+        <strong>Spécialité:</strong> {{ insc.section.specialite.nom }} ({{ insc.section.specialite.code }})</p>
+      <p style="margin-bottom: 0.5rem;"><i class="fa-solid fa-layer-group text-muted"></i> <strong>Section:</strong> {{
+        insc.section.nom }} (Niv. {{ insc.section.niveau.ordre }})</p>
+      <p style="margin-bottom: 0.5rem;"><i class="fa-solid fa-calendar text-muted"></i> <strong>Année:</strong> {{
+        insc.annee_scolaire.label }}</p>
+
+      <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+        <a href="{{ url_for('etudiant.espace_cours') }}" class="btn btn-glass btn-block" style="text-align: left;"><i
+            class="fa-solid fa-book-open"></i> Accéder aux cours</a>
+        <a href="{{ url_for('etudiant.notes') }}" class="btn btn-glass btn-block" style="text-align: left;"><i
+            class="fa-solid fa-star"></i> Consulter les notes</a>
+      </div>
+      {% else %}
+      <div class="flash danger" style="margin-top: 1rem;">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Vous n'avez aucune inscription active pour l'année en cours.</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

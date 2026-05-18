@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard Administration — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-shield-halved"></i> Espace Administration</h1>
+    <p class="text-muted">Vue globale de l'établissement EduNova. Gérer les utilisateurs, les spécialités et la
+      communication.</p>
+  </div>
+</div>
+
+<div class="section-inner" style="display: flex; gap: 2rem; flex-wrap: wrap;">
+
+  <!-- Sidebar Admin -->
+  <aside
+    style="flex: 0 0 250px; background: rgba(8, 12, 24, 0.8); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 16px; padding: 1.5rem; height: fit-content;">
+    <h3 style="margin-bottom: 1rem; color: var(--c-nova-cyan); font-size: 1rem;"><i class="fa-solid fa-compass"></i>
+      Navigation</h3>
+    <ul style="display: flex; flex-direction: column; gap: 0.5rem; list-style: none; padding: 0;">
+      <li><a href="{{ url_for('admin.dashboard') }}" class="btn btn-glass btn-block" style="text-align: left;"><i
+            class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+      <li><a href="{{ url_for('admin.professeurs') }}" class="btn btn-glass btn-block" style="text-align: left;"><i
+            class="fa-solid fa-chalkboard-user"></i> Professeurs</a></li>
+      <li><a href="{{ url_for('admin.etudiants') }}" class="btn btn-glass btn-block" style="text-align: left;"><i
+            class="fa-solid fa-user-graduate"></i> Étudiants</a></li>
+      <li><a href="{{ url_for('admin.parents') }}" class="btn btn-glass btn-block" style="text-align: left;"><i
+            class="fa-solid fa-users"></i> Parents</a></li>
+      <hr style="border:0; height:1px; background: rgba(255,255,255,0.1); margin: 0.5rem 0;">
+      <li><a href="{{ url_for('admin.specialites') }}" class="btn btn-glass btn-block" style="text-align: left;"><i
+            class="fa-solid fa-layer-group"></i> Spécialités & Matières</a></li>
+      <li><a href="{{ url_for('admin.affectations') }}" class="btn btn-glass btn-block" style="text-align: left;"><i
+            class="fa-solid fa-folder-tree"></i> Affectations</a></li>
+      <li><a href="{{ url_for('admin.emploi_du_temps') }}" class="btn btn-glass btn-block" style="text-align: left;"><i
+            class="fa-solid fa-calendar-days"></i> Emplois du temps</a></li>
+      <hr style="border:0; height:1px; background: rgba(255,255,255,0.1); margin: 0.5rem 0;">
+      <li><a href="{{ url_for('admin.annonces') }}" class="btn btn-glass btn-block" style="text-align: left;"><i
+            class="fa-solid fa-bullhorn"></i> Annonces</a></li>
+      <li><a href="{{ url_for('admin.justifications') }}" class="btn btn-glass btn-block" style="text-align: left;"><i
+            class="fa-solid fa-file-signature"></i> Justifications</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Area -->
+  <div style="flex: 1; min-width: 300px;">
+
+    {% if not annee %}
+    <div class="flash warning mb-2">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>Attention: Aucune année scolaire active n'est définie. Allez dans les paramètres pour en activer une.</span>
+    </div>
+    {% endif %}
+
+    <!-- KPIs -->
+    <div class="features-grid"
+      style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 2rem; gap: 1rem;">
+      <div class="card glass-card" style="padding: 1.5rem; text-align: center;">
+        <h2 style="font-size: 2.5rem; color: var(--c-nova-cyan);">{{ stats.etudiants }}</h2>
+        <p class="text-muted"><i class="fa-solid fa-user-graduate"></i> Étudiants Actifs</p>
+      </div>
+      <div class="card glass-card" style="padding: 1.5rem; text-align: center;">
+        <h2 style="font-size: 2.5rem; color: var(--c-aurora-indigo);">{{ stats.professeurs }}</h2>
+        <p class="text-muted"><i class="fa-solid fa-chalkboard-user"></i> Professeurs</p>
+      </div>
+      <div class="card glass-card" style="padding: 1.5rem; text-align: center;">
+        <h2 style="font-size: 2.5rem; color: var(--s-warning);">{{ stats.specialites }}</h2>
+        <p class="text-muted"><i class="fa-solid fa-layer-group"></i> Spécialités</p>
+      </div>
+      <div class="card glass-card" style="padding: 1.5rem; text-align: center;">
+        <h2 style="font-size: 2.5rem; color: var(--s-success);">{{ stats.annonces }}</h2>
+        <p class="text-muted"><i class="fa-solid fa-bullhorn"></i> Annonces</p>
+      </div>
+    </div>
+
+    <!-- Quick Overview Tables -->
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+      <div class="card glass-card">
+        <h3><i class="fa-solid fa-info-circle"></i> État du Système</h3>
+        <ul style="margin-top: 1rem; color: var(--text-muted); line-height: 2;">
+          <li><strong>Année Scolaire Active:</strong> {% if annee %}{{ annee.label }}{% else %}<span
+              style="color:var(--s-danger);">Non définie</span>{% endif %}</li>
+          <li><strong>Générateur Username Professeur:</strong> Auto (ex: ai001)</li>
+          <li><strong>Générateur Username Étudiant:</strong> Auto (ex: 22ai01)</li>
+          <li><strong>Génération de mot de passe:</strong> Automatique, sécurisée, affichée lors de la création</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

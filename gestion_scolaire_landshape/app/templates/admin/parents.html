@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des Parents — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-users"></i> Gestion des Parents</h1>
+    <p class="text-muted">Gérez les comptes des parents et leurs liens avec les étudiants.</p>
+  </div>
+</div>
+
+<div class="section-inner">
+  <div style="display: flex; justify-content: flex-end; margin-bottom: 2rem;">
+    <button class="btn btn-primary" onclick="document.getElementById('modalAjouterParent').showModal()"><i
+        class="fa-solid fa-plus"></i> Nouveau Parent</button>
+  </div>
+
+  <div class="card glass-card" style="overflow-x: auto;">
+    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Parent</th>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Contact</th>
+          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Enfants Liés</th>
+          <th style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for parent in parents %}
+        <tr>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <strong>{{ parent.nom }} {{ parent.prenom }}</strong><br>
+            <small class="text-muted"><i class="fa-solid fa-user"></i> {{ parent.utilisateur.username }}</small>
+          </td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <a href="mailto:{{ parent.email }}" style="color: var(--c-nova-cyan);"><i class="fa-solid fa-envelope"></i>
+              {{ parent.email }}</a><br>
+            {% if parent.telephone %}<span class="text-muted"><i class="fa-solid fa-phone"></i> {{ parent.telephone
+              }}</span>{% endif %}
+          </td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            {% for pe in parent.etudiants_lies %}
+            <span class="badge"
+              style="background: rgba(255,255,255,0.1); margin-bottom: 0.2rem; display: inline-block;">
+              {{ pe.etudiant.nom }} {{ pe.etudiant.prenom }} ({{ pe.lien }})
+            </span><br>
+            {% else %}
+            <span class="text-muted">Aucun</span>
+            {% endfor %}
+          </td>
+          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right;">
+            <button class="btn btn-glass btn-sm"><i class="fa-solid fa-pen"></i></button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+            <i class="fa-solid fa-users-slash fa-2x mb-1"></i><br>Aucun parent enregistré.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Ajouter Parent -->
+<dialog id="modalAjouterParent" class="edunova-dialog"
+  style="width: 100%; max-width: 500px; padding: 2rem; border-radius: 16px; border: var(--border-glass); background: var(--bg-midnight-slate); color: var(--text-main);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h3 style="margin: 0;"><i class="fa-solid fa-user-plus"></i> Nouveau Parent</h3>
+    <button onclick="document.getElementById('modalAjouterParent').close()" class="btn btn-glass"
+      style="padding: 0.5rem;"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <form action="{{ url_for('admin.ajouter_parent') }}" method="POST">
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+      <div style="flex: 1;">
+        <label class="form-label">Nom <span style="color:var(--s-danger);">*</span></label>
+        <input type="text" name="nom" class="form-input" required>
+      </div>
+      <div style="flex: 1;">
+        <label class="form-label">Prénom <span style="color:var(--s-danger);">*</span></label>
+        <input type="text" name="prenom" class="form-input" required>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 1rem;">
+      <label class="form-label">Email (Sert de Login) <span style="color:var(--s-danger);">*</span></label>
+      <input type="email" name="email" class="form-input" required>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+      <div style="flex: 1;">
+        <label class="form-label">Téléphone</label>
+        <input type="tel" name="telephone" class="form-input">
+      </div>
+      <div style="flex: 1;">
+        <label class="form-label">Profession</label>
+        <input type="text" name="profession" class="form-input">
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 1.5rem 0; padding-top: 1rem;">
+      <h4 style="margin-bottom: 1rem; color: var(--c-nova-cyan);">Lier un étudiant (Optionnel)</h4>
+      <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+        <div style="flex: 2;">
+          <label class="form-label">Étudiant</label>
+          <select name="etudiant_id" class="form-input">
+            <option value="">-- Aucun --</option>
+            {% for etu in etudiants %}
+            <option value="{{ etu.id }}">{{ etu.nom }} {{ etu.prenom }} ({{ etu.matricule }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="flex: 1;">
+          <label class="form-label">Lien de parenté</label>
+          <select name="lien" class="form-input">
+            <option value="pere">Père</option>
+            <option value="mere">Mère</option>
+            <option value="tuteur">Tuteur légal</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="flash info" style="margin-bottom: 1.5rem;">
+      <i class="fa-solid fa-robot"></i>
+      <span>Le mot de passe sera généré automatiquement et affiché à la prochaine étape. Le parent se connectera avec
+        son email.</span>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+      <button type="button" class="btn btn-glass"
+        onclick="document.getElementById('modalAjouterParent').close()">Annuler</button>
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Créer le compte</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}

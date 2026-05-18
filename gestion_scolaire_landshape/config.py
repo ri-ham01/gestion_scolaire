@@ -1,0 +1,84 @@
+import os
+
+# المسار الأساسي للمشروع
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+class Config:
+
+    # ── Security ──────────────────────────────────────────────
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'EduNova2026$SecretKey!XyZ#9f3mK8pQ2rL7vN')
+
+    # ── Database filess.io (MySQL) ────────────────────────────
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', (
+        'mysql+pymysql://'
+        'gestion_scolaire_landshape'
+        ':a635b506c2c42970e3c7b09d88e3e7d657fca2d2'
+        '@b7z9qy.h.filess.io'
+        ':61001'
+        '/gestion_scolaire_landshape'
+    ))
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle':  280,
+        'pool_timeout':  30,
+        'pool_size':     5,
+        'max_overflow':  2,
+    }
+
+    # ── Flask-Babel (i18n) ────────────────────────────────────
+    BABEL_DEFAULT_LOCALE     = 'fr'
+    BABEL_DEFAULT_TIMEZONE   = 'Africa/Algiers'
+    BABEL_SUPPORTED_LOCALES  = ['ar', 'fr', 'en']
+    LANGUAGES = {
+        'ar': 'العربية',
+        'fr': 'Français',
+        'en': 'English',
+    }
+
+    # ── Mail (désactivé — configurer via .env en production) ──
+    MAIL_SERVER   = os.environ.get('MAIL_SERVER',   None)
+    MAIL_PORT     = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USE_TLS  = os.environ.get('MAIL_USE_TLS',  'false').lower() == 'true'
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', None)
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', None)
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@edunova.dz')
+
+    # ── Upload fichiers ───────────────────────────────────────
+    UPLOAD_FOLDER      = os.path.join(BASE_DIR, 'app', 'static', 'uploads')
+    MAX_CONTENT_LENGTH = 52_428_800  # 50 MB
+
+    # Sous-dossiers autorisés
+    UPLOAD_SUBFOLDERS = ['cours', 'devoirs', 'soumissions',
+                         'corrections', 'justifications', 'releves', 'logos']
+
+    # Extensions autorisées par catégorie
+    ALLOWED_EXTENSIONS = {
+        'document': {'pdf', 'doc', 'docx'},
+        'image':    {'jpg', 'jpeg', 'png', 'gif', 'webp'},
+        'media':    {'mp3', 'mp4', 'avi', 'mov'},
+        'all':      {'pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'mp3', 'mp4'},
+    }
+
+    # ── Paramètres pédagogiques par défaut ───────────────────
+    SEUIL_PASSAGE          = 10.00   # moyenne annuelle minimale pour passer
+    SEUIL_EXCLUSION_ABS    = 10      # nb absences non justifiées → exclusion auto
+    DELAI_JUSTIF_HEURES    = 48      # délai max pour justifier une absence (heures)
+
+
+class DevelopmentConfig(Config):
+    DEBUG   = True
+    TESTING = False
+
+
+class ProductionConfig(Config):
+    DEBUG   = False
+    TESTING = False
+
+
+config = {
+    'development': DevelopmentConfig,
+    'production':  ProductionConfig,
+    'default':     DevelopmentConfig,
+}

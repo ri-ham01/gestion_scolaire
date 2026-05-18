@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Connexion — EduNova{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card glass-card">
+
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="logo-icon logo-lg">
+        <span class="logo-letter">E</span>
+        <div class="logo-dot"></div>
+      </div>
+      <div>
+        <h1 class="logo-text-lg">Edu<span class="logo-accent">Nova</span></h1>
+        <p class="auth-tagline">Connexion à votre espace</p>
+      </div>
+    </div>
+
+    <!-- Error -->
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+      <i class="fa-solid fa-circle-xmark"></i>
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Form -->
+    <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm" novalidate>
+
+      <div class="form-group">
+        <label class="form-label" for="identifiant">
+          <i class="fa-solid fa-user"></i>
+          Identifiant
+        </label>
+        <div class="input-wrapper">
+          <input type="text" id="identifiant" name="identifiant" class="form-input"
+            placeholder="Username ou Email (parents)" autocomplete="username" required autofocus />
+          <div class="input-focus-ring"></div>
+        </div>
+        <p class="form-hint">
+          Professeurs & étudiants : username généré par l'administration.<br />
+          Parents : adresse email enregistrée.
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">
+          <i class="fa-solid fa-lock"></i>
+          Mot de passe
+        </label>
+        <div class="input-wrapper input-password">
+          <input type="password" id="password" name="password" class="form-input" placeholder="Mot de passe"
+            autocomplete="current-password" required />
+          <button type="button" class="toggle-password" id="togglePwd" aria-label="Afficher/masquer le mot de passe">
+            <i class="fa-solid fa-eye" id="eyeIcon"></i>
+          </button>
+          <div class="input-focus-ring"></div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">
+        <span class="btn-text"><i class="fa-solid fa-right-to-bracket"></i> Se connecter</span>
+        <span class="btn-loading" style="display:none"><i class="fa-solid fa-circle-notch fa-spin"></i>
+          Connexion...</span>
+      </button>
+    </form>
+
+    <!-- Info box -->
+    <div class="auth-info">
+      <i class="fa-solid fa-circle-info"></i>
+      <p>Les identifiants sont fournis par l'administration. Toute modification est interdite.</p>
+    </div>
+
+    <!-- Langue rapide -->
+    <div class="auth-lang">
+      <a href="{{ url_for('auth.changer_langue', lang='fr') }}"
+        class="{% if session.get('lang','fr')=='fr' %}active{% endif %}">FR</a>
+      <span>|</span>
+      <a href="{{ url_for('auth.changer_langue', lang='ar') }}"
+        class="{% if session.get('lang')=='ar' %}active{% endif %}">AR</a>
+      <span>|</span>
+      <a href="{{ url_for('auth.changer_langue', lang='en') }}"
+        class="{% if session.get('lang')=='en' %}active{% endif %}">EN</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Toggle password visibility
+  document.getElementById('togglePwd').addEventListener('click', function () {
+    const pwd = document.getElementById('password');
+    const icon = document.getElementById('eyeIcon');
+    if (pwd.type === 'password') {
+      pwd.type = 'text';
+      icon.className = 'fa-solid fa-eye-slash';
+    } else {
+      pwd.type = 'password';
+      icon.className = 'fa-solid fa-eye';
+    }
+  });
+
+  // Loading state on submit
+  document.getElementById('loginForm').addEventListener('submit', function () {
+    const btn = document.getElementById('submitBtn');
+    btn.querySelector('.btn-text').style.display = 'none';
+    btn.querySelector('.btn-loading').style.display = 'inline-flex';
+    btn.disabled = true;
+  });
+</script>
+{% endblock %}

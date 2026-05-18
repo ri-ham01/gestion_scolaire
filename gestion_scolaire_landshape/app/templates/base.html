@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'fr') }}" dir="{{ 'rtl' if session.get('lang') == 'ar' else 'ltr' }}">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="EduNova — Système de Gestion Scolaire Intelligent" />
+  <title>{% block title %}EduNova{% endblock %}</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=Noto+Kufi+Arabic:wght@300;400;600;700&display=swap"
+    rel="stylesheet" />
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/edunova.css') }}" />
+  {% block head %}{% endblock %}
+</head>
+
+<body class="{% if session.get('lang') == 'ar' %}lang-ar{% endif %}">
+
+  <!-- ── WebGL Animated Background ───────────────────────────── -->
+  <canvas id="bg-canvas" class="webgl-canvas"></canvas>
+
+  <!-- ── Flash Messages ──────────────────────────────────────── -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-container" id="flashContainer">
+    {% for cat, msg in messages %}
+    <div class="flash flash-{{ cat }}" role="alert">
+      <i
+        class="fa-solid {% if cat=='success' %}fa-circle-check{% elif cat=='danger' %}fa-circle-xmark{% elif cat=='warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+      <span>{{ msg }}</span>
+      <button class="flash-close" onclick="this.parentElement.remove()" aria-label="Fermer">×</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <!-- ── NAVBAR ──────────────────────────────────────────────── -->
+  <nav class="navbar" id="navbar" role="navigation" aria-label="Navigation principale">
+    <div class="nav-inner">
+
+      <!-- Logo -->
+      <a href="{{ url_for('public.index') }}" class="nav-logo">
+        <div class="logo-icon">
+          <span class="logo-letter">E</span>
+          <div class="logo-dot"></div>
+        </div>
+        <span class="logo-text">Edu<span class="logo-accent">Nova</span></span>
+      </a>
+
+      <!-- Nav Links -->
+      <ul class="nav-links" id="navLinks">
+        {% if current_user.is_authenticated %}
+        {% if current_user.role == 'admin' %}
+        <li><a href="{{ url_for('admin.dashboard') }}"
+            class="nav-link {% if request.blueprint == 'admin' %}active{% endif %}"><i
+              class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+        <li><a href="{{ url_for('admin.professeurs') }}" class="nav-link"><i class="fa-solid fa-chalkboard-user"></i>
+            Professeurs</a></li>
+        <li><a href="{{ url_for('admin.etudiants') }}" class="nav-link"><i class="fa-solid fa-user-graduate"></i>
+            Étudiants</a></li>
+        <li><a href="{{ url_for('admin.annonces') }}" class="nav-link"><i class="fa-solid fa-bullhorn"></i> Annonces</a>
+        </li>
+        {% elif current_user.role == 'professeur' %}
+        <li><a href="{{ url_for('professeur.dashboard') }}"
+            class="nav-link {% if request.blueprint == 'professeur' %}active{% endif %}"><i
+              class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+        <li><a href="{{ url_for('professeur.notes') }}" class="nav-link"><i class="fa-solid fa-pen-to-square"></i>
+            Notes</a></li>
+        <li><a href="{{ url_for('professeur.presences') }}" class="nav-link"><i class="fa-solid fa-calendar-check"></i>
+            Présences</a></li>
+        <li><a href="{{ url_for('professeur.cours') }}" class="nav-link"><i class="fa-solid fa-book-open"></i> Cours</a>
+        </li>
+        <li><a href="{{ url_for('professeur.chat') }}" class="nav-link"><i class="fa-solid fa-message"></i> Messages</a>
+        </li>
+        {% elif current_user.role == 'etudiant' %}
+        <li><a href="{{ url_for('etudiant.dashboard') }}"
+            class="nav-link {% if request.blueprint == 'etudiant' %}active{% endif %}"><i
+              class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+        <li><a href="{{ url_for('etudiant.notes') }}" class="nav-link"><i class="fa-solid fa-star"></i> Notes</a></li>
+        <li><a href="{{ url_for('etudiant.espace_cours') }}" class="nav-link"><i class="fa-solid fa-book-open"></i>
+            Cours</a></li>
+        <li><a href="{{ url_for('etudiant.devoirs') }}" class="nav-link"><i class="fa-solid fa-file-pen"></i>
+            Devoirs</a></li>
+        <li><a href="{{ url_for('etudiant.chat') }}" class="nav-link"><i class="fa-solid fa-message"></i> Messages</a>
+        </li>
+        {% elif current_user.role == 'parent' %}
+        <li><a href="{{ url_for('parent.dashboard') }}"
+            class="nav-link {% if request.blueprint == 'parent' %}active{% endif %}"><i
+              class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+        <li><a href="{{ url_for('parent.absences') }}" class="nav-link"><i class="fa-solid fa-calendar-xmark"></i>
+            Absences</a></li>
+        <li><a href="{{ url_for('parent.releve') }}" class="nav-link"><i class="fa-solid fa-file-contract"></i>
+            Relevés</a></li>
+        <li><a href="{{ url_for('parent.chat') }}" class="nav-link"><i class="fa-solid fa-message"></i> Messages</a>
+        </li>
+        {% endif %}
+        {% else %}
+        <li><a href="{{ url_for('public.index') }}"
+            class="nav-link {% if request.endpoint == 'public.index' %}active{% endif %}"><i
+              class="fa-solid fa-house"></i> Accueil</a></li>
+        <li><a href="{{ url_for('public.emploi_du_temps') }}" class="nav-link"><i class="fa-solid fa-calendar-days"></i>
+            Emploi du temps</a></li>
+        <li><a href="{{ url_for('public.examens') }}" class="nav-link"><i class="fa-solid fa-file-circle-question"></i>
+            Examens</a></li>
+        <li><a href="{{ url_for('public.annonces') }}" class="nav-link"><i class="fa-solid fa-bullhorn"></i>
+            Annonces</a></li>
+        {% endif %}
+      </ul>
+
+      <!-- Right Actions -->
+      <div class="nav-actions">
+        <!-- Langue -->
+        <div class="lang-switcher-inline">
+          <a href="{{ url_for('auth.changer_langue', lang='ar') }}" class="lang-circ {% if session.get('lang')=='ar' %}active{% endif %}" aria-label="العربية">AR</a>
+          <a href="{{ url_for('auth.changer_langue', lang='fr') }}" class="lang-circ {% if session.get('lang','fr')=='fr' %}active{% endif %}" aria-label="Français">FR</a>
+          <a href="{{ url_for('auth.changer_langue', lang='en') }}" class="lang-circ {% if session.get('lang')=='en' %}active{% endif %}" aria-label="English">EN</a>
+        </div>
+
+        {% if current_user.is_authenticated %}
+        <!-- Notifications -->
+        <div class="notif-wrapper">
+          <button class="nav-icon-btn" id="notifToggle" aria-label="Notifications">
+            <i class="fa-solid fa-bell"></i>
+            <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+          </button>
+          <div class="notif-panel" id="notifPanel" aria-label="Panneau notifications">
+            <div class="notif-header">
+              <span>Notifications</span>
+              <button class="btn-text-sm" id="markAllRead">Tout marquer lu</button>
+            </div>
+            <ul class="notif-list" id="notifList">
+              <li class="notif-empty"><i class="fa-regular fa-bell-slash"></i> Aucune notification</li>
+            </ul>
+          </div>
+        </div>
+        <!-- Profil -->
+        <div class="user-menu">
+          <button class="user-avatar" id="userMenuToggle" aria-expanded="false">
+            <span class="avatar-initials">{{ (current_user.administrateur or current_user.professeur or
+              current_user.etudiant or current_user.parent) | attr('prenom') | truncate(1, True, '') | upper if
+              current_user.is_authenticated else '?' }}{{ (current_user.administrateur or current_user.professeur or
+              current_user.etudiant or current_user.parent) | attr('nom') | truncate(1, True, '') | upper if
+              current_user.is_authenticated else '' }}</span>
+            <div class="online-dot"></div>
+          </button>
+          <ul class="user-dropdown" id="userDropdown">
+            <li class="user-info">
+              <span class="user-role-badge badge-{{ current_user.role }}">{{ current_user.role | upper }}</span>
+              <span class="user-username">{{ current_user.username }}</span>
+            </li>
+            <li>
+              <hr class="dropdown-divider" />
+            </li>
+            <li><a href="{{ url_for('auth.logout') }}" class="dropdown-link danger"><i
+                  class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
+          </ul>
+        </div>
+        {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-right-to-bracket"></i> Connexion
+        </a>
+        {% endif %}
+
+        <!-- Hamburger -->
+        <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Main Content ─────────────────────────────────────────── -->
+  <main class="main-content" id="mainContent">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ── Footer ──────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-text">Edu<span class="logo-accent">Nova</span></span>
+        <p>Système de Gestion Scolaire Intelligent</p>
+      </div>
+      <div class="footer-links">
+        <a href="{{ url_for('public.emploi_du_temps') }}">Emploi du temps</a>
+        <a href="{{ url_for('public.examens') }}">Examens</a>
+        <a href="{{ url_for('public.annonces') }}">Annonces</a>
+      </div>
+      <p class="footer-copy">&copy; {{ 2026 }} EduNova. Tous droits réservés.</p>
+    </div>
+  </footer>
+
+  <!-- ── Command Palette (Ctrl+K) ───────────────────────────── -->
+  <div class="cmd-palette-overlay" id="cmdOverlay" aria-hidden="true">
+    <div class="cmd-palette">
+      <div class="cmd-header">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="cmdInput" placeholder="Rechercher une page ou une action... (Navigation rapide)" autocomplete="off">
+        <span class="cmd-shortcut">ESC</span>
+      </div>
+      <div class="cmd-results" id="cmdResults">
+        <!-- Rempli par JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scripts ─────────────────────────────────────────────── -->
+  <!-- Three.js pour le background spatial -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="{{ url_for('static', filename='js/three-bg.js') }}"></script>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    // Variables globales pour le JS
+    window.EDUNOVA_ROLE = "{{ current_user.role if current_user.is_authenticated else 'public' }}";
+    window.EDUNOVA_URLS = {
+      home: "{{ url_for('public.index') }}",
+      edt: "{{ url_for('public.emploi_du_temps') }}",
+      exam: "{{ url_for('public.examens') }}",
+      annonces: "{{ url_for('public.annonces') }}"
+    };
+    {% if current_user.is_authenticated %}
+    window.EDUNOVA_URLS.dashboard = "{{ url_for(current_user.role + '.dashboard') }}";
+    {% endif %}
+    {% if current_user.role == 'professeur' %}
+    window.EDUNOVA_URLS.notes = "{{ url_for('professeur.notes') }}";
+    window.EDUNOVA_URLS.presences = "{{ url_for('professeur.presences') }}";
+    window.EDUNOVA_URLS.chat = "{{ url_for('professeur.chat') }}";
+    {% endif %}
+  </script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% if current_user.is_authenticated %}
+  <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+  {% endif %}
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>
