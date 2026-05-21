@@ -32,9 +32,7 @@ class Utilisateur(UserMixin, db.Model):
     professeur      = db.relationship('Professeur',     back_populates='utilisateur', uselist=False)
     etudiant        = db.relationship('Etudiant',       back_populates='utilisateur', uselist=False)
     parent          = db.relationship('Parent',         back_populates='utilisateur', uselist=False)
-    notifications   = db.relationship('Notification',  back_populates='destinataire',
-                                      foreign_keys='Notification.destinataire_id',
-                                      lazy='dynamic')
+    notifications   = db.relationship('Notification',  back_populates='destinataire', lazy='dynamic')
     push_tokens     = db.relationship('PushToken',      back_populates='utilisateur',   lazy='dynamic')
     statut_connexion = db.relationship('StatutConnexion', back_populates='utilisateur', uselist=False)
 

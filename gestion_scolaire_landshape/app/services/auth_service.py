@@ -2,9 +2,8 @@
 #  EduNova — services/auth_service.py
 #  Authentification, création comptes admin-only
 # =============================================================
-from datetime import datetime, timezone
 from flask import request
-from app.extensions import db, bcrypt
+from app.extensions import db
 from app.models.user import Utilisateur
 from app.models.audit import JournalConnexion
 from app.utils.helpers import generer_password_securise

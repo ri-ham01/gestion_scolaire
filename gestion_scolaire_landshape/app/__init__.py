@@ -1,7 +1,8 @@
-import os
-from flask import Flask, session, request, g
-from flask_babel import Babel
+from datetime import datetime
+from flask import Flask, session, request
+from markupsafe import Markup
 from app.extensions import db, migrate, bcrypt, socketio, mail, login_manager, babel
+import re
 
 
 def create_app(config_name='default'):
@@ -46,6 +47,16 @@ def create_app(config_name='default'):
 
     # ── Register socket events ─────────────────────────────────
     from app.sockets import chat  # noqa: F401
+
+    # ── Jinja2 globals & filters ──────────────────────────────
+    app.jinja_env.globals['now'] = datetime.now
+
+    @app.template_filter('striptags')
+    def striptags_filter(text):
+        if not text:
+            return ''
+        clean = re.sub(r'<[^>]+>', '', str(text))
+        return clean
 
     # ── Shell context ──────────────────────────────────────────
     @app.shell_context_processor

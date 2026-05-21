@@ -10,9 +10,9 @@ from app.blueprints.parent import parent_bp
 from app.extensions import db
 from app.utils.decorators import parent_requis
 from app.utils.helpers import sauvegarder_fichier
-from app.models.profiles import Parent, Etudiant, ParentEtudiant
+from app.models.profiles import Parent
 from app.models.presence import Presence, CompteurAbsences
-from app.models.program import AffectationEnseignement, Inscription
+from app.models.program import AffectationEnseignement
 from app.models.evaluation import ReleverNotes
 from app.models.communication import Conversation, Message, Notification
 from app.services.notif_service import notifier_message

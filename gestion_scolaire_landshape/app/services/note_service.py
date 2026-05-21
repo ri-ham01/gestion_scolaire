@@ -35,10 +35,9 @@ def calculer_moyenne_semestre(etudiant_id: int, inscription_id: int, semestre_id
     Calcule la moyenne générale d'un semestre :
     somme (moyenne_matiere × coefficient_programme) / somme(coefficients).
     """
-    from app.models.evaluation    import Note, ResultatSemestre
+    from app.models.evaluation    import Note
     from app.models.program       import AffectationEnseignement, Programme
     from app.models.academic      import Semestre
-    from app.models.profiles      import Etudiant
     from app.models.program       import Inscription
 
     insc  = db.session.get(Inscription, inscription_id)

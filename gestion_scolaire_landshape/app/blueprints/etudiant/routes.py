@@ -11,10 +11,10 @@ from app.extensions import db
 from app.utils.decorators import etudiant_requis
 from app.utils.helpers import sauvegarder_fichier
 from app.models.profiles import Etudiant
-from app.models.program import AffectationEnseignement, Inscription
+from app.models.program import AffectationEnseignement
 from app.models.academic import AnneeScolaire, Semestre
 from app.models.evaluation import Note, ResultatSemestre, ResultatAnnuel, ReleverNotes, CorrectionExamen
-from app.models.pedagogy import Cours, Devoir, SoumissionDevoir, PostProfesseur, CommentairePost
+from app.models.pedagogy import Cours, Devoir, SoumissionDevoir, PostProfesseur
 from app.models.communication import Conversation, Message, Notification
 from app.services.notif_service import notifier_message
 
@@ -284,6 +284,33 @@ def nouvelle_conversation(prof_user_id):
     return redirect(url_for('etudiant.conversation_detail', conv_id=conv.id))
 
 
+@etudiant_bp.route('/chat/cours/<int:cours_id>')
+@login_required
+@etudiant_requis
+def chat_cours(cours_id):
+    cours = Cours.query.get_or_404(cours_id)
+    conv = Conversation.query.filter_by(
+        participant_a_id=current_user.id,
+        participant_b_id=cours.publie_par,
+        cours_id=cours.id,
+        type='cours_etudiant_professeur'
+    ).first()
+    
+    if not conv:
+        conv = Conversation(
+            type='cours_etudiant_professeur',
+            participant_a_id=current_user.id,
+            participant_a_role='etudiant',
+            participant_b_id=cours.publie_par,
+            cours_id=cours.id,
+            sujet=f"Question sur le cours: {cours.titre}"
+        )
+        db.session.add(conv)
+        db.session.commit()
+        
+    return redirect(url_for('etudiant.conversation_detail', conv_id=conv.id))
+
+
 @etudiant_bp.route('/chat/<int:conv_id>')
 @login_required
 @etudiant_requis
@@ -315,6 +342,34 @@ def envoyer_message():
         db.session.commit()
         notifier_message(conv_id, current_user.id,
                          conv.participant_b_id, 'professeur')
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 400
+
+
+@etudiant_bp.route('/chat/message/<int:msg_id>/supprimer', methods=['POST'])
+@login_required
+@etudiant_requis
+def supprimer_message(msg_id):
+    try:
+        msg = Message.query.get_or_404(msg_id)
+        conv = msg.conversation
+        if conv.participant_a_id != current_user.id:
+            abort(403)
+            
+        data = request.get_json() or {}
+        pour_tous = data.get('pour_tous', False)
+        
+        if msg.expediteur_utilisateur_id == current_user.id:
+            if pour_tous:
+                msg.supprime_par_expediteur = True
+                msg.supprime_par_destinataire = True
+            else:
+                msg.supprime_par_expediteur = True
+        else:
+            msg.supprime_par_destinataire = True
+            
+        db.session.commit()
         return jsonify({'ok': True})
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)}), 400

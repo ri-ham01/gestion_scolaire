@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}Accès Espace Numérique — EduNova{% endblock %}
+
+{% block head %}
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<style>
+  .cours-public-page {
+    min-height: calc(100vh - 70px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6rem 2rem;
+    text-align: center;
+  }
+
+  .cours-public-page .page-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(79,70,229,0.1); border: 1px solid rgba(79,70,229,0.3);
+    color: #818cf8; padding: 0.35rem 1rem; border-radius: 20px;
+    font-size: 0.8rem; font-weight: 600; margin-bottom: 2rem;
+  }
+
+  .cours-public-page h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800; color: #fff; margin-bottom: 1rem;
+  }
+
+  .cours-public-page p {
+    color: var(--text-muted); font-size: 1.05rem;
+    max-width: 560px; margin: 0 auto 3rem; line-height: 1.7;
+  }
+
+  .role-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    max-width: 800px;
+    width: 100%;
+  }
+
+  .role-card {
+    background: rgba(17,24,39,0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px;
+    padding: 2.5rem 1.5rem;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 1rem;
+    transition: all 0.35s cubic-bezier(0.25,1,0.5,1);
+    position: relative; overflow: hidden;
+  }
+
+  .role-card::before {
+    content: ''; position: absolute; top:0; left:0; right:0; height:3px;
+    opacity: 0; transition: opacity 0.3s;
+  }
+
+  .role-card-etudiant::before { background: linear-gradient(90deg, var(--c-aurora-indigo), #818cf8); }
+  .role-card-professeur::before { background: linear-gradient(90deg, var(--c-nova-cyan), #06b6d4); }
+  .role-card-parent::before { background: linear-gradient(90deg, #10b981, #34d399); }
+
+  .role-card:hover { transform: translateY(-8px); }
+  .role-card:hover::before { opacity: 1; }
+  .role-card-etudiant:hover  { border-color: rgba(79,70,229,0.4); box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(79,70,229,0.1); }
+  .role-card-professeur:hover { border-color: rgba(6,182,212,0.4); box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(6,182,212,0.1); }
+  .role-card-parent:hover  { border-color: rgba(16,185,129,0.4); box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(16,185,129,0.1); }
+
+  .role-icon {
+    width: 60px; height: 60px; border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem;
+  }
+
+  .ri-etudiant   { background: rgba(79,70,229,0.15); color: #818cf8; }
+  .ri-professeur { background: rgba(6,182,212,0.15);  color: var(--c-nova-cyan); }
+  .ri-parent     { background: rgba(16,185,129,0.15); color: #34d399; }
+
+  .role-card h3 { font-size: 1.1rem; font-weight: 700; color: #fff; margin:0; }
+  .role-card p  { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; margin:0; }
+
+  .btn-role {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 0.65rem 1.5rem;
+    border-radius: 10px; font-weight: 700; font-size: 0.85rem;
+    margin-top: 0.5rem; width: 100%;
+    transition: all 0.3s;
+  }
+
+  .btn-etudiant   { background: rgba(79,70,229,0.15); border: 1px solid rgba(79,70,229,0.3); color: #818cf8; }
+  .btn-professeur { background: rgba(6,182,212,0.15);  border: 1px solid rgba(6,182,212,0.3);  color: var(--c-nova-cyan); }
+  .btn-parent     { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
+
+  .btn-etudiant:hover   { background: rgba(79,70,229,0.3); color: #fff; }
+  .btn-professeur:hover { background: rgba(6,182,212,0.3);  color: #fff; }
+  .btn-parent:hover     { background: rgba(16,185,129,0.3); color: #fff; }
+
+  @media (max-width: 640px) {
+    .role-cards { grid-template-columns: 1fr; max-width: 340px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cours-public-page">
+  <div class="page-badge" data-aos="fade-down">
+    <i class="fa-solid fa-lock-open"></i> Accès sécurisé
+  </div>
+
+  <h1 data-aos="fade-up">
+    Choisissez votre <span style="background:linear-gradient(135deg,var(--c-aurora-indigo),var(--c-nova-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">espace</span>
+  </h1>
+
+  <p data-aos="fade-up" data-aos-delay="100">
+    Sélectionnez votre profil pour accéder à votre espace personnalisé.
+    Vos identifiants de connexion vous ont été fournis par l'administration.
+  </p>
+
+  <div class="role-cards" data-aos="fade-up" data-aos-delay="200">
+    <!-- Étudiant -->
+    <div class="role-card role-card-etudiant">
+      <div class="role-icon ri-etudiant">
+        <i class="fa-solid fa-graduation-cap"></i>
+      </div>
+      <h3>Étudiant</h3>
+      <p>Notes, absences, cours, devoirs, relevés de notes, messagerie.</p>
+      <a href="{{ url_for('auth.login') }}" class="btn-role btn-etudiant">
+        <i class="fa-solid fa-right-to-bracket fa-sm"></i> Se connecter
+      </a>
+    </div>
+
+    <!-- Professeur -->
+    <div class="role-card role-card-professeur">
+      <div class="role-icon ri-professeur">
+        <i class="fa-solid fa-chalkboard-user"></i>
+      </div>
+      <h3>Professeur</h3>
+      <p>Saisie des notes, présences, cours, devoirs, messagerie.</p>
+      <a href="{{ url_for('auth.login') }}" class="btn-role btn-professeur">
+        <i class="fa-solid fa-right-to-bracket fa-sm"></i> Se connecter
+      </a>
+    </div>
+
+    <!-- Parent -->
+    <div class="role-card role-card-parent">
+      <div class="role-icon ri-parent">
+        <i class="fa-solid fa-people-roof"></i>
+      </div>
+      <h3>Parent</h3>
+      <p>Suivi des absences, justifications, relevés de notes, messagerie.</p>
+      <a href="{{ url_for('auth.login') }}" class="btn-role btn-parent">
+        <i class="fa-solid fa-right-to-bracket fa-sm"></i> Se connecter
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    AOS.init({ duration: 750, easing: 'ease-out-cubic', once: true, offset: 50 });
+  });
+</script>
+{% endblock %}

@@ -56,7 +56,7 @@ class Professeur(db.Model):
     affectations = db.relationship('AffectationEnseignement', back_populates='professeur',    lazy='dynamic')
     notes_saisies = db.relationship('Note',                   back_populates='professeur_saisie',
                                     foreign_keys='Note.saisie_par', lazy='dynamic')
-    seances      = db.relationship('Seance',                  back_populates='enregistre_par_prof',
+    seances      = db.relationship('Seance',
                                     primaryjoin='Seance.affectation_id == AffectationEnseignement.id',
                                     secondary='affectations_enseignement',
                                     secondaryjoin='AffectationEnseignement.professeur_id == Professeur.id',

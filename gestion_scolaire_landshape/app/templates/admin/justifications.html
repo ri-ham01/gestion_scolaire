@@ -1,7 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'base_admin.html' %}
 {% block title %}Validation des Justifications — EduNova{% endblock %}
 
-{% block content %}
+{% block admin_content %}
 <div class="page-header">
   <div class="section-inner">
     <h1><i class="fa-solid fa-file-signature"></i> Validation des Justifications</h1>
@@ -10,59 +10,56 @@
 </div>
 
 <div class="section-inner">
-  <div class="card glass-card" style="overflow-x: auto;">
-    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+  <div class="glass-table-container">
+    <table class="glass-table">
       <thead>
         <tr>
-          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Date Absence</th>
-          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Étudiant</th>
-          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Soumis par
-            (Parent)</th>
-          <th style="text-align: center; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Justificatif
-          </th>
-          <th style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Décision</th>
+          <th>Date Absence</th>
+          <th>Étudiant</th>
+          <th>Soumis par (Parent)</th>
+          <th style="text-align: center;">Justificatif</th>
+          <th style="text-align: right;">Décision</th>
         </tr>
       </thead>
       <tbody>
         {% for pres in presences %}
         <tr>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-muted);">
+          <td style="color: var(--text-muted);">
             <i class="fa-solid fa-calendar"></i> {{ pres.date_enregistrement.strftime('%d/%m/%Y') }}<br>
             <small>Séance ID: {{ pres.seance_id }}</small>
           </td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <td>
             <strong>{{ pres.etudiant.nom }} {{ pres.etudiant.prenom }}</strong><br>
             <small class="text-muted">{{ pres.etudiant.matricule }}</small>
           </td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <td>
             {% if pres.justification_fichier_url %}
-            <span class="badge" style="background: rgba(255,255,255,0.1);"><i class="fa-solid fa-user-clock"></i>
-              Reçu</span>
+            <span class="badge" style="background: rgba(255,255,255,0.1); padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.75rem;"><i class="fa-solid fa-user-clock"></i> Reçu</span>
             {% else %}
             <span class="text-muted">-</span>
             {% endif %}
           </td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+          <td style="text-align: center;">
             {% if pres.justification_fichier_url %}
             <a href="{{ url_for('static', filename=pres.justification_fichier_url.replace('\\', '/').split('static/')[-1]) }}"
-              target="_blank" class="btn btn-glass btn-sm" title="Voir le document">
+              target="_blank" class="btn btn-sm" style="background: rgba(255,255,255,0.1); color: #fff; padding: 0.4rem 0.8rem; border-radius: 6px;" title="Voir le document">
               <i class="fa-solid fa-file-pdf"></i> Ouvrir
             </a>
             {% else %}
             <span class="text-muted"><i class="fa-solid fa-ban"></i></span>
             {% endif %}
           </td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right;">
+          <td style="text-align: right;">
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
               <form action="{{ url_for('admin.accepter_justification', pres_id=pres.id) }}" method="POST"
                 style="display:inline;">
-                <button type="submit" class="btn btn-glass btn-sm" style="color: var(--s-success);" title="Accepter"><i
+                <button type="submit" class="btn btn-sm" style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #34d399; padding: 0.4rem 0.8rem; border-radius: 6px;" title="Accepter"><i
                     class="fa-solid fa-check"></i></button>
               </form>
               <form action="{{ url_for('admin.refuser_justification', pres_id=pres.id) }}" method="POST"
                 style="display:inline;"
                 onsubmit="return confirm('Refuser cette justification ? L\'absence restera non justifiée.');">
-                <button type="submit" class="btn btn-glass danger btn-sm" title="Refuser"><i
+                <button type="submit" class="btn danger btn-sm" style="padding: 0.4rem 0.8rem; border-radius: 6px;" title="Refuser"><i
                     class="fa-solid fa-xmark"></i></button>
               </form>
             </div>

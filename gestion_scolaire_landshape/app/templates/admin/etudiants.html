@@ -1,7 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'base_admin.html' %}
 {% block title %}Gestion des Étudiants — EduNova{% endblock %}
 
-{% block content %}
+{% block admin_content %}
 <div class="page-header">
   <div class="section-inner">
     <h1><i class="fa-solid fa-user-graduate"></i> Gestion des Étudiants</h1>
@@ -17,58 +17,52 @@
     <form method="GET" action="{{ url_for('admin.etudiants') }}" class="search-form"
       style="display: flex; gap: 0.5rem;">
       <input type="text" name="q" value="{{ q }}" placeholder="Rechercher par nom, prénom, username..."
-        class="form-input" style="width: 300px;">
-      <button type="submit" class="btn btn-glass"><i class="fa-solid fa-search"></i></button>
-      {% if q %}<a href="{{ url_for('admin.etudiants') }}" class="btn btn-glass danger"><i
+        class="form-input" style="width: 300px; padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: #fff;">
+      <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1rem; border-radius: 8px;"><i class="fa-solid fa-search"></i></button>
+      {% if q %}<a href="{{ url_for('admin.etudiants') }}" class="btn danger" style="padding: 0.6rem 1rem; border-radius: 8px;"><i
           class="fa-solid fa-xmark"></i></a>{% endif %}
     </form>
 
-    <button class="btn btn-primary" onclick="document.getElementById('modalAjouterEtudiant').showModal()"><i
+    <button class="btn btn-primary" onclick="document.getElementById('modalAjouterEtudiant').showModal()" style="border-radius: 8px;"><i
         class="fa-solid fa-plus"></i> Nouvel Étudiant</button>
   </div>
 
-  <div class="card glass-card" style="overflow-x: auto;">
-    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+  <div class="glass-table-container">
+    <table class="glass-table">
       <thead>
         <tr>
-          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Matricule</th>
-          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Étudiant</th>
-          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Username</th>
-          <th style="text-align: center; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Sexe</th>
-          <th style="text-align: center; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Statut</th>
-          <th style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Actions</th>
+          <th>Matricule</th>
+          <th>Étudiant</th>
+          <th>Username</th>
+          <th style="text-align: center;">Sexe</th>
+          <th style="text-align: center;">Statut</th>
+          <th style="text-align: right;">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for etu in etus %}
         <tr>
-          <td
-            style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">
-            {{ etu.matricule }}</td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);"><strong>{{ etu.nom }} {{
-              etu.prenom }}</strong></td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">{{ etu.utilisateur.username }}
-          </td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+          <td style="font-family: var(--font-mono); color: var(--text-muted);">{{ etu.matricule }}</td>
+          <td><strong>{{ etu.nom }} {{ etu.prenom }}</strong></td>
+          <td>{{ etu.utilisateur.username }}</td>
+          <td style="text-align: center;">
             {% if etu.sexe == 'M' %}<i class="fa-solid fa-mars" style="color:var(--c-nova-cyan);"></i>
             {% elif etu.sexe == 'F' %}<i class="fa-solid fa-venus" style="color:var(--s-warning);"></i>
             {% else %}-{% endif %}
           </td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+          <td style="text-align: center;">
             {% if etu.est_actif %}
-            <span class="badge" style="background: rgba(34,197,94,0.2); color: var(--s-success);"><i
-                class="fa-solid fa-check-circle"></i> Actif</span>
+            <span class="badge-status status-active"><i class="fa-solid fa-check-circle"></i> Actif</span>
             {% else %}
-            <span class="badge" style="background: rgba(239,68,68,0.2); color: var(--s-danger);"><i
-                class="fa-solid fa-ban"></i> Inactif</span>
+            <span class="badge-status status-inactive"><i class="fa-solid fa-ban"></i> Inactif</span>
             {% endif %}
           </td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right;">
+          <td style="text-align: right;">
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
               {% if etu.est_actif %}
               <form action="{{ url_for('admin.supprimer_etudiant', etu_id=etu.id) }}" method="POST"
                 onsubmit="return confirm('Désactiver cet étudiant ?');">
-                <button type="submit" class="btn btn-glass danger btn-sm" title="Désactiver"><i
+                <button type="submit" class="btn danger btn-sm" title="Désactiver" style="padding: 0.4rem 0.8rem; border-radius: 6px;"><i
                     class="fa-solid fa-trash"></i></button>
               </form>
               {% endif %}
@@ -156,7 +150,7 @@
     </div>
 
     <div style="display: flex; justify-content: flex-end; gap: 1rem;">
-      <button type="button" class="btn btn-glass"
+      <button type="button" class="btn" style="background: rgba(255,255,255,0.1); color:#fff;"
         onclick="document.getElementById('modalAjouterEtudiant').close()">Annuler</button>
       <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Créer et Inscrire</button>
     </div>

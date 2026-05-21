@@ -1,7 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'base_admin.html' %}
 {% block title %}Années Scolaires — EduNova{% endblock %}
 
-{% block content %}
+{% block admin_content %}
 <div class="page-header">
   <div class="section-inner">
     <h1><i class="fa-solid fa-calendar"></i> Années Scolaires</h1>
@@ -15,54 +15,49 @@
   <div class="card glass-card">
     <h3 style="margin-bottom: 1.5rem; color: var(--c-nova-cyan);"><i class="fa-solid fa-list-ol"></i> Historique</h3>
 
-    <table class="data-table" style="width: 100%; border-collapse: collapse;">
-      <thead>
-        <tr>
-          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Période</th>
-          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Début / Fin</th>
-          <th style="text-align: center; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Statut</th>
-          <th style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for annee in annees %}
-        <tr
-          style="{% if annee.est_active %}background: rgba(34,197,94,0.05); border-left: 3px solid var(--s-success);{% endif %}">
-          <td
-            style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: bold; font-family: var(--font-mono);">
-            {{ annee.label }}</td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">{{ annee.annee_debut }} - {{
-            annee.annee_fin }}</td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
-            {% if annee.est_active %}
-            <span class="badge" style="background: rgba(34,197,94,0.2); color: var(--s-success);"><i
-                class="fa-solid fa-check-circle"></i> Active</span>
-            {% else %}
-            <span class="badge" style="background: rgba(100,116,139,0.2); color: var(--text-muted);"><i
-                class="fa-solid fa-box-archive"></i> Archivée</span>
-            {% endif %}
-          </td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right;">
-            {% if not annee.est_active %}
-            <form action="{{ url_for('admin.activer_annee', an_id=annee.id) }}" method="POST"
-              onsubmit="return confirm('Attention: Activer cette année désactivera l\'année courante. Continuer ?');"
-              style="display:inline;">
-              <button type="submit" class="btn btn-primary btn-sm" title="Rendre Active"><i
-                  class="fa-solid fa-power-off"></i> Activer</button>
-            </form>
-            {% else %}
-            <span class="text-muted" style="font-size: 0.85rem;"><i class="fa-solid fa-lock"></i> En cours</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">Aucune année scolaire
-            trouvée.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="glass-table-container">
+      <table class="glass-table">
+        <thead>
+          <tr>
+            <th>Période</th>
+            <th>Début / Fin</th>
+            <th style="text-align: center;">Statut</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for annee in annees %}
+          <tr style="{% if annee.est_active %}background: rgba(34,197,94,0.05); border-left: 3px solid var(--s-success);{% endif %}">
+            <td style="font-weight: bold; font-family: var(--font-mono);">{{ annee.label }}</td>
+            <td>{{ annee.annee_debut }} - {{ annee.annee_fin }}</td>
+            <td style="text-align: center;">
+              {% if annee.est_active %}
+              <span class="badge-status status-active"><i class="fa-solid fa-check-circle"></i> Active</span>
+              {% else %}
+              <span class="badge" style="background: rgba(100,116,139,0.2); color: var(--text-muted); padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700;"><i class="fa-solid fa-box-archive"></i> Archivée</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              {% if not annee.est_active %}
+              <form action="{{ url_for('admin.activer_annee', an_id=annee.id) }}" method="POST"
+                onsubmit="return confirm('Attention: Activer cette année désactivera l\'année courante. Continuer ?');"
+                style="display:inline;">
+                <button type="submit" class="btn btn-primary btn-sm" style="border-radius: 6px; padding: 0.4rem 0.8rem;" title="Rendre Active"><i
+                    class="fa-solid fa-power-off"></i> Activer</button>
+              </form>
+              {% else %}
+              <span class="text-muted" style="font-size: 0.85rem;"><i class="fa-solid fa-lock"></i> En cours</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">Aucune année scolaire trouvée.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Ajouter une Année -->

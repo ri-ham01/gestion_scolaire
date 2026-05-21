@@ -99,9 +99,8 @@
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const inputs = document.querySelectorAll('.cell-input');
-    const affId = {{ aff_selectionnee.id }
-  };
-  let typingTimer;
+    const affId = {{ aff_selectionnee.id }};
+    let typingTimer;
   const doneTypingInterval = 1000; // 1 seconde de debounce
 
   inputs.forEach(input => {

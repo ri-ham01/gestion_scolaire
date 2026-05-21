@@ -5,10 +5,9 @@
 # =============================================================
 import os
 from flask import (render_template, send_file, abort,
-                   redirect, url_for, request, current_app, jsonify)
+                   request, current_app)
 from app.blueprints.public import public_bp
-from app.extensions import db
-from app.models.academic import AnneeScolaire, Semestre, Specialite
+from app.models.academic import Semestre, Specialite
 from app.models.communication import Annonce
 from app.models.planning import PdfEmploiTemps
 from app.models.evaluation import ReleverNotes
@@ -26,15 +25,37 @@ def index():
 # ── Emploi du temps ───────────────────────────────────────────
 @public_bp.route('/emploi-du-temps')
 def emploi_du_temps():
+    from app.models.academic import AnneeScolaire
     specialites = Specialite.query.filter_by(est_active=True).order_by(Specialite.nom).all()
-    semestre    = Semestre.query.filter_by(est_actif=True).first()
+    
+    annee_active = AnneeScolaire.query.filter_by(est_active=True).first()
+    if annee_active:
+        semestres = Semestre.query.filter_by(annee_scolaire_id=annee_active.id).order_by(Semestre.numero).all()
+    else:
+        semestres = Semestre.query.order_by(Semestre.id.desc()).limit(2).all()
+        
+    sem_id = request.args.get('sem_id', type=int)
+    if sem_id:
+        semestre_actif = Semestre.query.get(sem_id)
+    else:
+        semestre_actif = next((s for s in semestres if s.est_actif), None)
+        if not semestre_actif and semestres:
+            semestre_actif = semestres[0]
+
     return render_template('public/emploi_temps.html',
-                           specialites=specialites, semestre=semestre)
+                           specialites=specialites, 
+                           semestre=semestre_actif, 
+                           semestres=semestres)
 
 
 @public_bp.route('/emploi-du-temps/telecharger/<int:spe_id>')
 def telecharger_edt(spe_id):
-    semestre = Semestre.query.filter_by(est_actif=True).first()
+    sem_id = request.args.get('sem_id', type=int)
+    if sem_id:
+        semestre = Semestre.query.get(sem_id)
+    else:
+        semestre = Semestre.query.filter_by(est_actif=True).first()
+        
     if not semestre:
         abort(404)
     pdf_record = PdfEmploiTemps.query.filter_by(
@@ -56,15 +77,37 @@ def telecharger_edt(spe_id):
 # ── Examens ───────────────────────────────────────────────────
 @public_bp.route('/examens')
 def examens():
+    from app.models.academic import AnneeScolaire
     specialites = Specialite.query.filter_by(est_active=True).order_by(Specialite.nom).all()
-    semestre    = Semestre.query.filter_by(est_actif=True).first()
+    
+    annee_active = AnneeScolaire.query.filter_by(est_active=True).first()
+    if annee_active:
+        semestres = Semestre.query.filter_by(annee_scolaire_id=annee_active.id).order_by(Semestre.numero).all()
+    else:
+        semestres = Semestre.query.order_by(Semestre.id.desc()).limit(2).all()
+        
+    sem_id = request.args.get('sem_id', type=int)
+    if sem_id:
+        semestre_actif = Semestre.query.get(sem_id)
+    else:
+        semestre_actif = next((s for s in semestres if s.est_actif), None)
+        if not semestre_actif and semestres:
+            semestre_actif = semestres[0]
+
     return render_template('public/examens.html',
-                           specialites=specialites, semestre=semestre)
+                           specialites=specialites, 
+                           semestre=semestre_actif,
+                           semestres=semestres)
 
 
 @public_bp.route('/examens/telecharger/<int:spe_id>')
 def telecharger_examen(spe_id):
-    semestre = Semestre.query.filter_by(est_actif=True).first()
+    sem_id = request.args.get('sem_id', type=int)
+    if sem_id:
+        semestre = Semestre.query.get(sem_id)
+    else:
+        semestre = Semestre.query.filter_by(est_actif=True).first()
+        
     if not semestre:
         abort(404)
     pdf_record = PdfEmploiTemps.query.filter_by(

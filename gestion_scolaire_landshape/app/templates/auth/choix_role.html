@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Connexion — Choisissez votre profil — EduNova{% endblock %}
+
+{% block content %}
+<div class="auth-page role-select-page">
+  <div class="role-select-card glass-card">
+
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="logo-icon logo-lg">
+        <span class="logo-letter">E</span>
+        <div class="logo-dot"></div>
+      </div>
+      <div>
+        <h1 class="logo-text-lg">Edu<span class="logo-accent">Nova</span></h1>
+        <p class="auth-tagline">Choisissez votre espace de connexion</p>
+      </div>
+    </div>
+
+    <!-- Subtitle -->
+    <p class="role-subtitle">Qui êtes-vous ?</p>
+
+    <!-- Role Cards Grid -->
+    <div class="role-grid">
+
+      <!-- Admin -->
+      <a href="{{ url_for('auth.login_admin') }}" class="role-card" id="role-admin">
+        <div class="role-icon-wrap role-icon-admin">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="role-info">
+          <span class="role-name">Administration</span>
+          <span class="role-desc">Gestion complète de l'établissement</span>
+        </div>
+        <i class="fa-solid fa-chevron-right role-arrow"></i>
+      </a>
+
+      <!-- Professeur -->
+      <a href="{{ url_for('auth.login_professeur') }}" class="role-card" id="role-prof">
+        <div class="role-icon-wrap role-icon-prof">
+          <i class="fa-solid fa-chalkboard-user"></i>
+        </div>
+        <div class="role-info">
+          <span class="role-name">Professeur</span>
+          <span class="role-desc">Saisie des notes et présences</span>
+        </div>
+        <i class="fa-solid fa-chevron-right role-arrow"></i>
+      </a>
+
+      <!-- Étudiant -->
+      <a href="{{ url_for('auth.login_etudiant') }}" class="role-card" id="role-etudiant">
+        <div class="role-icon-wrap role-icon-etudiant">
+          <i class="fa-solid fa-user-graduate"></i>
+        </div>
+        <div class="role-info">
+          <span class="role-name">Étudiant</span>
+          <span class="role-desc">Notes, cours et emploi du temps</span>
+        </div>
+        <i class="fa-solid fa-chevron-right role-arrow"></i>
+      </a>
+
+      <!-- Parent -->
+      <a href="{{ url_for('auth.login_parent') }}" class="role-card" id="role-parent">
+        <div class="role-icon-wrap role-icon-parent">
+          <i class="fa-solid fa-people-roof"></i>
+        </div>
+        <div class="role-info">
+          <span class="role-name">Parent / Tuteur</span>
+          <span class="role-desc">Suivi scolaire de votre enfant</span>
+        </div>
+        <i class="fa-solid fa-chevron-right role-arrow"></i>
+      </a>
+
+    </div><!-- /.role-grid -->
+
+    <!-- Lang switcher -->
+    <div class="auth-lang">
+      <a href="{{ url_for('auth.changer_langue', lang='fr') }}"
+         class="{% if session.get('lang','fr')=='fr' %}active{% endif %}">FR</a>
+      <span>|</span>
+      <a href="{{ url_for('auth.changer_langue', lang='ar') }}"
+         class="{% if session.get('lang')=='ar' %}active{% endif %}">AR</a>
+      <span>|</span>
+      <a href="{{ url_for('auth.changer_langue', lang='en') }}"
+         class="{% if session.get('lang')=='en' %}active{% endif %}">EN</a>
+    </div>
+
+  </div><!-- /.role-select-card -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+/* ── Role Select Page ───────────────────────── */
+.role-select-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+.role-select-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+.role-subtitle {
+  font-size: 1rem;
+  color: var(--text-muted, #94a3b8);
+  margin: 1rem 0 1.75rem;
+  letter-spacing: .03em;
+}
+.role-grid {
+  display: flex;
+  flex-direction: column;
+  gap: .85rem;
+}
+.role-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
+  text-decoration: none;
+  color: inherit;
+  transition: background .2s, transform .15s, border-color .2s;
+  cursor: pointer;
+}
+.role-card:hover {
+  background: rgba(99,102,241,.15);
+  border-color: rgba(99,102,241,.5);
+  transform: translateX(4px);
+}
+.role-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+.role-icon-admin   { background: linear-gradient(135deg,#f59e0b,#ef4444); color:#fff; }
+.role-icon-prof    { background: linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; }
+.role-icon-etudiant{ background: linear-gradient(135deg,#06b6d4,#3b82f6); color:#fff; }
+.role-icon-parent  { background: linear-gradient(135deg,#10b981,#059669); color:#fff; }
+.role-info {
+  flex: 1;
+  text-align: left;
+}
+.role-name {
+  display: block;
+  font-weight: 600;
+  font-size: .95rem;
+  color: #e2e8f0;
+  margin-bottom: 2px;
+}
+.role-desc {
+  display: block;
+  font-size: .78rem;
+  color: #64748b;
+}
+.role-arrow {
+  color: #475569;
+  font-size: .8rem;
+  transition: transform .2s;
+}
+.role-card:hover .role-arrow { transform: translateX(4px); color: #6366f1; }
+</style>
+{% endblock %}

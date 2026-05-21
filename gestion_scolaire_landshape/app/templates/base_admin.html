@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<style>
+/* ── Admin Layout ── */
+.admin-layout {
+  display: flex;
+  gap: 0;
+  min-height: calc(100vh - 70px);
+}
+
+/* ── Sidebar ── */
+.admin-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: rgba(8,12,24,0.85);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255,255,255,0.05);
+  padding: 2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  position: sticky;
+  top: 70px;
+  height: calc(100vh - 70px);
+  overflow-y: auto;
+}
+
+.sidebar-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.8rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  position: relative;
+  text-decoration: none;
+}
+
+.sidebar-link i {
+  width: 18px;
+  text-align: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.sidebar-link:hover {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+}
+
+.sidebar-link.active {
+  background: rgba(79,70,229,0.15);
+  color: #fff;
+  border: 1px solid rgba(79,70,229,0.25);
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 60%;
+  background: var(--c-aurora-indigo);
+  border-radius: 0 3px 3px 0;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 0.5rem 0;
+}
+
+/* ── Admin Main ── */
+.admin-main {
+  flex: 1;
+  padding: 2.5rem;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* ── Page Header ── */
+.admin-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+
+.admin-page-header .header-left h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-page-header .header-left h1 i {
+  font-size: 1.4rem;
+  background: linear-gradient(135deg,var(--c-aurora-indigo),var(--c-nova-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.admin-page-header .header-left p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ── Tables & Common ── */
+.glass-table-container {
+  background: rgba(17,24,39,0.65);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  overflow-x: auto;
+}
+
+.glass-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.glass-table th {
+  text-align: left;
+  padding: 1rem 1.2rem;
+  background: rgba(0,0,0,0.2);
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.glass-table td {
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.9rem;
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+.glass-table tr:hover td {
+  background: rgba(255,255,255,0.02);
+}
+
+.glass-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Badge Status */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.status-active { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
+.status-inactive { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #f87171; }
+
+@media (max-width: 900px) {
+  .admin-sidebar { display: none; }
+  .admin-main { padding: 1.5rem; }
+}
+
+/* Modal styles */
+dialog::backdrop { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); }
+.edunova-dialog {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  animation: slideInUp 0.3s ease-out;
+  margin: auto;
+}
+@keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+{% block admin_head %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────── -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-section-label">Général</div>
+    <a href="{{ url_for('admin.dashboard') }}" class="sidebar-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+      <i class="fa-solid fa-gauge-high"></i> Dashboard
+    </a>
+    <a href="{{ url_for('admin.annees_scolaires') }}" class="sidebar-link {% if request.endpoint == 'admin.annees_scolaires' %}active{% endif %}">
+      <i class="fa-solid fa-calendar-alt"></i> Années Scolaires
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Utilisateurs</div>
+    <a href="{{ url_for('admin.professeurs') }}" class="sidebar-link {% if 'professeur' in request.endpoint %}active{% endif %}">
+      <i class="fa-solid fa-chalkboard-user"></i> Professeurs
+    </a>
+    <a href="{{ url_for('admin.etudiants') }}" class="sidebar-link {% if 'etudiant' in request.endpoint %}active{% endif %}">
+      <i class="fa-solid fa-user-graduate"></i> Étudiants
+    </a>
+    <a href="{{ url_for('admin.parents') }}" class="sidebar-link {% if 'parent' in request.endpoint %}active{% endif %}">
+      <i class="fa-solid fa-people-roof"></i> Parents
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Académique</div>
+    <a href="{{ url_for('admin.specialites') }}" class="sidebar-link {% if 'specialite' in request.endpoint or 'matiere' in request.endpoint %}active{% endif %}">
+      <i class="fa-solid fa-layer-group"></i> Spécialités & Matières
+    </a>
+    <a href="{{ url_for('admin.affectations') }}" class="sidebar-link {% if 'affectation' in request.endpoint %}active{% endif %}">
+      <i class="fa-solid fa-folder-tree"></i> Affectations
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Documents</div>
+    <a href="{{ url_for('admin.emploi_du_temps') }}" class="sidebar-link {% if 'emploi_du_temps' in request.endpoint %}active{% endif %}">
+      <i class="fa-solid fa-calendar-days"></i> Emplois du temps
+    </a>
+    <a href="{{ url_for('admin.annonces') }}" class="sidebar-link {% if 'annonce' in request.endpoint %}active{% endif %}">
+      <i class="fa-solid fa-bullhorn"></i> Annonces
+    </a>
+    <a href="{{ url_for('admin.justifications') }}" class="sidebar-link {% if 'justification' in request.endpoint %}active{% endif %}">
+      <i class="fa-solid fa-file-signature"></i> Justifications
+    </a>
+
+    <div style="flex:1;"></div>
+    <div class="sidebar-divider"></div>
+    <a href="{{ url_for('auth.logout') }}" class="sidebar-link" style="color: #f87171;">
+      <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+    </a>
+  </aside>
+
+  <!-- ── MAIN CONTENT ───────────────────────────────── -->
+  <div class="admin-main">
+    {% block admin_content %}{% endblock %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% block admin_scripts %}{% endblock %}
+{% endblock %}

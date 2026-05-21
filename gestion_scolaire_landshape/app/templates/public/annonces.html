@@ -1,92 +1,429 @@
 {% extends 'base.html' %}
 {% block title %}Tableau d'Affichage — EduNova{% endblock %}
 
+{% block head %}
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<style>
+  .page-hero {
+    padding: 6rem 2rem 3rem;
+    text-align: center;
+    position: relative;
+  }
+  .page-hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 200px; height: 1px;
+    background: linear-gradient(to right, transparent, var(--c-aurora-indigo), transparent);
+  }
+  .page-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(79,70,229,0.1); border: 1px solid rgba(79,70,229,0.3);
+    color: #818cf8; padding: 0.35rem 1rem; border-radius: 20px;
+    font-size: 0.8rem; font-weight: 600; letter-spacing: 0.5px;
+    margin-bottom: 1.5rem;
+  }
+  .page-hero h1 { font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 800; color: #fff; margin-bottom: 1rem; }
+  .page-hero p  { color: var(--text-muted); font-size: 1.05rem; max-width: 560px; margin: 0 auto; line-height: 1.7; }
+
+  /* ── Timeline Layout ── */
+  .annonces-section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 3rem 2rem 6rem;
+  }
+
+  .timeline {
+    position: relative;
+    padding-left: 2.5rem;
+  }
+
+  /* Vertical line */
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.65rem;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 2px;
+    background: linear-gradient(to bottom,
+      var(--c-aurora-indigo),
+      var(--c-nova-cyan) 40%,
+      rgba(255,255,255,0.05) 90%,
+      transparent);
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 2rem;
+  }
+
+  /* Timeline dot */
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -2rem;
+    top: 1.6rem;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--c-aurora-indigo);
+    border: 2px solid var(--bg-deep-void);
+    box-shadow: 0 0 12px rgba(79,70,229,0.6);
+    transition: all 0.3s;
+    z-index: 1;
+  }
+
+  .timeline-item:hover::before {
+    background: var(--c-nova-cyan);
+    box-shadow: 0 0 16px rgba(6,182,212,0.7);
+    transform: scale(1.3);
+  }
+
+  /* Pinned dot override */
+  .timeline-item.is-pinned::before {
+    background: #f59e0b;
+    box-shadow: 0 0 12px rgba(245,158,11,0.7);
+  }
+
+  .annonce-card {
+    background: rgba(17,24,39,0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 18px;
+    overflow: hidden;
+    transition: all 0.35s cubic-bezier(0.25,1,0.5,1);
+  }
+
+  .annonce-card:hover {
+    border-color: rgba(79,70,229,0.25);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    transform: translateX(6px);
+  }
+
+  .annonce-card.is-pinned {
+    border-left: 3px solid #f59e0b;
+    background: rgba(245,158,11,0.04);
+  }
+
+  .annonce-card.is-pinned:hover {
+    border-color: rgba(245,158,11,0.4);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 20px rgba(245,158,11,0.08);
+  }
+
+  .annonce-header {
+    display: flex; align-items: flex-start; gap: 1.2rem;
+    padding: 1.5rem 1.8rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .annonce-date-col {
+    flex-shrink: 0;
+    text-align: center;
+    background: rgba(79,70,229,0.1);
+    border: 1px solid rgba(79,70,229,0.2);
+    border-radius: 12px;
+    padding: 0.6rem 0.9rem;
+    min-width: 58px;
+  }
+
+  .is-pinned .annonce-date-col {
+    background: rgba(245,158,11,0.1);
+    border-color: rgba(245,158,11,0.25);
+  }
+
+  .annonce-date-col .day {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .annonce-date-col .month {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--c-nova-cyan);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.2rem;
+  }
+
+  .is-pinned .annonce-date-col .month { color: #fbbf24; }
+
+  .annonce-header-body { flex: 1; min-width: 0; }
+
+  .annonce-meta-row {
+    display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+
+  .pin-badge {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.7rem; font-weight: 700;
+    color: #fbbf24;
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 6px;
+    padding: 0.15rem 0.5rem;
+  }
+
+  .annonce-public {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.7rem; font-weight: 600;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 0.15rem 0.5rem;
+  }
+
+  .annonce-header h3 { 
+    font-size: 1.1rem; font-weight: 700; color: #fff; 
+    margin-bottom: 0.3rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .annonce-timestamp {
+    font-size: 0.78rem; color: var(--text-muted);
+    font-family: var(--font-mono);
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+
+  .annonce-body {
+    padding: 1.2rem 1.8rem;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    line-height: 1.8;
+  }
+
+  .annonce-body.collapsed {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .annonce-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.8rem;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    gap: 1rem; flex-wrap: wrap;
+  }
+
+  .attachments {
+    display: flex; gap: 0.5rem; flex-wrap: wrap;
+  }
+
+  .attachment-link {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.3rem 0.8rem;
+    background: rgba(79,70,229,0.1);
+    border: 1px solid rgba(79,70,229,0.25);
+    color: #818cf8;
+    border-radius: 8px;
+    font-size: 0.78rem; font-weight: 600;
+    transition: all 0.3s;
+  }
+  .attachment-link:hover {
+    background: rgba(79,70,229,0.2);
+    color: #fff;
+  }
+
+  .btn-expand {
+    background: none; border: none; cursor: pointer;
+    color: var(--c-nova-cyan);
+    font-size: 0.82rem; font-weight: 600;
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0; transition: color 0.2s;
+    font-family: var(--font-body);
+  }
+  .btn-expand:hover { color: #fff; }
+
+  /* Pagination */
+  .pagination-bar {
+    display: flex; justify-content: center; gap: 0.5rem;
+    margin-top: 3rem; flex-wrap: wrap;
+  }
+
+  .page-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 10px;
+    font-size: 0.9rem; font-weight: 600;
+    background: rgba(17,24,39,0.6);
+    border: 1px solid rgba(255,255,255,0.07);
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+  .page-btn:hover { background: rgba(79,70,229,0.15); border-color: rgba(79,70,229,0.3); color: #fff; }
+  .page-btn.active {
+    background: var(--c-aurora-indigo); border-color: var(--c-aurora-indigo);
+    color: #fff; box-shadow: 0 4px 12px rgba(79,70,229,0.4);
+    pointer-events: none;
+  }
+
+  /* Empty */
+  .empty-state {
+    text-align: center; padding: 6rem 2rem;
+    background: rgba(17,24,39,0.5);
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 20px;
+  }
+  .empty-state i { font-size: 3rem; color: var(--text-muted); margin-bottom: 1.5rem; display: block; }
+  .empty-state p { color: var(--text-muted); font-size: 1.1rem; }
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- Hero Section -->
-<section class="hero"
-  style="min-height: 40vh; align-items: center; justify-content: center; text-align: center; padding-top: 6rem;">
-  <div class="hero-inner" style="max-width: 800px;">
-    <h1 class="hero-title" data-aos="fade-up">Tableau d'<span class="gradient-text">Affichage</span></h1>
-    <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="100">
-      Restez informé des dernières nouvelles, événements et directives officielles de l'établissement.
-    </p>
-  </div>
-</section>
+<!-- ── PAGE HERO ─────────────────────────────────── -->
+<div class="page-hero" data-aos="fade-up">
+  <div class="page-badge"><i class="fa-solid fa-megaphone"></i> Communication officielle</div>
+  <h1>Tableau d'<span style="background:linear-gradient(135deg,var(--c-aurora-indigo),var(--c-nova-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Affichage</span></h1>
+  <p>
+    Dernières annonces et directives officielles de l'administration.
+    Triées du plus récent au plus ancien.
+  </p>
+</div>
 
-<!-- Content Section -->
-<section class="section-inner" data-aos="fade-up" data-aos-delay="200"
-  style="max-width: 1000px; margin: 0 auto 4rem auto;">
-  <div style="display: flex; flex-direction: column; gap: 2rem;">
+<!-- ── TIMELINE ───────────────────────────────────── -->
+<section class="annonces-section">
+  {% if annonces.items %}
+  <div class="timeline">
     {% for annonce in annonces.items %}
-    <article class="card glass-card"
-      style="position: relative; overflow: hidden; {% if annonce.est_epinglee %}border-left: 4px solid var(--s-warning);{% endif %}">
-      {% if annonce.est_epinglee %}
-      <div style="position: absolute; top: 1rem; right: 1.5rem; color: var(--s-warning);" title="Annonce épinglée">
-        <i class="fa-solid fa-thumbtack"></i>
-      </div>
-      {% endif %}
+    <div class="timeline-item {% if annonce.est_epinglee %}is-pinned{% endif %}"
+         data-aos="fade-up" data-aos-delay="{{ loop.index0 * 60 }}">
+      <div class="annonce-card {% if annonce.est_epinglee %}is-pinned{% endif %}">
 
-      <div style="padding: 2rem;">
-        <h3
-          style="margin-bottom: 0.5rem; color: {% if annonce.est_epinglee %}var(--s-warning){% else %}var(--c-nova-cyan){% endif %}; padding-right: 2rem;">
-          {{ annonce.titre }}
-        </h3>
-        <p class="text-muted" style="font-size: 0.85rem; font-family: var(--font-mono); margin-bottom: 1.5rem;">
-          <i class="fa-regular fa-clock"></i> Publié le {{ annonce.date_publication.strftime('%d %B %Y') }}
-        </p>
+        <!-- Header -->
+        <div class="annonce-header">
+          <div class="annonce-date-col">
+            <span class="day">{{ annonce.date_publication.strftime('%d') }}</span>
+            <span class="month">{{ annonce.date_publication.strftime('%b') }}</span>
+          </div>
+          <div class="annonce-header-body">
+            <div class="annonce-meta-row">
+              {% if annonce.est_epinglee %}
+              <span class="pin-badge"><i class="fa-solid fa-thumbtack fa-xs"></i> Épinglée</span>
+              {% endif %}
+              {% if annonce.public_cible %}
+              <span class="annonce-public">
+                <i class="fa-solid fa-users fa-xs"></i>
+                {% if 'tous' in annonce.public_cible %}Tout le monde
+                {% else %}{{ annonce.public_cible | join(', ') | replace('etudiants','Étudiants') | replace('professeurs','Professeurs') | replace('parents','Parents') }}
+                {% endif %}
+              </span>
+              {% endif %}
+            </div>
+            <h3>{{ annonce.titre }}</h3>
+            <div class="annonce-timestamp">
+              <i class="fa-regular fa-clock"></i>
+              Publié le {{ annonce.date_publication.strftime('%d %B %Y à %H:%M') }}
+              {% if annonce.date_expiration and annonce.date_expiration > now() %}
+              &nbsp;·&nbsp; <i class="fa-solid fa-hourglass-half"></i>
+              Expire le {{ annonce.date_expiration.strftime('%d/%m/%Y') }}
+              {% endif %}
+            </div>
+          </div>
+        </div>
 
-        <div style="line-height: 1.8; color: var(--text-main); margin-bottom: 1.5rem;">
+        <!-- Body -->
+        <div class="annonce-body" id="body-{{ annonce.id }}">
           {{ annonce.contenu | safe }}
         </div>
 
-        {% if annonce.fichiers.count() > 0 %}
-        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
-          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">Pièces jointes :</h4>
-          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <!-- Footer -->
+        <div class="annonce-footer">
+          <!-- Attachments -->
+          <div class="attachments">
             {% for fichier in annonce.fichiers %}
-            <a href="{{ url_for('static', filename=fichier.fichier_url.replace('\\', '/').split('static/')[-1]) }}"
-              target="_blank" class="btn btn-glass btn-sm"
-              style="display: inline-flex; align-items: center; gap: 0.5rem;">
-              <i class="fa-solid fa-paperclip"></i> {{ fichier.nom_fichier or 'Document' }}
+            <a href="{{ url_for('static', filename=fichier.fichier_url.split('static/')[-1]) }}"
+               target="_blank" class="attachment-link">
+              <i class="fa-solid fa-paperclip fa-xs"></i>
+              {{ fichier.nom_fichier or 'Pièce jointe' }}
             </a>
             {% endfor %}
           </div>
+
+          <!-- Expand / Collapse -->
+          <button class="btn-expand" onclick="toggleBody(this, 'body-{{ annonce.id }}')">
+            <i class="fa-solid fa-chevron-down fa-xs"></i> Voir plus
+          </button>
         </div>
-        {% endif %}
       </div>
-    </article>
-    {% else %}
-    <div class="card glass-card" style="text-align: center; padding: 4rem;">
-      <i class="fa-regular fa-newspaper fa-3x mb-2" style="color: var(--text-muted);"></i>
-      <p class="text-muted" style="font-size: 1.2rem;">Aucune annonce publiée pour le moment.</p>
     </div>
     {% endfor %}
+  </div>
 
-    <!-- Pagination -->
-    {% if annonces.pages > 1 %}
-    <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 2rem;">
-      {% for page_num in annonces.iter_pages(left_edge=1, left_current=2, right_current=3, right_edge=1) %}
+  <!-- Pagination -->
+  {% if annonces.pages > 1 %}
+  <div class="pagination-bar" data-aos="fade-up">
+    {% if annonces.has_prev %}
+    <a href="{{ url_for('public.annonces', page=annonces.prev_num) }}" class="page-btn" title="Précédent">
+      <i class="fa-solid fa-chevron-left fa-xs"></i>
+    </a>
+    {% endif %}
+
+    {% for page_num in annonces.iter_pages(left_edge=1, left_current=2, right_current=3, right_edge=1) %}
       {% if page_num %}
-      {% if annonces.page == page_num %}
-      <span class="btn btn-primary" style="pointer-events: none;">{{ page_num }}</span>
+        <a href="{{ url_for('public.annonces', page=page_num) }}"
+           class="page-btn {% if annonces.page == page_num %}active{% endif %}">
+          {{ page_num }}
+        </a>
       {% else %}
-      <a href="{{ url_for('public.annonces', page=page_num) }}" class="btn btn-glass">{{ page_num }}</a>
+        <span class="page-btn" style="pointer-events:none; color:var(--text-muted);">…</span>
       {% endif %}
-      {% else %}
-      <span style="color: var(--text-muted); padding: 0.5rem;">...</span>
-      {% endif %}
-      {% endfor %}
-    </div>
+    {% endfor %}
+
+    {% if annonces.has_next %}
+    <a href="{{ url_for('public.annonces', page=annonces.next_num) }}" class="page-btn" title="Suivant">
+      <i class="fa-solid fa-chevron-right fa-xs"></i>
+    </a>
     {% endif %}
   </div>
-</section>
+  {% endif %}
 
-<!-- Animation script from home -->
-<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  {% else %}
+  <!-- Empty State -->
+  <div class="empty-state" data-aos="fade-up">
+    <i class="fa-regular fa-newspaper"></i>
+    <p>Aucune annonce publiée pour le moment.<br>
+      <span style="font-size:0.9rem; margin-top:0.5rem; display:block;">Revenez prochainement pour les actualités de l'établissement.</span>
+    </p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    AOS.init({ duration: 800, once: true, offset: 50 });
+    AOS.init({ duration: 750, easing: 'ease-out-cubic', once: true, offset: 50 });
+
+    // Collapse long annonces by default (> 3 lines)
+    document.querySelectorAll('.annonce-body').forEach(function(el) {
+      if (el.scrollHeight > 100) {
+        el.classList.add('collapsed');
+      } else {
+        // Hide the expand button if content is short
+        var footer = el.closest('.annonce-card').querySelector('.btn-expand');
+        if (footer) footer.style.display = 'none';
+      }
+    });
   });
+
+  function toggleBody(btn, bodyId) {
+    var body = document.getElementById(bodyId);
+    var isCollapsed = body.classList.contains('collapsed');
+    body.classList.toggle('collapsed');
+    var icon = btn.querySelector('i');
+    if (isCollapsed) {
+      btn.innerHTML = '<i class="fa-solid fa-chevron-up fa-xs"></i> Voir moins';
+      icon = btn.querySelector('i');
+    } else {
+      btn.innerHTML = '<i class="fa-solid fa-chevron-down fa-xs"></i> Voir plus';
+    }
+  }
 </script>
 {% endblock %}

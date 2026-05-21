@@ -1,15 +1,15 @@
-{% extends 'base.html' %}
+{% extends 'base_professeur.html' %}
 {% block title %}Dashboard Professeur — EduNova{% endblock %}
 
-{% block content %}
-<div class="page-header">
-  <div class="section-inner">
-    <h1><i class="fa-solid fa-chalkboard-user"></i> Espace Professeur</h1>
-    <p class="text-muted">Bienvenue, {{ prof.prenom }} {{ prof.nom }}. Voici votre résumé académique.</p>
+{% block professeur_content %}
+<div class="professeur-page-header">
+  <div class="header-left">
+    <h1><i class="fa-solid fa-chalkboard-user"></i> Bienvenue, {{ prof.prenom }} {{ prof.nom }}</h1>
+    <p>Voici votre résumé académique.</p>
   </div>
 </div>
 
-<div class="section-inner">
+<div>
   <!-- KPIs -->
   <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 2rem;">
     <div class="card glass-card">

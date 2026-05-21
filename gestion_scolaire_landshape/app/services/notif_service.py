@@ -2,7 +2,6 @@
 #  EduNova — services/notif_service.py
 #  Création de notifications internes et push
 # =============================================================
-from datetime import datetime, timezone
 from app.extensions import db
 
 

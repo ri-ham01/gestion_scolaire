@@ -9,14 +9,13 @@ from app.extensions import db
 def enregistrer_seance_et_presences(aff_id: int, prof_id: int,
                                       date_seance, heure_debut, heure_fin,
                                       type_seance: str,
-                                      data: list) -> 'Seance':
+                                      data: list):
     """
     Crée une séance et enregistre les présences.
     data = [{'etudiant_id': int, 'statut': str}, ...]
     Retourne la Seance créée.
     """
-    from app.models.presence import Seance, Presence, CompteurAbsences
-    from app.models.program  import Inscription
+    from app.models.presence import Seance, Presence
     from app.services.notif_service import notifier_absence
 
     seance = Seance(
@@ -53,8 +52,6 @@ def _maj_compteur(etudiant_id: int, aff_id: int, justifie: bool) -> None:
     """Met à jour le compteur d'absences et vérifie le seuil d'exclusion."""
     from app.models.presence import CompteurAbsences
     from app.models.program  import Inscription, AffectationEnseignement
-    from app.models.user     import Utilisateur
-    from app.models.academic import ParametreSysteme
 
     aff  = db.session.get(AffectationEnseignement, aff_id)
     insc = Inscription.query.filter_by(

@@ -75,13 +75,13 @@ def generer_username_etudiant(annee_scolaire_debut: int,
                                specialite_code: str,
                                niveau_ordre: int) -> str:
     """
-    Format : <YY><code_spe><niveau><NN> → ex: 24ai101, 24ai102
+    Format : <YY><code_spe><NN> → ex: 22ai01, 22ai02
     YY = 2 derniers chiffres de l'année de début.
     """
     from app.models.user import Utilisateur
     from app.extensions import db
     yy     = str(annee_scolaire_debut)[-2:]
-    prefix = f'{yy}{specialite_code.lower()}{niveau_ordre}'
+    prefix = f'{yy}{specialite_code.lower()}'
     pattern = f'{prefix}%'
     existing = db.session.query(Utilisateur).filter(
         Utilisateur.role == 'etudiant',

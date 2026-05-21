@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<style>
+/* ── Etudiant Layout ── */
+.etudiant-layout {
+  display: flex;
+  gap: 0;
+  min-height: calc(100vh - 70px);
+}
+
+/* ── Sidebar ── */
+.etudiant-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: rgba(8,12,24,0.85);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255,255,255,0.05);
+  padding: 2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  position: sticky;
+  top: 70px;
+  height: calc(100vh - 70px);
+  overflow-y: auto;
+}
+
+.sidebar-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.8rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  position: relative;
+  text-decoration: none;
+}
+
+.sidebar-link i {
+  width: 18px;
+  text-align: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.sidebar-link:hover {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+}
+
+.sidebar-link.active {
+  background: rgba(16,185,129,0.15); /* Greenish for student */
+  color: #fff;
+  border: 1px solid rgba(16,185,129,0.25);
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 60%;
+  background: #10b981;
+  border-radius: 0 3px 3px 0;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 0.5rem 0;
+}
+
+/* ── Etudiant Main ── */
+.etudiant-main {
+  flex: 1;
+  padding: 2.5rem;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* ── Page Header ── */
+.etudiant-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+
+.etudiant-page-header .header-left h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.etudiant-page-header .header-left h1 i {
+  font-size: 1.4rem;
+  background: linear-gradient(135deg,#10b981,var(--c-nova-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.etudiant-page-header .header-left p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .etudiant-sidebar { display: none; }
+  .etudiant-main { padding: 1.5rem; }
+}
+</style>
+{% block etudiant_head %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="etudiant-layout">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────── -->
+  <aside class="etudiant-sidebar">
+    <div class="sidebar-section-label">Tableau de bord</div>
+    <a href="{{ url_for('etudiant.dashboard') }}" class="sidebar-link {% if request.endpoint == 'etudiant.dashboard' %}active{% endif %}">
+      <i class="fa-solid fa-house"></i> Accueil
+    </a>
+    <a href="{{ url_for('public.emploi_du_temps') }}" class="sidebar-link {% if request.endpoint == 'public.emploi_du_temps' %}active{% endif %}">
+      <i class="fa-solid fa-calendar-days"></i> Emploi du temps
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Études</div>
+    <a href="{{ url_for('etudiant.espace_cours') }}" class="sidebar-link {% if 'cours' in request.endpoint %}active{% endif %}">
+      <i class="fa-solid fa-book-open"></i> Mes Cours
+    </a>
+    <a href="{{ url_for('etudiant.devoirs') }}" class="sidebar-link {% if 'devoir' in request.endpoint %}active{% endif %}">
+      <i class="fa-solid fa-pen-ruler"></i> Mes Devoirs
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Évaluations</div>
+    <a href="{{ url_for('etudiant.notes') }}" class="sidebar-link {% if request.endpoint == 'etudiant.notes' %}active{% endif %}">
+      <i class="fa-solid fa-star"></i> Mes Notes
+    </a>
+    <a href="{{ url_for('etudiant.releve') }}" class="sidebar-link {% if request.endpoint == 'etudiant.releve' %}active{% endif %}">
+      <i class="fa-solid fa-file-contract"></i> Relevés
+    </a>
+    <a href="{{ url_for('etudiant.presences') }}" class="sidebar-link {% if 'presence' in request.endpoint %}active{% endif %}">
+      <i class="fa-solid fa-clipboard-user"></i> Présences & Absences
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Communication</div>
+    <a href="{{ url_for('etudiant.chat') }}" class="sidebar-link {% if 'chat' in request.endpoint or 'conversation' in request.endpoint %}active{% endif %}">
+      <i class="fa-solid fa-message"></i> Messages
+    </a>
+
+    <div style="flex:1;"></div>
+    <div class="sidebar-divider"></div>
+    <a href="{{ url_for('auth.logout') }}" class="sidebar-link" style="color: #f87171;">
+      <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+    </a>
+  </aside>
+
+  <!-- ── MAIN CONTENT ───────────────────────────────── -->
+  <div class="etudiant-main">
+    {% block etudiant_content %}{% endblock %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% block etudiant_scripts %}{% endblock %}
+{% endblock %}

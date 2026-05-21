@@ -27,6 +27,16 @@
           {% if msg.est_lu %}<i class="fa-solid fa-check-double text-primary"></i>{% else %}<i
             class="fa-solid fa-check text-muted"></i>{% endif %}
           {% endif %}
+          
+          <div class="dropdown" style="display: inline-block; margin-left: 0.5rem; position: relative;">
+            <i class="fa-solid fa-ellipsis-vertical" style="cursor: pointer; opacity: 0.5;" onclick="toggleDropdown({{ msg.id }})"></i>
+            <div id="dropdown-{{ msg.id }}" class="dropdown-content glass-card" style="display: none; position: absolute; right: 0; bottom: 100%; min-width: 150px; z-index: 10; padding: 0.5rem; font-size: 0.8rem; text-align: left;">
+              <div onclick="supprimerMessage({{ msg.id }}, false)" style="padding: 0.5rem; cursor: pointer; color: var(--s-warning);"><i class="fa-solid fa-trash-can"></i> Supprimer pour moi</div>
+              {% if msg.expediteur_utilisateur_id == current_user.id %}
+              <div onclick="supprimerMessage({{ msg.id }}, true)" style="padding: 0.5rem; cursor: pointer; color: var(--s-danger); border-top: 1px solid rgba(255,255,255,0.1);"><i class="fa-solid fa-trash"></i> Supprimer pour tous</div>
+              {% endif %}
+            </div>
+          </div>
         </div>
       </div>
       {% else %}
@@ -141,6 +151,38 @@
         }
       });
     }
+
+    window.toggleDropdown = function(msgId) {
+      document.querySelectorAll('.dropdown-content').forEach(el => {
+        if (el.id !== 'dropdown-' + msgId) el.style.display = 'none';
+      });
+      const el = document.getElementById('dropdown-' + msgId);
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    };
+
+    window.supprimerMessage = function(msgId, pourTous) {
+      if(!confirm("Êtes-vous sûr de vouloir supprimer ce message ?")) return;
+      
+      fetch(`/etudiant/chat/message/${msgId}/supprimer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ pour_tous: pourTous })
+      }).then(res => res.json()).then(data => {
+        if (data.ok) {
+          window.location.reload();
+        } else {
+          alert('Erreur lors de la suppression');
+        }
+      });
+    };
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.dropdown')) {
+        document.querySelectorAll('.dropdown-content').forEach(el => el.style.display = 'none');
+      }
+    });
 
     document.getElementById('chatForm').addEventListener('submit', function (e) {
       e.preventDefault();

@@ -1,0 +1,105 @@
+{% extends 'base_admin.html' %}
+{% block title %}Gestion des Annonces — EduNova{% endblock %}
+
+{% block admin_content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-bullhorn"></i> Gestion des Annonces</h1>
+    <p class="text-muted">Créez et gérez les annonces diffusées aux professeurs, étudiants et parents.</p>
+  </div>
+</div>
+
+<div class="section-inner" style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start;">
+
+  <!-- Liste des Annonces -->
+  <div class="card glass-card">
+    <h3 style="margin-bottom: 1.5rem; color: var(--c-nova-cyan);"><i class="fa-solid fa-list"></i> Annonces Récentes</h3>
+
+    <div class="glass-table-container">
+      <table class="glass-table">
+        <thead>
+          <tr>
+            <th>Titre</th>
+            <th>Public Cible</th>
+            <th style="text-align: center;">Statut</th>
+            <th style="text-align: right;">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ann in annonces %}
+          <tr>
+            <td>
+              {% if ann.est_epinglee %}
+              <i class="fa-solid fa-thumbtack" style="color: var(--s-warning); margin-right: 0.5rem;"></i>
+              {% endif %}
+              <strong>{{ ann.titre }}</strong>
+            </td>
+            <td>
+              {% if ann.public_cible == 'tous' %}
+              <span class="badge" style="background: rgba(255,255,255,0.1);"><i class="fa-solid fa-users"></i> Tous</span>
+              {% elif ann.public_cible == 'professeurs' %}
+              <span class="badge" style="background: rgba(59,130,246,0.2); color: #60a5fa;"><i class="fa-solid fa-chalkboard-user"></i> Professeurs</span>
+              {% elif ann.public_cible == 'etudiants' %}
+              <span class="badge" style="background: rgba(16,185,129,0.2); color: #34d399;"><i class="fa-solid fa-user-graduate"></i> Étudiants</span>
+              {% elif ann.public_cible == 'parents' %}
+              <span class="badge" style="background: rgba(245,158,11,0.2); color: #fbbf24;"><i class="fa-solid fa-children"></i> Parents</span>
+              {% endif %}
+            </td>
+            <td style="text-align: center;">
+              {% if ann.est_publie %}
+              <span class="badge-status status-active">Publiée</span>
+              {% else %}
+              <span class="badge-status status-inactive">Brouillon</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right; color: var(--text-muted); font-size: 0.85rem;">
+              {{ ann.created_at.strftime('%d/%m/%Y') }}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+              <i class="fa-solid fa-comment-slash fa-2x mb-1"></i><br>Aucune annonce publiée.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Nouvelle Annonce -->
+  <div class="card glass-card">
+    <h3 style="margin-bottom: 1.5rem; color: var(--c-aurora-indigo);"><i class="fa-solid fa-pen-to-square"></i> Nouvelle Annonce</h3>
+    <form action="{{ url_for('admin.ajouter_annonce') }}" method="POST">
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Titre <span style="color:var(--s-danger);">*</span></label>
+        <input type="text" name="titre" class="form-input" required>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Contenu <span style="color:var(--s-danger);">*</span></label>
+        <textarea name="contenu" class="form-input" rows="5" required style="resize: vertical;"></textarea>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Public Cible</label>
+        <select name="public_cible" class="form-input">
+          <option value="tous">Tous (Public général)</option>
+          <option value="professeurs">Professeurs uniquement</option>
+          <option value="etudiants">Étudiants uniquement</option>
+          <option value="parents">Parents uniquement</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+        <input type="checkbox" name="est_publie" id="est_publie" value="1" checked style="width: 1rem; height: 1rem; accent-color: var(--c-nova-cyan);">
+        <label for="est_publie" style="cursor: pointer; margin: 0;">Publier immédiatement</label>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-paper-plane"></i> Diffuser l'annonce</button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

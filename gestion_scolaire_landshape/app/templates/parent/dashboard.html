@@ -1,11 +1,20 @@
-{% extends 'base.html' %}
+{% extends 'base_parent.html' %}
 {% block title %}Espace Parents — EduNova{% endblock %}
 
-{% block content %}
-<div class="page-header">
-  <div class="section-inner">
+{% block parent_content %}
+<div class="parent-page-header" style="background: url('{{ url_for('static', filename='images/parent-bg.jpg') }}') center/cover; position: relative;">
+  <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.75);"></div>
+  <div class="header-left" style="position: relative; z-index: 1;">
     <h1><i class="fa-solid fa-house-user"></i> Bienvenue, {{ parent.prenom }} {{ parent.nom }}</h1>
-    <p class="text-muted">Suivez le parcours académique de vos enfants, leurs présences et leurs résultats.</p>
+    <p>Suivez le parcours académique de vos enfants, leurs présences et leurs résultats.</p>
+    <div style="margin-top: 1rem; display: flex; gap: 1rem; font-size: 0.9rem;">
+      {% if parent.profession %}
+      <span class="badge" style="background: rgba(255,255,255,0.1);"><i class="fa-solid fa-briefcase"></i> {{ parent.profession }}</span>
+      {% endif %}
+      {% if parent.statut_emploi %}
+      <span class="badge" style="background: rgba(255,255,255,0.1);"><i class="fa-solid fa-user-tie"></i> {{ parent.statut_emploi | capitalize | replace('_', ' ') }}</span>
+      {% endif %}
+    </div>
   </div>
 </div>
 
@@ -28,16 +37,24 @@
         <i class="fa-solid fa-graduation-cap fa-2x"></i>
       </div>
       <h4 style="margin-bottom: 0.5rem;">{{ enfant.nom }} {{ enfant.prenom }}</h4>
-      <p class="text-muted" style="margin-bottom: 1.5rem; font-family: var(--font-mono); font-size: 0.85rem;">Matricule:
+      <p class="text-muted" style="margin-bottom: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;">Matricule:
         {{ enfant.matricule }}</p>
+      {% if enfant.date_naissance %}
+      <p class="text-muted" style="margin-bottom: 1.5rem; font-size: 0.85rem;">
+        <i class="fa-solid fa-calendar-day"></i> Né(e) le: {{ enfant.date_naissance.strftime('%d/%m/%Y') }} {% if enfant.lieu_naissance %}à {{ enfant.lieu_naissance }}{% endif %}
+      </p>
+      {% endif %}
 
       {% set insc = enfant.get_inscription_active() %}
       {% if insc %}
-      <p style="margin-bottom: 0.5rem;"><i class="fa-solid fa-layer-group" style="color:var(--c-aurora-indigo);"></i>
-        <strong>Section:</strong> {{ insc.section.nom }}
+      <p style="margin-bottom: 0.5rem;"><i class="fa-solid fa-graduation-cap" style="color:var(--c-aurora-indigo);"></i>
+        <strong>Spécialité:</strong> {{ insc.section.specialite.nom }}
+      </p>
+      <p style="margin-bottom: 0.5rem;"><i class="fa-solid fa-layer-group" style="color:var(--c-nova-cyan);"></i>
+        <strong>Classe/Section:</strong> {{ insc.section.nom }}
       </p>
       <p style="margin-bottom: 1.5rem;"><i class="fa-solid fa-star" style="color:var(--s-warning);"></i>
-        <strong>Niveau:</strong> {{ insc.section.niveau.ordre }}
+        <strong>Année d'étude:</strong> Niveau {{ insc.section.niveau.ordre }} ({{ insc.annee_scolaire.label }})
       </p>
       {% else %}
       <p class="text-muted" style="margin-bottom: 1.5rem;"><i class="fa-solid fa-ban"></i> Aucune inscription active.

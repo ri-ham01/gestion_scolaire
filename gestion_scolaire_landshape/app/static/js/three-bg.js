@@ -1,125 +1,148 @@
 /**
- * EduNova — Three.js WebGL Animated Background
- * Une nébuleuse spatiale lente et immersive.
+ * EduNova — Three.js WebGL Shader Background (Nebula)
+ * Une nébuleuse spatiale qui respire lentement.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
     const canvas = document.getElementById("bg-canvas");
     if (!canvas) return;
 
-    // Configuration de base
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0a0e1a, 0.001);
-
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 2000);
-    camera.position.z = 1000;
-
-    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    
+    // Orthographic camera for full screen plane
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // Particules
-    const geometry = new THREE.BufferGeometry();
-    const particlesCount = 1500;
+    // Full screen plane
+    const geometry = new THREE.PlaneGeometry(2, 2);
 
-    const posArray = new Float32Array(particlesCount * 3);
-    const colorsArray = new Float32Array(particlesCount * 3);
+    const vertexShader = `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = vec4(position, 1.0);
+        }
+    `;
 
-    const color1 = new THREE.Color(0x4f46e5); // Aurora Indigo
-    const color2 = new THREE.Color(0x06b6d4); // Nova Cyan
+    const fragmentShader = `
+        uniform float uTime;
+        uniform vec2 uResolution;
+        varying vec2 vUv;
 
-    for (let i = 0; i < particlesCount * 3; i += 3) {
-        // Sphère de distribution
-        const r = 800 * Math.cbrt(Math.random());
-        const theta = Math.random() * 2 * Math.PI;
-        const phi = Math.acos(2 * Math.random() - 1);
+        // Simplex 2D noise
+        vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
+        float snoise(vec2 v){
+            const vec4 C = vec4(0.211324865405187, 0.366025403784439,
+                     -0.577350269189626, 0.024390243902439);
+            vec2 i  = floor(v + dot(v, C.yy) );
+            vec2 x0 = v -   i + dot(i, C.xx);
+            vec2 i1;
+            i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+            vec4 x12 = x0.xyxy + C.xxzz;
+            x12.xy -= i1;
+            i = mod(i, 289.0);
+            vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 ))
+            + i.x + vec3(0.0, i1.x, 1.0 ));
+            vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy),
+              dot(x12.zw,x12.zw)), 0.0);
+            m = m*m ;
+            m = m*m ;
+            vec3 x = 2.0 * fract(p * C.www) - 1.0;
+            vec3 h = abs(x) - 0.5;
+            vec3 ox = floor(x + 0.5);
+            vec3 a0 = x - ox;
+            m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+            vec3 g;
+            g.x  = a0.x  * x0.x  + h.x  * x0.y;
+            g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+            return 130.0 * dot(m, g);
+        }
 
-        posArray[i] = r * Math.sin(phi) * Math.cos(theta);     // x
-        posArray[i + 1] = r * Math.sin(phi) * Math.sin(theta); // y
-        posArray[i + 2] = r * Math.cos(phi);                   // z
+        // Fractional Brownian motion
+        float fbm(vec2 st) {
+            float value = 0.0;
+            float amplitude = 0.5;
+            for (int i = 0; i < 5; i++) {
+                value += amplitude * snoise(st);
+                st *= 2.0;
+                amplitude *= 0.5;
+            }
+            return value;
+        }
 
-        // Mélange de couleurs
-        const mixedColor = color1.clone().lerp(color2, Math.random());
-        colorsArray[i] = mixedColor.r;
-        colorsArray[i + 1] = mixedColor.g;
-        colorsArray[i + 2] = mixedColor.b;
-    }
+        void main() {
+            vec2 st = gl_FragCoord.xy / uResolution.xy;
+            st.x *= uResolution.x / uResolution.y;
 
-    geometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3));
+            vec2 q = vec2(0.0);
+            q.x = fbm(st + 0.00 * uTime);
+            q.y = fbm(st + vec2(1.0));
 
-    // Texture pour les particules (cercle flou au lieu de carré)
-    const createCircleTexture = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 32;
-        canvas.height = 32;
-        const context = canvas.getContext('2d');
-        const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
-        gradient.addColorStop(0, 'rgba(255,255,255,1)');
-        gradient.addColorStop(1, 'rgba(255,255,255,0)');
-        context.fillStyle = gradient;
-        context.fillRect(0, 0, 32, 32);
-        const texture = new THREE.CanvasTexture(canvas);
-        return texture;
-    };
+            vec2 r = vec2(0.0);
+            r.x = fbm(st + 1.0 * q + vec2(1.7, 9.2) + 0.15 * uTime);
+            r.y = fbm(st + 1.0 * q + vec2(8.3, 2.8) + 0.126 * uTime);
 
-    const material = new THREE.PointsMaterial({
-        size: 8,
-        vertexColors: true,
+            float f = fbm(st + r);
+
+            // Colors: Deep Void (0A0E1A), Aurora Indigo (4F46E5), Nova Cyan (06B6D4)
+            vec3 color = mix(
+                vec3(0.04, 0.05, 0.1), // Base dark
+                vec3(0.31, 0.27, 0.9), // Indigo
+                clamp((f*f)*4.0, 0.0, 1.0)
+            );
+
+            color = mix(
+                color,
+                vec3(0.02, 0.71, 0.83), // Cyan
+                clamp(length(q), 0.0, 1.0)
+            );
+            
+            color = mix(
+                color,
+                vec3(0.1, 0.1, 0.2), // Lightness
+                clamp(length(r.x), 0.0, 1.0)
+            );
+            
+            // Vignette
+            vec2 uv = vUv * 2.0 - 1.0;
+            float vignette = 1.0 - smoothstep(0.5, 1.5, length(uv));
+            color *= vignette * 1.2;
+
+            gl_FragColor = vec4((f*f*f + 0.6 * f*f + 0.5 * f) * color, 1.0);
+        }
+    `;
+
+    const material = new THREE.ShaderMaterial({
+        vertexShader,
+        fragmentShader,
+        uniforms: {
+            uTime: { value: 0 },
+            uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+        },
         transparent: true,
-        opacity: 0.8,
-        map: createCircleTexture(),
-        blending: THREE.AdditiveBlending,
         depthWrite: false
     });
 
-    const particlesMesh = new THREE.Points(geometry, material);
-    scene.add(particlesMesh);
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
 
-    // Mouvement de la souris
-    let mouseX = 0;
-    let mouseY = 0;
-    let targetX = 0;
-    let targetY = 0;
-    const windowHalfX = window.innerWidth / 2;
-    const windowHalfY = window.innerHeight / 2;
-
-    document.addEventListener('mousemove', (event) => {
-        mouseX = (event.clientX - windowHalfX) * 0.5;
-        mouseY = (event.clientY - windowHalfY) * 0.5;
-    });
-
-    // Animation
     const clock = new THREE.Clock();
 
     const tick = () => {
         const elapsedTime = clock.getElapsedTime();
-
-        targetX = mouseX * 0.001;
-        targetY = mouseY * 0.001;
-
-        particlesMesh.rotation.y += 0.0005 + (targetX - particlesMesh.rotation.y) * 0.05;
-        particlesMesh.rotation.x += 0.0005 + (targetY - particlesMesh.rotation.x) * 0.05;
-
-        // Vague légère
-        const positions = geometry.attributes.position.array;
-        for (let i = 0; i < particlesCount; i++) {
-            const i3 = i * 3;
-            const x = geometry.attributes.position.array[i3];
-            geometry.attributes.position.array[i3 + 1] += Math.sin(elapsedTime + x) * 0.05;
-        }
-        geometry.attributes.position.needsUpdate = true;
-
+        material.uniforms.uTime.value = elapsedTime * 0.2; // Slow breathing
+        
         renderer.render(scene, camera);
         window.requestAnimationFrame(tick);
     };
 
     tick();
 
-    // Redimensionnement
     window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+        material.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
     });
 });

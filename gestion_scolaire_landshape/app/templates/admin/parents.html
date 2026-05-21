@@ -1,7 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'base_admin.html' %}
 {% block title %}Gestion des Parents — EduNova{% endblock %}
 
-{% block content %}
+{% block admin_content %}
 <div class="page-header">
   <div class="section-inner">
     <h1><i class="fa-solid fa-users"></i> Gestion des Parents</h1>
@@ -11,34 +11,34 @@
 
 <div class="section-inner">
   <div style="display: flex; justify-content: flex-end; margin-bottom: 2rem;">
-    <button class="btn btn-primary" onclick="document.getElementById('modalAjouterParent').showModal()"><i
+    <button class="btn btn-primary" onclick="document.getElementById('modalAjouterParent').showModal()" style="border-radius: 8px;"><i
         class="fa-solid fa-plus"></i> Nouveau Parent</button>
   </div>
 
-  <div class="card glass-card" style="overflow-x: auto;">
-    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+  <div class="glass-table-container">
+    <table class="glass-table">
       <thead>
         <tr>
-          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Parent</th>
-          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Contact</th>
-          <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Enfants Liés</th>
-          <th style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Actions</th>
+          <th>Parent</th>
+          <th>Contact</th>
+          <th>Enfants Liés</th>
+          <th style="text-align: right;">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for parent in parents %}
         <tr>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <td>
             <strong>{{ parent.nom }} {{ parent.prenom }}</strong><br>
             <small class="text-muted"><i class="fa-solid fa-user"></i> {{ parent.utilisateur.username }}</small>
           </td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <td>
             <a href="mailto:{{ parent.email }}" style="color: var(--c-nova-cyan);"><i class="fa-solid fa-envelope"></i>
               {{ parent.email }}</a><br>
             {% if parent.telephone %}<span class="text-muted"><i class="fa-solid fa-phone"></i> {{ parent.telephone
               }}</span>{% endif %}
           </td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <td>
             {% for pe in parent.etudiants_lies %}
             <span class="badge"
               style="background: rgba(255,255,255,0.1); margin-bottom: 0.2rem; display: inline-block;">
@@ -48,8 +48,8 @@
             <span class="text-muted">Aucun</span>
             {% endfor %}
           </td>
-          <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right;">
-            <button class="btn btn-glass btn-sm"><i class="fa-solid fa-pen"></i></button>
+          <td style="text-align: right;">
+            <button class="btn btn-sm" style="background: rgba(255,255,255,0.1); color: #fff; padding: 0.4rem 0.8rem; border-radius: 6px;"><i class="fa-solid fa-pen"></i></button>
           </td>
         </tr>
         {% else %}
@@ -131,7 +131,7 @@
     </div>
 
     <div style="display: flex; justify-content: flex-end; gap: 1rem;">
-      <button type="button" class="btn btn-glass"
+      <button type="button" class="btn" style="background: rgba(255,255,255,0.1); color:#fff;"
         onclick="document.getElementById('modalAjouterParent').close()">Annuler</button>
       <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Créer le compte</button>
     </div>

@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<style>
+/* ── Parent Layout ── */
+.parent-layout {
+  display: flex;
+  gap: 0;
+  min-height: calc(100vh - 70px);
+}
+
+/* ── Sidebar ── */
+.parent-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: rgba(8,12,24,0.85);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255,255,255,0.05);
+  padding: 2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  position: sticky;
+  top: 70px;
+  height: calc(100vh - 70px);
+  overflow-y: auto;
+}
+
+.sidebar-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.8rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  position: relative;
+  text-decoration: none;
+}
+
+.sidebar-link i {
+  width: 18px;
+  text-align: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.sidebar-link:hover {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+}
+
+.sidebar-link.active {
+  background: rgba(245,158,11,0.15); /* Amber/Gold for parent */
+  color: #fff;
+  border: 1px solid rgba(245,158,11,0.25);
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 60%;
+  background: #f59e0b;
+  border-radius: 0 3px 3px 0;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 0.5rem 0;
+}
+
+/* ── Parent Main ── */
+.parent-main {
+  flex: 1;
+  padding: 2.5rem;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* ── Page Header ── */
+.parent-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+
+.parent-page-header .header-left h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.parent-page-header .header-left h1 i {
+  font-size: 1.4rem;
+  background: linear-gradient(135deg,#f59e0b,#f43f5e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.parent-page-header .header-left p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .parent-sidebar { display: none; }
+  .parent-main { padding: 1.5rem; }
+}
+</style>
+{% block parent_head %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="parent-layout">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────── -->
+  <aside class="parent-sidebar">
+    <div class="sidebar-section-label">Espace Parents</div>
+    <a href="{{ url_for('parent.dashboard') }}" class="sidebar-link {% if request.endpoint == 'parent.dashboard' %}active{% endif %}">
+      <i class="fa-solid fa-house-user"></i> Accueil
+    </a>
+    <a href="{{ url_for('public.emploi_du_temps') }}" class="sidebar-link {% if request.endpoint == 'public.emploi_du_temps' %}active{% endif %}">
+      <i class="fa-solid fa-calendar-days"></i> Emploi du temps
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Suivi des Enfants</div>
+    <a href="{{ url_for('parent.absences') }}" class="sidebar-link {% if request.endpoint == 'parent.absences' %}active{% endif %}">
+      <i class="fa-solid fa-calendar-xmark"></i> Absences & Justifications
+    </a>
+    <a href="{{ url_for('parent.releve') }}" class="sidebar-link {% if request.endpoint == 'parent.releve' %}active{% endif %}">
+      <i class="fa-solid fa-file-contract"></i> Résultats & Bulletins
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Communication</div>
+    <a href="{{ url_for('parent.chat') }}" class="sidebar-link {% if 'chat' in request.endpoint or 'conversation' in request.endpoint %}active{% endif %}">
+      <i class="fa-solid fa-message"></i> Contacter un professeur
+    </a>
+
+    <div style="flex:1;"></div>
+    <div class="sidebar-divider"></div>
+    <a href="{{ url_for('auth.logout') }}" class="sidebar-link" style="color: #f87171;">
+      <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+    </a>
+  </aside>
+
+  <!-- ── MAIN CONTENT ───────────────────────────────── -->
+  <div class="parent-main">
+    {% block parent_content %}{% endblock %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% block parent_scripts %}{% endblock %}
+{% endblock %}

@@ -1,22 +1,21 @@
 # =============================================================
 #  EduNova — blueprints/professeur/routes.py
 # =============================================================
-import os
 from datetime import datetime, timezone
 from flask import (render_template, redirect, url_for, request,
-                   flash, send_file, abort, jsonify, current_app)
+                   flash, abort, jsonify)
 from flask_login import login_required, current_user
 from app.blueprints.professeur import prof_bp
 from app.extensions import db
 from app.utils.decorators import professeur_requis
 from app.utils.helpers import sauvegarder_fichier
-from app.models.profiles import Professeur, Etudiant
+from app.models.profiles import Professeur
 from app.models.program import AffectationEnseignement, Inscription
 from app.models.evaluation import Note, CorrectionExamen
 from app.models.presence import Seance, Presence
-from app.models.pedagogy import Cours, Devoir, SoumissionDevoir, PostProfesseur, CommentairePost
+from app.models.pedagogy import Cours, Devoir, PostProfesseur
 from app.models.communication import Conversation, Message
-from app.services.note_service import sauvegarder_note, enregistrer_resultat_semestre
+from app.services.note_service import sauvegarder_note
 from app.services.notif_service import notifier_message, notifier_note_publiee
 
 
@@ -161,7 +160,6 @@ def presences():
 @login_required
 @professeur_requis
 def enregistrer_presences():
-    from app.services.qr_service import enregistrer_presences as svc_pres
     prof   = get_prof()
     aff_id = int(request.form['aff_id'])
     aff    = AffectationEnseignement.query.get_or_404(aff_id)

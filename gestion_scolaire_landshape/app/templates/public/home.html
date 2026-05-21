@@ -1,85 +1,704 @@
 {% extends 'base.html' %}
 {% block title %}EduNova — L'excellence académique redéfinie{% endblock %}
 
+{% block head %}
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<style>
+  /* ── Hero ── */
+  .home-hero {
+    min-height: calc(100vh - 70px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .home-hero::before {
+    content: '';
+    position: absolute;
+    top: -200px; left: 50%; transform: translateX(-50%);
+    width: 900px; height: 900px;
+    background: radial-gradient(ellipse at center,
+      rgba(79,70,229,0.18) 0%,
+      rgba(6,182,212,0.08) 40%,
+      transparent 70%);
+    pointer-events: none;
+    animation: pulse-glow 6s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%,100% { opacity: 0.7; transform: translateX(-50%) scale(1); }
+    50%      { opacity: 1;   transform: translateX(-50%) scale(1.08); }
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(6,182,212,0.1);
+    border: 1px solid rgba(6,182,212,0.3);
+    color: var(--c-nova-cyan);
+    padding: 0.4rem 1.2rem;
+    border-radius: 30px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 2rem;
+    animation: fadeSlideDown 0.8s ease;
+  }
+
+  .eyebrow-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--c-nova-cyan);
+    box-shadow: 0 0 10px var(--c-nova-cyan);
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink {
+    0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+  }
+
+  .home-title {
+    font-size: clamp(2.8rem, 6vw, 5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -2px;
+    margin-bottom: 1.5rem;
+    color: #fff;
+    animation: fadeSlideDown 0.9s ease 0.1s both;
+  }
+
+  .home-title .line2 {
+    display: block;
+    background: linear-gradient(135deg, var(--c-aurora-indigo), var(--c-nova-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .home-subtitle {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    max-width: 620px;
+    margin: 0 auto 3.5rem;
+    line-height: 1.8;
+    animation: fadeSlideDown 1s ease 0.2s both;
+  }
+
+  @keyframes fadeSlideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── 4 Cards Grid ── */
+  .home-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    max-width: 860px;
+    width: 100%;
+    animation: fadeSlideUp 1s ease 0.3s both;
+  }
+
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .home-card {
+    background: rgba(17,24,39,0.6);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px;
+    padding: 2rem 1.8rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    color: var(--text-main);
+    transition: all 0.35s cubic-bezier(0.25,1,0.5,1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .home-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(79,70,229,0.06), transparent);
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+
+  .home-card:hover { 
+    transform: translateY(-8px) scale(1.01);
+    border-color: rgba(6,182,212,0.35);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 30px rgba(6,182,212,0.1);
+    color: var(--text-main);
+  }
+
+  .home-card:hover::before { opacity: 1; }
+
+  .home-card-icon {
+    width: 56px; height: 56px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .icon-blue  { background: rgba(79,70,229,0.15); color: #818cf8; }
+  .icon-cyan  { background: rgba(6,182,212,0.15);  color: var(--c-nova-cyan); }
+  .icon-amber { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .icon-green { background: rgba(16,185,129,0.15); color: #34d399; }
+
+  .home-card h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    position: relative; z-index: 1;
+  }
+
+  .home-card p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+    position: relative; z-index: 1;
+    flex: 1;
+  }
+
+  .home-card .card-arrow {
+    margin-top: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--c-nova-cyan);
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s;
+    position: relative; z-index: 1;
+  }
+
+  .home-card:hover .card-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* ── Stats Strip ── */
+  .stats-strip {
+    display: flex;
+    gap: 3rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 3rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff, var(--c-nova-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  /* ── Map & Contact ── */
+  .map-contact-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 4rem 2rem 6rem;
+  }
+
+  .section-label {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .section-label .s-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(79,70,229,0.1);
+    border: 1px solid rgba(79,70,229,0.3);
+    color: #818cf8;
+    padding: 0.3rem 0.9rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 1rem;
+  }
+
+  .section-label h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .map-contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: stretch;
+  }
+
+  .map-glass {
+    background: rgba(17,24,39,0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(6,182,212,0.25);
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .map-glass iframe {
+    width: 100%;
+    height: 100%;
+    min-height: 350px;
+    display: block;
+    filter: brightness(0.85) contrast(1.1) saturate(0.7) hue-rotate(200deg);
+    border: none;
+  }
+
+  .map-gps-btn {
+    position: absolute;
+    bottom: 1.2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--c-aurora-indigo);
+    color: #fff;
+    padding: 0.7rem 1.5rem;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    box-shadow: 0 4px 20px rgba(79,70,229,0.5);
+    transition: all 0.3s;
+    white-space: nowrap;
+  }
+
+  .map-gps-btn:hover {
+    background: var(--c-aurora-hover);
+    transform: translateX(-50%) translateY(-3px);
+    box-shadow: 0 8px 28px rgba(79,70,229,0.6);
+    color: #fff;
+  }
+
+  .contact-glass {
+    background: rgba(17,24,39,0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 24px;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .contact-glass h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+
+  .contact-glass p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  .contact-links {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .contact-link-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    color: var(--text-main);
+    transition: all 0.3s;
+  }
+
+  .contact-link-item:hover {
+    background: rgba(79,70,229,0.1);
+    border-color: rgba(79,70,229,0.3);
+    transform: translateX(5px);
+    color: #fff;
+  }
+
+  .contact-icon-wrap {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .ci-email   { background: rgba(79,70,229,0.15); color: #818cf8; }
+  .ci-fb      { background: rgba(24,119,242,0.15); color: #60a5fa; }
+  .ci-phone   { background: rgba(16,185,129,0.15); color: #34d399; }
+
+  .contact-link-item .ci-text span:first-child {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 0.15rem;
+  }
+
+  .contact-link-item .ci-text span:last-child {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  /* ── Latest Announcements ── */
+  .latest-annonces {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+
+  .annonce-preview {
+    background: rgba(17,24,39,0.5);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .annonce-preview::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, var(--c-aurora-indigo), var(--c-nova-cyan));
+    border-radius: 3px 0 0 3px;
+  }
+
+  .annonce-preview:hover {
+    border-color: rgba(79,70,229,0.25);
+    transform: translateX(6px);
+  }
+
+  .annonce-date-badge {
+    flex-shrink: 0;
+    background: rgba(79,70,229,0.12);
+    border: 1px solid rgba(79,70,229,0.25);
+    border-radius: 10px;
+    padding: 0.6rem 0.9rem;
+    text-align: center;
+    min-width: 60px;
+  }
+
+  .annonce-date-badge .day {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .annonce-date-badge .mon {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--c-nova-cyan);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.2rem;
+  }
+
+  .annonce-body h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.4rem;
+  }
+
+  .annonce-body p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .pinned-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fbbf24;
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 6px;
+    padding: 0.15rem 0.5rem;
+    margin-bottom: 0.4rem;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .home-cards { grid-template-columns: 1fr; max-width: 400px; }
+    .map-contact-grid { grid-template-columns: 1fr; }
+    .home-title { letter-spacing: -1px; }
+    .stats-strip { gap: 2rem; }
+  }
+
+  @media (max-width: 480px) {
+    .home-hero { padding: 4rem 1.2rem 3rem; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- ── HERO SECTION ────────────────────────────────────────── -->
-<section class="hero">
-  <div class="hero-inner">
-    <div class="hero-badge" data-aos="fade-up">
-      <div class="badge-dot"></div>
-      <span>Portail Académique Intelligent v2.0</span>
-    </div>
-    
-    <h1 class="hero-title" data-aos="fade-up" data-aos-delay="100">
-      L'avenir de la <span class="gradient-text">Gestion Scolaire</span>
-    </h1>
-    
-    <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="200">
-      Une plateforme unifiée réunissant professeurs, étudiants et parents. Consultez vos emplois du temps, cours, examens et résultats en temps réel.
-    </p>
 
-    <!-- 4 QUICK ACCESS CARDS (2x2 Grid) -->
-    <div class="hero-cards" data-aos="fade-up" data-aos-delay="300">
-      <a href="{{ url_for('public.emploi_du_temps') }}" class="hero-card">
-        <i class="fa-solid fa-clock"></i>
-        <h3>Toutes les sections</h3>
-        <p>Consultez et téléchargez les emplois du temps de toutes les spécialités en PDF.</p>
-      </a>
-      
-      <a href="{{ url_for('public.examens') }}" class="hero-card">
+<!-- ── HERO ─────────────────────────────────────────── -->
+<section class="home-hero">
+  <div class="hero-eyebrow">
+    <div class="eyebrow-dot"></div>
+    Portail Académique Intelligent — Version 2.0
+  </div>
+
+  <h1 class="home-title">
+    Bienvenue à
+    <span class="line2">EduNova</span>
+  </h1>
+
+  <p class="home-subtitle">
+    Propulsez votre avenir académique grâce à notre écosystème d'apprentissage nouvelle génération. Une synergie parfaite entre innovation et simplicité pour garantir votre excellence et une communication fluide, 24h/24 et 7j/7.
+  </p>
+
+  <!-- 4 Cards -->
+  <div class="home-cards">
+    <a href="{{ url_for('public.emploi_du_temps') }}" class="home-card">
+      <div class="home-card-icon icon-blue">
+        <i class="fa-solid fa-calendar-days"></i>
+      </div>
+      <h3>Emploi du Temps</h3>
+      <p>Consultez et téléchargez les emplois du temps de toutes les spécialités en PDF. Mis à jour chaque semestre.</p>
+      <div class="card-arrow">
+        Voir les horaires <i class="fa-solid fa-arrow-right fa-sm"></i>
+      </div>
+    </a>
+
+    <a href="{{ url_for('public.examens') }}" class="home-card">
+      <div class="home-card-icon icon-amber">
         <i class="fa-solid fa-clipboard-list"></i>
-        <h3>Calendrier des Examens</h3>
-        <p>Dates, horaires et salles pour l'ensemble des évaluations prévues.</p>
-      </a>
-      
-      <a href="{{ url_for('public.annonces') }}" class="hero-card">
+      </div>
+      <h3>Calendrier des Examens</h3>
+      <p>Dates, horaires et salles pour l'ensemble des évaluations. Téléchargement PDF disponible par filière.</p>
+      <div class="card-arrow">
+        Voir les examens <i class="fa-solid fa-arrow-right fa-sm"></i>
+      </div>
+    </a>
+
+    <a href="{{ url_for('public.annonces') }}" class="home-card">
+      <div class="home-card-icon icon-cyan">
         <i class="fa-solid fa-bullhorn"></i>
-        <h3>Tableau d'Affichage</h3>
-        <p>Dernières annonces et nouveautés officielles de l'administration.</p>
-      </a>
-      
-      <a href="{{ url_for('auth.login') }}" class="hero-card">
+      </div>
+      <h3>Tableau d'Affichage</h3>
+      <p>Dernières annonces officielles de l'administration. Affichées du plus récent au plus ancien.</p>
+      <div class="card-arrow">
+        Voir les annonces <i class="fa-solid fa-arrow-right fa-sm"></i>
+      </div>
+    </a>
+
+    <a href="{{ url_for('auth.login') }}" class="home-card">
+      <div class="home-card-icon icon-green">
         <i class="fa-solid fa-graduation-cap"></i>
-        <h3>Espace Numérique</h3>
-        <p>Accès sécurisé pour la consultation des cours, notes, et absences.</p>
+      </div>
+      <h3>Espace Numérique</h3>
+      <p>Accès sécurisé pour la consultation des cours, notes, absences et messages. Étudiant / Prof / Parent.</p>
+      <div class="card-arrow">
+        Se connecter <i class="fa-solid fa-arrow-right fa-sm"></i>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- ── STATS STRIP ────────────────────────────────── -->
+<div class="stats-strip" data-aos="fade-up">
+  <div class="stat-item">
+    <div class="stat-num">37+</div>
+    <div class="stat-label">Tables de données</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">4</div>
+    <div class="stat-label">Espaces dédiés</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">3</div>
+    <div class="stat-label">Langues (AR/FR/EN)</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">100%</div>
+    <div class="stat-label">Sécurisé & Chiffré</div>
+  </div>
+</div>
+
+<!-- ── LATEST ANNONCES ────────────────────────────── -->
+{% if annonces %}
+<section class="latest-annonces" data-aos="fade-up">
+  <div class="section-label">
+    <div class="s-badge"><i class="fa-solid fa-megaphone"></i> Dernières nouvelles</div>
+    <h2>Annonces récentes</h2>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem;">
+    {% for annonce in annonces %}
+    <div class="annonce-preview" data-aos="fade-left" data-aos-delay="{{ loop.index * 80 }}">
+      <div class="annonce-date-badge">
+        <span class="day">{{ annonce.date_publication.strftime('%d') }}</span>
+        <span class="mon">{{ annonce.date_publication.strftime('%b') }}</span>
+      </div>
+      <div class="annonce-body" style="flex:1;">
+        {% if annonce.est_epinglee %}
+        <div class="pinned-badge"><i class="fa-solid fa-thumbtack fa-sm"></i> Épinglée</div>
+        {% endif %}
+        <h4>{{ annonce.titre }}</h4>
+        <p>{{ annonce.contenu | striptags | truncate(150) }}</p>
+      </div>
+      <a href="{{ url_for('public.annonces') }}" style="color: var(--c-nova-cyan); flex-shrink:0; align-self:center;">
+        <i class="fa-solid fa-chevron-right"></i>
       </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div style="text-align:center;">
+    <a href="{{ url_for('public.annonces') }}" class="btn btn-glass">
+      <i class="fa-solid fa-list"></i> Voir toutes les annonces
+    </a>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── MAP & CONTACT ──────────────────────────────── -->
+<section class="map-contact-section" data-aos="fade-up">
+  <div class="section-label">
+    <div class="s-badge"><i class="fa-solid fa-location-dot"></i> Nous trouver</div>
+    <h2>Contact & Localisation</h2>
+  </div>
+
+  <div class="map-contact-grid">
+    <!-- Google Map -->
+    <div class="map-glass">
+      <iframe
+        src="https://maps.google.com/maps?q=36.742749,3.034926&hl=fr&z=17&output=embed"
+        allowfullscreen=""
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade">
+      </iframe>
+      <a href="https://maps.app.goo.gl/6jYLx4xHmarAmAmHA" target="_blank" class="map-gps-btn">
+        <i class="fa-solid fa-location-arrow"></i> Obtenir l'itinéraire GPS
+      </a>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="contact-glass">
+      <div>
+        <h3>Contactez-nous</h3>
+        <p>Notre équipe administrative est disponible du dimanche au jeudi de 8h00 à 16h00. N'hésitez pas à nous contacter.</p>
+      </div>
+
+      <div class="contact-links">
+        <a href="mailto:contact@edunova.dz" class="contact-link-item">
+          <div class="contact-icon-wrap ci-email">
+            <i class="fa-solid fa-envelope"></i>
+          </div>
+          <div class="ci-text">
+            <span>Email officiel</span>
+            <span>contact@edunova.dz</span>
+          </div>
+          <i class="fa-solid fa-external-link fa-xs" style="margin-left:auto; color:var(--text-muted);"></i>
+        </a>
+
+        <a href="https://facebook.com/edunova" target="_blank" class="contact-link-item">
+          <div class="contact-icon-wrap ci-fb">
+            <i class="fa-brands fa-facebook-f"></i>
+          </div>
+          <div class="ci-text">
+            <span>Page Facebook officielle</span>
+            <span>EduNova Officiel</span>
+          </div>
+          <i class="fa-solid fa-external-link fa-xs" style="margin-left:auto; color:var(--text-muted);"></i>
+        </a>
+
+        <div class="contact-link-item" style="cursor:default;">
+          <div class="contact-icon-wrap ci-phone">
+            <i class="fa-solid fa-phone"></i>
+          </div>
+          <div class="ci-text">
+            <span>Téléphone</span>
+            <span>+213 XX XX XX XX</span>
+          </div>
+        </div>
+
+        <div class="contact-link-item" style="cursor:default;">
+          <div class="contact-icon-wrap" style="background:rgba(245,158,11,0.15); color:#fbbf24;">
+            <i class="fa-solid fa-map-marker-alt"></i>
+          </div>
+          <div class="ci-text">
+            <span>Adresse</span>
+            <span>Alger, Algérie</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ── FOOTER MAP & CONTACT ────────────────────────────────── -->
-<section class="footer-map-section" data-aos="fade-up">
-  <div class="map-card">
-    <div class="map-wrapper">
-      <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d102341.35378772709!2d3.0336214041793646!3d36.7212002220468!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x128fad6796cdab13%3A0x3b1c676d6c97abfb!2sAlger!5e0!3m2!1sfr!2sdz!4v1700000000000!5m2!1sfr!2sdz" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-    </div>
-    <div class="contact-strip">
-      <a href="https://maps.google.com/?q=Alger,Algeria" target="_blank" class="btn btn-primary btn-sm">
-        <i class="fa-solid fa-location-arrow"></i> Itinéraire (GPS)
-      </a>
-      <a href="mailto:contact@edunova.dz" class="contact-item">
-        <i class="fa-solid fa-envelope"></i> contact@edunova.dz
-      </a>
-      <a href="https://facebook.com/edunova" target="_blank" class="contact-item">
-        <i class="fa-brands fa-facebook"></i> EduNova Officiel
-      </a>
-    </div>
-  </div>
-</section>
 {% endblock %}
 
 {% block scripts %}
-<!-- Animation on Scroll -->
-<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    AOS.init({
-      duration: 800,
-      easing: 'ease-out-cubic',
-      once: true,
-      offset: 50
-    });
+  document.addEventListener("DOMContentLoaded", function () {
+    AOS.init({ duration: 800, easing: 'ease-out-cubic', once: true, offset: 60 });
   });
 </script>
 {% endblock %}

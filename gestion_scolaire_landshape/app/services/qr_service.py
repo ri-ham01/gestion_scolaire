@@ -4,7 +4,6 @@
 # =============================================================
 import os
 import qrcode
-from qrcode.image.pil import PilImage
 from flask import current_app, url_for
 
 
@@ -57,7 +56,6 @@ def enregistrer_presences(affectation_id: int, professeur_id: int,
     from app.extensions import db
     from app.models.presence  import Seance, Presence, CompteurAbsences
     from app.models.program   import Inscription, AffectationEnseignement
-    from app.models.academic  import Semestre
     from app.services.notif_service import notifier_absence
 
     try:

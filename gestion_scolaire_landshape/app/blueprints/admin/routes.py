@@ -2,23 +2,22 @@
 #  EduNova — blueprints/admin/routes.py
 #  Tableau de bord administration complète
 # =============================================================
-import os, uuid
 from datetime import datetime, timezone
 from flask import (render_template, redirect, url_for, request,
-                   flash, send_file, abort, jsonify, current_app)
+                   flash)
 from flask_login import login_required, current_user
 from app.blueprints.admin import admin_bp
 from app.extensions import db
 from app.utils.decorators import admin_requis
-from app.utils.helpers import sauvegarder_fichier, generer_token_qr
+from app.utils.helpers import sauvegarder_fichier
 from app.models.user import Utilisateur
-from app.models.profiles import (Administrateur, Professeur, Etudiant,
-                                   Parent, ParentEtudiant)
+from app.models.profiles import (Professeur, Etudiant, Parent,
+                                   ParentEtudiant)
 from app.models.academic import AnneeScolaire, Semestre, Niveau, Specialite, Section
-from app.models.program  import Matiere, Programme, Inscription, AffectationEnseignement
+from app.models.program  import Matiere, Inscription, AffectationEnseignement
 from app.models.communication import Annonce, AnnonceFichier
 from app.models.presence import Presence
-from app.models.planning import PdfEmploiTemps, EmploiDuTemps, CalendrierExamen
+from app.models.planning import PdfEmploiTemps
 from app.models.audit import JournalAdmin
 
 

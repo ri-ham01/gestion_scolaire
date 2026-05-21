@@ -19,7 +19,7 @@ class Notification(db.Model):
                             'correction_publiee','message_recu','annonce',
                             'post_publie','commentaire_recu','releve_disponible',
                             'mot_de_passe_envoye','autre'), nullable=False)
-    destinataire_id   = db.Column(db.Integer,  nullable=False)
+    destinataire_id   = db.Column(db.Integer,  db.ForeignKey('utilisateurs.id', ondelete='CASCADE'), nullable=False)
     destinataire_role = db.Column(db.Enum('etudiant','professeur','parent','admin'), nullable=False)
     titre             = db.Column(db.String(255), nullable=False)
     contenu           = db.Column(db.Text,        nullable=False)
@@ -29,9 +29,7 @@ class Notification(db.Model):
     reference_id      = db.Column(db.Integer,     nullable=True)
     date_envoi        = db.Column(db.DateTime,    default=lambda: datetime.now(timezone.utc))
 
-    destinataire = db.relationship('Utilisateur', back_populates='notifications',
-                                   foreign_keys=[destinataire_id],
-                                   primaryjoin='Notification.destinataire_id == Utilisateur.id')
+    destinataire = db.relationship('Utilisateur', back_populates='notifications')
 
     def __repr__(self):
         return f'<Notification type={self.type} dest={self.destinataire_id}>'
