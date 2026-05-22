@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="EduNova — Système de Gestion Scolaire Intelligent" />
+  <title>Dashboard Professeur — EduNova</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=Noto+Kufi+Arabic:wght@300;400;600;700&display=swap"
+    rel="stylesheet" />
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="/static/css/edunova.css" />
+  
+<style>
+/* ── Professeur Layout ── */
+.professeur-layout {
+  display: flex;
+  gap: 0;
+  min-height: calc(100vh - 70px);
+}
+
+/* ── Sidebar ── */
+.professeur-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: rgba(8,12,24,0.85);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255,255,255,0.05);
+  padding: 2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  position: sticky;
+  top: 70px;
+  height: calc(100vh - 70px);
+  overflow-y: auto;
+}
+
+.sidebar-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.8rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  position: relative;
+  text-decoration: none;
+}
+
+.sidebar-link i {
+  width: 18px;
+  text-align: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.sidebar-link:hover {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+}
+
+.sidebar-link.active {
+  background: rgba(236,72,153,0.15); /* Pinkish for professor */
+  color: #fff;
+  border: 1px solid rgba(236,72,153,0.25);
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 60%;
+  background: #ec4899;
+  border-radius: 0 3px 3px 0;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 0.5rem 0;
+}
+
+/* ── Professeur Main ── */
+.professeur-main {
+  flex: 1;
+  padding: 2.5rem;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* ── Page Header ── */
+.professeur-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+
+.professeur-page-header .header-left h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.professeur-page-header .header-left h1 i {
+  font-size: 1.4rem;
+  background: linear-gradient(135deg,#ec4899,#8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.professeur-page-header .header-left p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .professeur-sidebar { display: none; }
+  .professeur-main { padding: 1.5rem; }
+}
+</style>
+
+
+</head>
+
+<body class="">
+
+  <!-- ── WebGL Animated Background ───────────────────────────── -->
+  <canvas id="bg-canvas" class="webgl-canvas"></canvas>
+
+  <!-- ── Flash Messages ──────────────────────────────────────── -->
+  
+  
+  
+
+  <!-- ── NAVBAR ──────────────────────────────────────────────── -->
+  <nav class="navbar" id="navbar" role="navigation" aria-label="Navigation principale">
+    <div class="nav-inner">
+
+      <!-- Logo -->
+      <a href="/" class="nav-logo">
+        <div class="logo-icon">
+          <span class="logo-letter">E</span>
+          <div class="logo-dot"></div>
+        </div>
+        <span class="logo-text">Edu<span class="logo-accent">Nova</span></span>
+      </a>
+
+      <!-- Nav Links -->
+      <ul class="nav-links" id="navLinks">
+        
+        
+        <li><a href="/professeur/dashboard"
+            class="nav-link active"><i
+              class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+        <li><a href="/professeur/notes" class="nav-link"><i class="fa-solid fa-pen-to-square"></i>
+            Notes</a></li>
+        <li><a href="/professeur/presences" class="nav-link"><i class="fa-solid fa-calendar-check"></i>
+            Présences</a></li>
+        <li><a href="/professeur/cours" class="nav-link"><i class="fa-solid fa-book-open"></i> Cours</a>
+        </li>
+        <li><a href="/professeur/chat" class="nav-link"><i class="fa-solid fa-message"></i> Messages</a>
+        </li>
+        
+        
+      </ul>
+
+      <!-- Right Actions -->
+      <div class="nav-actions">
+        <!-- Langue -->
+        <div class="lang-switcher-inline">
+          <a href="/auth/langue/ar"
+            class="lang-circ " aria-label="العربية">AR</a>
+          <a href="/auth/langue/fr"
+            class="lang-circ active" aria-label="Français">FR</a>
+          <a href="/auth/langue/en"
+            class="lang-circ " aria-label="English">EN</a>
+        </div>
+
+        
+        <!-- Notifications -->
+        <div class="notif-wrapper">
+          <button class="nav-icon-btn" id="notifToggle" aria-label="Notifications">
+            <i class="fa-solid fa-bell"></i>
+            <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+          </button>
+          <div class="notif-panel" id="notifPanel" aria-label="Panneau notifications">
+            <div class="notif-header">
+              <span>Notifications</span>
+              <button class="btn-text-sm" id="markAllRead">Tout marquer lu</button>
+            </div>
+            <ul class="notif-list" id="notifList">
+              <li class="notif-empty"><i class="fa-regular fa-bell-slash"></i> Aucune notification</li>
+            </ul>
+          </div>
+        </div>
+        <!-- Profil -->
+        <div class="user-menu">
+          <button class="user-avatar" id="userMenuToggle" aria-expanded="false">
+            <span class="avatar-initials">JEANMARTIN</span>
+            <div class="online-dot"></div>
+          </button>
+          <ul class="user-dropdown" id="userDropdown">
+            <li class="user-info">
+              <span class="user-role-badge badge-professeur">PROFESSEUR</span>
+              <span class="user-username">prof_info1</span>
+            </li>
+            <li>
+              <hr class="dropdown-divider" />
+            </li>
+            <li><a href="/auth/logout" class="dropdown-link danger"><i
+                  class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></li>
+          </ul>
+        </div>
+        
+
+        <!-- Hamburger -->
+        <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Main Content ─────────────────────────────────────────── -->
+  <main class="main-content" id="mainContent">
+    
+<div class="professeur-layout">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────── -->
+  <aside class="professeur-sidebar">
+    <div class="sidebar-section-label">Espace Enseignant</div>
+    <a href="/professeur/dashboard" class="sidebar-link active">
+      <i class="fa-solid fa-chalkboard-user"></i> Accueil
+    </a>
+    <a href="/emploi-du-temps" class="sidebar-link ">
+      <i class="fa-solid fa-calendar-days"></i> Emploi du temps
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Gestion des Classes</div>
+    <a href="/professeur/presences" class="sidebar-link ">
+      <i class="fa-solid fa-clipboard-check"></i> Faire l'appel
+    </a>
+    <a href="/professeur/notes" class="sidebar-link ">
+      <i class="fa-solid fa-pen-to-square"></i> Saisir les notes
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Contenu & Ressources</div>
+    <a href="/professeur/cours" class="sidebar-link ">
+      <i class="fa-solid fa-book-open"></i> Déposer un cours
+    </a>
+    <a href="/professeur/devoirs" class="sidebar-link ">
+      <i class="fa-solid fa-file-arrow-up"></i> Travaux & Devoirs
+    </a>
+    <a href="/professeur/posts" class="sidebar-link ">
+      <i class="fa-solid fa-newspaper"></i> Mes Publications
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Communication</div>
+    <a href="/professeur/chat" class="sidebar-link ">
+      <i class="fa-solid fa-message"></i> Messages
+    </a>
+
+    <div style="flex:1;"></div>
+    <div class="sidebar-divider"></div>
+    <a href="/auth/logout" class="sidebar-link" style="color: #f87171;">
+      <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+    </a>
+  </aside>
+
+  <!-- ── MAIN CONTENT ───────────────────────────────── -->
+  <div class="professeur-main">
+    
+<div class="professeur-page-header">
+  <div class="header-left">
+    <h1><i class="fa-solid fa-chalkboard-user"></i> Bienvenue, Jean Martin</h1>
+    <p>Voici votre résumé académique.</p>
+  </div>
+</div>
+
+<div>
+  <!-- KPIs -->
+  <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 2rem;">
+    <div class="card glass-card">
+      <div class="feature-icon icon-indigo"><i class="fa-solid fa-users"></i></div>
+      <h3>0</h3>
+      <p>Étudiants Total</p>
+    </div>
+    <div class="card glass-card">
+      <div class="feature-icon icon-cyan"><i class="fa-solid fa-layer-group"></i></div>
+      <h3>0</h3>
+      <p>Classes / Sections</p>
+    </div>
+    <div class="card glass-card">
+      <div class="feature-icon icon-gold"><i class="fa-solid fa-bell"></i></div>
+      <h3>0</h3>
+      <p>Notifications</p>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="card glass-card mb-2">
+    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-bolt"></i> Actions Rapides</h3>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+      <a href="/professeur/notes" class="btn btn-primary">
+        <i class="fa-solid fa-pen-to-square"></i> Saisir les notes
+      </a>
+      <a href="/professeur/presences" class="btn btn-glass">
+        <i class="fa-solid fa-calendar-check"></i> Faire l'appel
+      </a>
+      <a href="/professeur/cours" class="btn btn-glass">
+        <i class="fa-solid fa-book-open"></i> Déposer un cours
+      </a>
+      <a href="/professeur/chat" class="btn btn-glass">
+        <i class="fa-solid fa-message"></i> Messages
+      </a>
+    </div>
+  </div>
+
+  <!-- Vos Affectations -->
+  <h3 style="margin-top: 2rem; margin-bottom: 1rem;"><i class="fa-solid fa-folder-tree"></i> Vos Affectations Actuelles
+  </h3>
+  <div class="spreadsheet-container">
+    <table class="spreadsheet-table">
+      <thead>
+        <tr>
+          <th>Matière</th>
+          <th>Spécialité</th>
+          <th>Niveau</th>
+          <th>Section</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td colspan="5" class="cell-readonly text-muted text-center">Aucune affectation active.</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+</div>
+
+  </div>
+
+</div>
+
+  </main>
+
+  <!-- ── Footer ──────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-text">Edu<span class="logo-accent">Nova</span></span>
+        <p>Système de Gestion Scolaire Intelligent</p>
+      </div>
+      <div class="footer-links">
+        <a href="/emploi-du-temps">Emploi du temps</a>
+        <a href="/examens">Examens</a>
+        <a href="/annonces">Annonces</a>
+      </div>
+      <p class="footer-copy">&copy; 2026 EduNova. Tous droits réservés.</p>
+    </div>
+  </footer>
+
+  <!-- ── Command Palette (Ctrl+K) ───────────────────────────── -->
+  <div class="cmd-palette-overlay" id="cmdOverlay" aria-hidden="true">
+    <div class="cmd-palette">
+      <div class="cmd-header">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="cmdInput" placeholder="Rechercher une page ou une action... (Navigation rapide)"
+          autocomplete="off">
+        <span class="cmd-shortcut">ESC</span>
+      </div>
+      <div class="cmd-results" id="cmdResults">
+        <!-- Rempli par JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scripts ─────────────────────────────────────────────── -->
+  <!-- Three.js pour le background spatial -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="/static/js/three-bg.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    // Variables globales pour le JS
+    window.EDUNOVA_ROLE = "professeur";
+    window.EDUNOVA_URLS = {
+      home: "/",
+      edt: "/emploi-du-temps",
+      exam: "/examens",
+      annonces: "/annonces"
+    };
+    
+    window.EDUNOVA_URLS.dashboard = "/professeur/dashboard";
+    
+    
+    window.EDUNOVA_URLS.notes = "/professeur/notes";
+    window.EDUNOVA_URLS.presences = "/professeur/presences";
+    window.EDUNOVA_URLS.chat = "/professeur/chat";
+    
+  </script>
+  <script src="/static/js/main.js"></script>
+  
+  <script src="/static/js/notifications.js"></script>
+  
+  
+
+
+
+  <!-- Google Translate Integration -->
+  <div id="google_translate_element" style="display:none;"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+        pageLanguage: 'fr',
+        includedLanguages: 'ar,en,fr',
+        autoDisplay: false
+      }, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  <style>
+    /* Masquer l'interface de Google Translate */
+    .skiptranslate iframe,
+    .skiptranslate.goog-te-banner-frame {
+      display: none !important;
+    }
+    body {
+      top: 0px !important;
+    }
+    #google_translate_element {
+      display: none !important;
+    }
+  </style>
+</body>
+
+</html>

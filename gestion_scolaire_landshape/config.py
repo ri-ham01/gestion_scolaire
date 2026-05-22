@@ -25,8 +25,11 @@ class Config:
         'pool_size': 1,
         'max_overflow': 2,
         'pool_recycle': 280,
-        'pool_timeout': 15,
+        'pool_timeout': 30,
         'pool_pre_ping': True,
+        'connect_args': {
+            'connect_timeout': 60
+        }
     }
 
     # ── Flask-Babel (i18n) ───────────────────────────────────
@@ -57,8 +60,8 @@ class Config:
     ALLOWED_EXTENSIONS = {
         'document': {'pdf', 'doc', 'docx'},
         'image':    {'jpg', 'jpeg', 'png', 'gif', 'webp'},
-        'media':    {'mp3', 'mp4', 'avi', 'mov'},
-        'all':      {'pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'mp3', 'mp4'},
+        'media':    set(),
+        'all':      {'pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp'},
     }
 
     # ── Paramètres pédagogiques par défaut ──────────────────

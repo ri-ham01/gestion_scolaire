@@ -1,0 +1,45 @@
+{% extends "espace_etudes/layout.html" %}
+{% block title %}Discussions - {{ cours.titre }}{% endblock %}
+
+{% block etudes_sidebar %}
+<div class="sidebar-section-label" style="color: var(--c-aurora-indigo);">Informations du Cours</div>
+<div style="padding: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+  <p><strong>Cours :</strong> {{ cours.titre }}</p>
+  <p><strong>Matière :</strong> {{ cours.affectation.matiere.nom }}</p>
+  <p><strong>Section :</strong> {{ cours.affectation.section.code_section }}</p>
+</div>
+{% endblock %}
+
+{% block etudes_content %}
+<div class="card glass-card" style="min-height: calc(100vh - 120px); padding: 2rem;">
+  
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+    <div>
+      <h2 style="margin: 0;"><i class="fa-solid fa-users-viewfinder" style="color: var(--c-aurora-indigo);"></i> Discussions des étudiants</h2>
+      <p style="color: var(--text-muted); margin-top: 0.5rem;">Cours : {{ cours.titre }}</p>
+    </div>
+    <a href="{{ url_for('espace_etudes.professeur_dashboard', aff_id=cours.affectation_id) }}" class="btn btn-sm btn-glass"><i class="fa-solid fa-arrow-left"></i> Retour au cours</a>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+    {% for conv in conversations %}
+      <a href="{{ url_for('espace_etudes.chat_cours', cours_id=cours.id, etudiant_id=conv.participant_a_id) }}" class="card glass-card" style="text-decoration: none; display: flex; align-items: center; gap: 1rem; transition: all 0.3s;">
+        <div style="width: 50px; height: 50px; background: rgba(6,182,212,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <i class="fa-solid fa-user" style="color: var(--c-nova-cyan); font-size: 1.5rem;"></i>
+        </div>
+        <div style="flex: 1;">
+          <h4 style="margin: 0; color: white;">{{ conv.etudiant_concerne.nom }} {{ conv.etudiant_concerne.prenom }}</h4>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem;">Dernier message: {{ conv.date_dernier_message.strftime('%d/%m %H:%M') }}</div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
+      </a>
+    {% else %}
+      <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 3rem;">
+        <i class="fa-solid fa-comment-slash fa-3x" style="margin-bottom: 1rem; opacity: 0.5;"></i>
+        <p>Aucun étudiant n'a posé de question sur ce cours pour le moment.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

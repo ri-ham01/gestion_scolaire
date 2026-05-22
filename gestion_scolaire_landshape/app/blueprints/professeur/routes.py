@@ -30,13 +30,40 @@ def dashboard():
     prof = get_prof()
     affs = AffectationEnseignement.query.filter_by(
         professeur_id=prof.id, est_active=True).all()
+    total_students = sum(aff.section.inscriptions.count() for aff in affs)
     # Notifications non lues
     from app.models.communication import Notification
     notifs_count = Notification.query.filter_by(
         destinataire_id=current_user.id, est_lu=False).count()
     return render_template('professeur/dashboard.html',
-                           prof=prof, affs=affs, notifs_count=notifs_count)
+                           prof=prof, affs=affs, notifs_count=notifs_count,
+                           total_students=total_students)
 
+@prof_bp.route('/mes-etudiants')
+@login_required
+@professeur_requis
+def mes_etudiants():
+    prof = get_prof()
+    affs = AffectationEnseignement.query.filter_by(
+        professeur_id=prof.id, est_active=True).all()
+    aff_id = request.args.get('aff_id', type=int)
+    etudiants_liste = []
+    aff_selectionnee = None
+    if aff_id:
+        aff_selectionnee = AffectationEnseignement.query.get_or_404(aff_id)
+        if aff_selectionnee.professeur_id != prof.id:
+            abort(403)
+        inscs = Inscription.query.filter_by(
+            section_id=aff_selectionnee.section_id, statut='actif').all()
+        q = request.args.get('q', '').strip()
+        for insc in inscs:
+            etu = insc.etudiant
+            if q and q.lower() not in etu.utilisateur.username.lower() and q.lower() not in etu.nom.lower() and q.lower() not in etu.prenom.lower():
+                continue
+            etudiants_liste.append({'etudiant': etu, 'inscription': insc})
+    return render_template('professeur/mes_etudiants.html',
+                           affs=affs, aff_selectionnee=aff_selectionnee,
+                           etudiants=etudiants_liste, q=request.args.get('q', ''))
 
 # ── Notes ─────────────────────────────────────────────────────
 @prof_bp.route('/notes')
@@ -291,18 +318,24 @@ def cours():
 def ajouter_cours():
     prof = get_prof()
     try:
-        aff_id  = int(request.form['aff_id'])
-        titre   = request.form['titre'].strip()
+        aff_id      = int(request.form['aff_id'])
+        titre       = request.form['titre'].strip()
+        ordre       = int(request.form.get('ordre', 1))
+        description = request.form.get('description', '').strip()
+        url_video   = request.form.get('url_video', '').strip()
+        
         fichier = request.files.get('fichier')
-        chemin  = sauvegarder_fichier(fichier, 'cours') if fichier else None
-        ext     = fichier.filename.rsplit('.', 1)[-1].lower() if fichier else ''
+        chemin  = sauvegarder_fichier(fichier, 'cours') if fichier and fichier.filename else None
+        ext     = fichier.filename.rsplit('.', 1)[-1].lower() if fichier and '.' in fichier.filename else ''
         type_c  = 'pdf' if ext == 'pdf' else ('video' if ext in ('mp4','avi') else
                   'audio' if ext in ('mp3',) else 'image' if ext in ('jpg','jpeg','png') else 'pdf')
+                  
         c = Cours(
             affectation_id=aff_id, titre=titre, type_contenu=type_c,
-            fichier_url=chemin, nom_fichier_original=fichier.filename if fichier else None,
+            fichier_url=chemin, nom_fichier_original=fichier.filename if fichier and fichier.filename else None,
             est_publie=True, date_publication=datetime.now(timezone.utc),
             publie_par=prof.id,
+            ordre=ordre, description=description, url_video=url_video
         )
         db.session.add(c)
         db.session.commit()
@@ -356,12 +389,71 @@ def ajouter_devoir():
 @login_required
 @professeur_requis
 def chat():
+    prof = current_user.professeur
     convs = Conversation.query.filter_by(participant_b_id=current_user.id).all()
-    etudiants_convs = [c for c in convs if c.participant_a_role == 'etudiant']
-    parents_convs   = [c for c in convs if c.participant_a_role == 'parent']
+    parents_convs = [c for c in convs if c.participant_a_role == 'parent']
+    
+    # Students the professor teaches -> Get their parents
+    from app.models.program import AffectationEnseignement, Inscription
+    affs = AffectationEnseignement.query.filter_by(professeur_id=prof.id, est_active=True).all()
+    section_ids = [aff.section_id for aff in affs]
+    
+    mes_parents = []
+    if section_ids:
+        inscriptions = Inscription.query.filter(Inscription.section_id.in_(section_ids), Inscription.statut == 'actif').all()
+        parents_dict = {}
+        for insc in inscriptions:
+            etu = insc.etudiant
+            for pe in etu.parents_link:
+                parent = pe.parent
+                if parent.id not in parents_dict:
+                    parents_dict[parent.id] = {
+                        'parent': parent,
+                        'etudiant': etu
+                    }
+        mes_parents = list(parents_dict.values())
+        
     return render_template('professeur/chat.html',
-                           etudiants_convs=etudiants_convs,
-                           parents_convs=parents_convs)
+                           parents_convs=parents_convs,
+                           mes_parents=mes_parents)
+
+
+@prof_bp.route('/chat/nouveau_parent', methods=['POST'])
+@login_required
+@professeur_requis
+def nouveau_chat_parent():
+    parent_id = request.form.get('parent_id', type=int)
+    if not parent_id:
+        flash('Veuillez sélectionner un parent.', 'danger')
+        return redirect(url_for('professeur.chat'))
+        
+    from app.models.profiles import Parent
+    parent = Parent.query.get_or_404(parent_id)
+    
+    # Check if conversation already exists
+    conv = Conversation.query.filter_by(
+        participant_a_id=parent.utilisateur_id,
+        participant_b_id=current_user.id,
+        participant_a_role='parent'
+    ).first()
+    
+    if not conv:
+        # Find the student related to this parent and this prof
+        # For simplicity, we just use the first student of this parent
+        # But we can also leave etudiant_concerne_id empty or take it from the form
+        etu_id = request.form.get('etudiant_id', type=int)
+        
+        conv = Conversation(
+            type='parent_professeur',
+            participant_a_id=parent.utilisateur_id,
+            participant_a_role='parent',
+            participant_b_id=current_user.id,
+            etudiant_concerne_id=etu_id
+        )
+        db.session.add(conv)
+        db.session.commit()
+        
+    return redirect(url_for('professeur.conversation', conv_id=conv.id))
 
 
 @prof_bp.route('/chat/conversation/<int:conv_id>')

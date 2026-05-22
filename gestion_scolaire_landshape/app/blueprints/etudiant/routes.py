@@ -37,10 +37,13 @@ def dashboard():
             section_id=insc.section_id, semestre_id=insc.semestre_courant,
             est_active=True).all()
         aff_ids = [a.id for a in affs]
-        posts = PostProfesseur.query.filter(
-            PostProfesseur.affectation_id.in_(aff_ids),
-            PostProfesseur.est_publie == True
-        ).order_by(PostProfesseur.created_at.desc()).limit(5).all()
+        if aff_ids:
+            posts = PostProfesseur.query.filter(
+                PostProfesseur.affectation_id.in_(aff_ids),
+                PostProfesseur.est_publie == True
+            ).order_by(PostProfesseur.created_at.desc()).limit(5).all()
+        else:
+            posts = []
     return render_template('etudiant/dashboard.html',
                            etu=etu, insc=insc, notifs_count=notifs_count, posts=posts)
 
@@ -96,8 +99,50 @@ def notes():
 def releve():
     etu   = get_etu()
     insc  = etu.get_inscription_active()
-    releves = ReleverNotes.query.filter_by(etudiant_id=etu.id).all()
-    return render_template('etudiant/releve.html', etu=etu, releves=releves, insc=insc)
+    
+    def get_notes_semestre(sem_num):
+        from app.models.academic import Semestre
+        from app.models.program import AffectationEnseignement
+        from app.models.evaluation import Note, ResultatSemestre
+        if not insc:
+            return [], None, None
+        sem = Semestre.query.filter_by(
+            annee_scolaire_id=insc.annee_scolaire_id, numero=sem_num).first()
+        if not sem:
+            return [], None, None
+        affs = AffectationEnseignement.query.filter_by(
+            section_id=insc.section_id, semestre_id=sem.id, est_active=True).all()
+        rows = []
+        for aff in affs:
+            note = Note.query.filter_by(
+                etudiant_id=etu.id, affectation_id=aff.id).first()
+            prog = next((p for p in aff.matiere.programmes
+                         if p.specialite_id == insc.section.specialite_id
+                         and p.niveau_id    == insc.section.niveau_id
+                         and p.semestre_numero == sem_num), None)
+            rows.append({'matiere': aff.matiere, 'note': note,
+                         'coeff': prog.coefficient if prog else 1,
+                         'type': prog.type_matiere if prog else 'principale'})
+        rs = ResultatSemestre.query.filter_by(
+            etudiant_id=etu.id, inscription_id=insc.id, semestre_id=sem.id).first()
+        return rows, rs, sem
+
+    rows_s1, rs1, sem1 = get_notes_semestre(1)
+    rows_s2, rs2, sem2 = get_notes_semestre(2)
+    from app.models.evaluation import ResultatAnnuel
+    ra = ResultatAnnuel.query.filter_by(
+        etudiant_id=etu.id, annee_scolaire_id=insc.annee_scolaire_id if insc else 0).first()
+        
+    # Generate generic QR Code token
+    token = f"stu_{etu.id}_{insc.id if insc else 0}"
+    from app.services.qr_service import generer_qr_et_url
+    _, qr_url = generer_qr_et_url(token)
+    
+    return render_template('etudiant/releve.html', 
+                           etu=etu, insc=insc,
+                           rows_s1=rows_s1, rs1=rs1, sem1=sem1,
+                           rows_s2=rows_s2, rs2=rs2, sem2=sem2, ra=ra,
+                           qr_url=qr_url, token=token)
 
 
 @etudiant_bp.route('/releve/telecharger/<string:token>')
@@ -252,36 +297,6 @@ def soumettre_devoir(dev_id):
 
 
 # ── Chat ──────────────────────────────────────────────────────
-@etudiant_bp.route('/chat')
-@login_required
-@etudiant_requis
-def chat():
-    etu  = get_etu()
-    insc = etu.get_inscription_active()
-    convs = Conversation.query.filter_by(
-        participant_a_id=current_user.id, participant_a_role='etudiant').all()
-    return render_template('etudiant/chat.html', convs=convs, insc=insc)
-
-
-@etudiant_bp.route('/chat/nouvelle/<int:prof_user_id>')
-@login_required
-@etudiant_requis
-def nouvelle_conversation(prof_user_id):
-    conv = Conversation.query.filter_by(
-        participant_a_id=current_user.id,
-        participant_b_id=prof_user_id,
-        type='etudiant_professeur'
-    ).first()
-    if not conv:
-        conv = Conversation(
-            type='etudiant_professeur',
-            participant_a_id=current_user.id,
-            participant_a_role='etudiant',
-            participant_b_id=prof_user_id,
-        )
-        db.session.add(conv)
-        db.session.commit()
-    return redirect(url_for('etudiant.conversation_detail', conv_id=conv.id))
 
 
 @etudiant_bp.route('/chat/cours/<int:cours_id>')

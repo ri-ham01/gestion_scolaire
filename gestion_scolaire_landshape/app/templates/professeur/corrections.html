@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des Corrections — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-spell-check"></i> Gestion des Corrections</h1>
+    <p class="text-muted">Publiez les corrigés-types de vos examens et évaluations pour vos étudiants.</p>
+  </div>
+</div>
+
+<div class="section-inner">
+  <div class="grid-layout" style="grid-template-columns: 1fr 2fr;">
+
+    <!-- Formulaire d'Ajout -->
+    <div class="card glass-card form-section">
+      <h2 style="margin-bottom: 1.5rem; color: var(--c-nova-cyan);">Publier une Correction</h2>
+      <form action="{{ url_for('professeur.ajouter_correction') }}" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+          <label class="form-label">Titre</label>
+          <input type="text" name="titre" class="form-input" required placeholder="Ex: Corrigé Devoir 1">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Type d'Évaluation</label>
+          <select name="type_evaluation" class="form-input" required>
+            <option value="devoir">Devoir</option>
+            <option value="evaluation_continue">Évaluation Continue</option>
+            <option value="examen">Examen</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Matière et Section</label>
+          <select name="affectation_id" class="form-input" required>
+            {% for aff in affs %}
+            <option value="{{ aff.id }}">{{ aff.matiere.nom }} — {{ aff.section.niveau.nom }} ({{ aff.section.code_section }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Fichier (PDF, Word, Image)</label>
+          <div class="file-drop-area">
+            <span class="file-msg">Glissez-déposez ou cliquez pour sélectionner</span>
+            <input type="file" name="fichier" class="file-input" required accept=".pdf,.doc,.docx,.png,.jpg,.jpeg">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1.5rem;">
+          <i class="fa-solid fa-upload"></i> Publier la Correction
+        </button>
+      </form>
+    </div>
+
+    <!-- Liste des Corrections -->
+    <div class="card glass-card">
+      <h2 style="margin-bottom: 1.5rem;">Corrections Publiées</h2>
+      {% if corrections %}
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
+        {% for corr in corrections %}
+        <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+            {% if corr.type_fichier == 'pdf' %}
+            <i class="fa-solid fa-file-pdf fa-2x" style="color: var(--s-danger);"></i>
+            {% elif corr.type_fichier == 'word' %}
+            <i class="fa-solid fa-file-word fa-2x" style="color: #2563eb;"></i>
+            {% else %}
+            <i class="fa-solid fa-file-image fa-2x" style="color: var(--s-success);"></i>
+            {% endif %}
+            <h4 style="margin: 0; color: #fff;">{{ corr.titre }}</h4>
+          </div>
+          <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0.5rem;">
+            {{ corr.affectation.matiere.nom }} ({{ corr.affectation.section.code_section }})<br>
+            Type: {{ corr.type_evaluation }}<br>
+            Date: {{ corr.date_publication.strftime('%d/%m/%Y') }}
+          </p>
+          <span class="badge" style="background: var(--s-success);"><i class="fa-solid fa-check"></i> Publiée</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align: center; padding: 3rem;">
+        <i class="fa-solid fa-spell-check fa-3x mb-2" style="color: var(--text-muted);"></i>
+        <p class="text-muted">Vous n'avez publié aucune correction pour le moment.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .file-drop-area {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    border: 2px dashed rgba(255,255,255,0.2);
+    border-radius: 8px;
+    background: rgba(0,0,0,0.1);
+    transition: all 0.3s;
+    text-align: center;
+  }
+  .file-drop-area:hover {
+    border-color: var(--c-nova-cyan);
+    background: rgba(var(--c-nova-cyan-rgb), 0.05);
+  }
+  .file-input {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+    opacity: 0;
+  }
+  .file-msg {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+</style>
+
+<script>
+  document.querySelector('.file-input').addEventListener('change', function() {
+    let fileName = this.files[0] ? this.files[0].name : 'Glissez-déposez ou cliquez pour sélectionner';
+    this.parentElement.querySelector('.file-msg').textContent = fileName;
+  });
+</script>
+{% endblock %}

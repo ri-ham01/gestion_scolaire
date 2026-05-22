@@ -73,15 +73,16 @@ def generer_username_professeur(specialite_code: str) -> str:
 
 def generer_username_etudiant(annee_scolaire_debut: int,
                                specialite_code: str,
-                               niveau_ordre: int) -> str:
+                               niveau_ordre: int,
+                               groupe_suffix: str = '') -> str:
     """
-    Format : <YY><code_spe><NN> → ex: 22ai01, 22ai02
+    Format : <YY><code_spe><groupe_suffix>_<NN> → ex: 26mathA_1, 26infoA_5
     YY = 2 derniers chiffres de l'année de début.
     """
     from app.models.user import Utilisateur
     from app.extensions import db
     yy     = str(annee_scolaire_debut)[-2:]
-    prefix = f'{yy}{specialite_code.lower()}'
+    prefix = f'{yy}{specialite_code.lower()}{groupe_suffix}'
     pattern = f'{prefix}%'
     existing = db.session.query(Utilisateur).filter(
         Utilisateur.role == 'etudiant',
@@ -89,11 +90,11 @@ def generer_username_etudiant(annee_scolaire_debut: int,
     ).all()
     max_num = 0
     for u in existing:
-        m = re.match(rf'^{re.escape(prefix)}(\d+)$', u.username)
+        m = re.match(rf'^{re.escape(prefix)}_(\d+)$', u.username)
         if m:
             max_num = max(max_num, int(m.group(1)))
     num = max_num + 1
-    return f'{prefix}{num:02d}'
+    return f'{prefix}_{num}'
 
 
 def generer_password_securise(longueur: int = 12) -> str:
@@ -134,9 +135,11 @@ def sauvegarder_fichier(file_obj, sous_dossier: str, prefix: str = '') -> str | 
     """
     if not file_obj or file_obj.filename == '':
         return None
+    original_ext = file_obj.filename.rsplit('.', 1)[-1].lower() if '.' in file_obj.filename else 'bin'
     filename  = secure_filename(file_obj.filename)
-    ext       = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'bin'
-    unique    = f'{prefix}_{uuid.uuid4().hex[:8]}.{ext}' if prefix else f'{uuid.uuid4().hex}.{ext}'
+    if not filename:
+        filename = f"fichier.{original_ext}"
+    unique    = f'{prefix}_{uuid.uuid4().hex[:8]}.{original_ext}' if prefix else f'{uuid.uuid4().hex}.{original_ext}'
     dossier   = os.path.join(current_app.config['UPLOAD_FOLDER'], sous_dossier)
     os.makedirs(dossier, exist_ok=True)
     chemin    = os.path.join(dossier, unique)

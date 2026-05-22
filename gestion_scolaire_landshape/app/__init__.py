@@ -36,6 +36,7 @@ def create_app(config_name='default'):
     from app.blueprints.etudiant.routes   import etudiant_bp
     from app.blueprints.parent.routes     import parent_bp
     from app.blueprints.api.routes        import api_bp
+    from app.blueprints.espace_etudes.routes import espace_etudes_bp
 
     app.register_blueprint(auth_bp,      url_prefix='/auth')
     app.register_blueprint(public_bp,    url_prefix='/')
@@ -44,6 +45,7 @@ def create_app(config_name='default'):
     app.register_blueprint(etudiant_bp,  url_prefix='/etudiant')
     app.register_blueprint(parent_bp,    url_prefix='/parent')
     app.register_blueprint(api_bp,       url_prefix='/api')
+    app.register_blueprint(espace_etudes_bp, url_prefix='/espace-etudes')
 
     # ── Register socket events ─────────────────────────────────
     from app.sockets import chat  # noqa: F401

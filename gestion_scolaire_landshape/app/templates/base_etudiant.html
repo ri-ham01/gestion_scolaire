@@ -163,15 +163,12 @@
     <a href="{{ url_for('etudiant.releve') }}" class="sidebar-link {% if request.endpoint == 'etudiant.releve' %}active{% endif %}">
       <i class="fa-solid fa-file-contract"></i> Relevés
     </a>
-    <a href="{{ url_for('etudiant.presences') }}" class="sidebar-link {% if 'presence' in request.endpoint %}active{% endif %}">
-      <i class="fa-solid fa-clipboard-user"></i> Présences & Absences
-    </a>
 
     <div class="sidebar-divider"></div>
-    <div class="sidebar-section-label">Communication</div>
-    <a href="{{ url_for('etudiant.chat') }}" class="sidebar-link {% if 'chat' in request.endpoint or 'conversation' in request.endpoint %}active{% endif %}">
+    <!-- <div class="sidebar-section-label">Communication</div>
+    <a href="#" class="sidebar-link">
       <i class="fa-solid fa-message"></i> Messages
-    </a>
+    </a> -->
 
     <div style="flex:1;"></div>
     <div class="sidebar-divider"></div>

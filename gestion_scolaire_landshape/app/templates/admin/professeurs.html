@@ -117,6 +117,27 @@
       <input type="text" name="grade" class="form-input" placeholder="ex: Maître de Conférences, Assistant...">
     </div>
 
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+      <div style="flex: 1;">
+        <label class="form-label">Affecter à une section (Optionnel)</label>
+        <select name="section_id" class="form-input">
+          <option value="">-- Ne pas affecter pour le moment --</option>
+          {% for sec in sections %}
+          <option value="{{ sec.id }}">{{ sec.nom }} ({{ sec.specialite.code }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="flex: 1;">
+        <label class="form-label">Matière enseignée (Optionnel)</label>
+        <select name="matiere_id" class="form-input">
+          <option value="">-- Sélectionnez une matière --</option>
+          {% for mat in matieres %}
+          <option value="{{ mat.id }}">{{ mat.nom }} ({{ mat.code }})</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
     <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
       <div style="flex: 1;">
         <label class="form-label">Date de naissance</label>

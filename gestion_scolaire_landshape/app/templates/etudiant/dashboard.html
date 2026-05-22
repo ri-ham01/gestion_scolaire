@@ -2,10 +2,38 @@
 {% block title %}Espace Étudiant — EduNova{% endblock %}
 
 {% block etudiant_content %}
-<div class="etudiant-page-header">
+<div class="etudiant-page-header" data-aos="fade-down">
   <div class="header-left">
-    <h1><i class="fa-solid fa-graduation-cap"></i> Bonjour, {{ etu.prenom }} {{ etu.nom }}</h1>
-    <p>Accédez à vos cours, devoirs, notes et annonces.</p>
+    <h1 style="font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #fff, var(--c-nova-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"><i class="fa-solid fa-graduation-cap" style="color: #fff; -webkit-text-fill-color: initial;"></i> Bonjour, {{ etu.prenom }} {{ etu.nom }}</h1>
+    <p style="color: var(--text-muted); font-size: 1.1rem; margin-top: 0.5rem;">Bienvenue dans votre espace d'excellence académique.</p>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 2rem;" data-aos="fade-up">
+  <div class="card glass-card" style="border-top: 3px solid var(--c-nova-cyan);">
+    <div class="feature-icon icon-cyan" style="background: rgba(6,182,212,0.15); color: var(--c-nova-cyan); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 1.4rem; margin-bottom: 1rem;"><i class="fa-solid fa-book-open"></i></div>
+    <h3 style="font-size: 1.6rem; margin-bottom: 0.2rem;">Mes Cours</h3>
+    <p style="color: var(--text-muted); font-size: 0.85rem;">Accès rapide aux ressources</p>
+    <a href="{{ url_for('etudiant.espace_cours') }}" class="btn btn-sm btn-glass" style="margin-top: 1rem; width: 100%;">Voir <i class="fa-solid fa-arrow-right"></i></a>
+  </div>
+  <div class="card glass-card" style="border-top: 3px solid var(--c-aurora-indigo);">
+    <div class="feature-icon icon-indigo" style="background: rgba(139,92,246,0.15); color: #8b5cf6; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 1.4rem; margin-bottom: 1rem;"><i class="fa-solid fa-star"></i></div>
+    <h3 style="font-size: 1.6rem; margin-bottom: 0.2rem;">Résultats</h3>
+    <p style="color: var(--text-muted); font-size: 0.85rem;">Consulter mon évolution</p>
+    <a href="{{ url_for('etudiant.notes') }}" class="btn btn-sm btn-glass" style="margin-top: 1rem; width: 100%;">Notes <i class="fa-solid fa-arrow-right"></i></a>
+  </div>
+  <div class="card glass-card" style="border-top: 3px solid #f59e0b;">
+    <div class="feature-icon icon-amber" style="background: rgba(245,158,11,0.15); color: #f59e0b; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 1.4rem; margin-bottom: 1rem;"><i class="fa-solid fa-file-pen"></i></div>
+    <h3 style="font-size: 1.6rem; margin-bottom: 0.2rem;">Devoirs</h3>
+    <p style="color: var(--text-muted); font-size: 0.85rem;">Travaux à rendre</p>
+    <a href="{{ url_for('etudiant.devoirs') }}" class="btn btn-sm btn-glass" style="margin-top: 1rem; width: 100%;">Devoirs <i class="fa-solid fa-arrow-right"></i></a>
+  </div>
+  <div class="card glass-card" style="border-top: 3px solid #ec4899;">
+    <div class="feature-icon icon-pink" style="background: rgba(236,72,153,0.15); color: #ec4899; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 1.4rem; margin-bottom: 1rem;"><i class="fa-solid fa-bell"></i></div>
+    <h3 style="font-size: 1.6rem; margin-bottom: 0.2rem;">{{ notifs_count }}</h3>
+    <p style="color: var(--text-muted); font-size: 0.85rem;">Notifications non lues</p>
+    <a href="#" class="btn btn-sm btn-glass" style="margin-top: 1rem; width: 100%;">Ouvrir <i class="fa-solid fa-arrow-right"></i></a>
   </div>
 </div>
 

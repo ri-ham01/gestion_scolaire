@@ -1,47 +1,247 @@
 {% extends 'base.html' %}
-{% block title %}Relevés de Notes — EduNova{% endblock %}
+{% block title %}Relevé de Notes Officiel — EduNova{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div class="section-inner">
-    <h1><i class="fa-solid fa-file-pdf"></i> Relevés de Notes Officiels</h1>
-    <p class="text-muted">Téléchargez vos relevés de notes scellés (QR Code inclus).</p>
+<div class="page-header print-hide">
+  <div class="section-inner" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <h1><i class="fa-solid fa-file-pdf"></i> Relevé de Notes Officiel</h1>
+      <p class="text-muted">Votre relevé de notes global, prêt à être imprimé.</p>
+    </div>
+    <button onclick="window.print()" class="btn btn-primary">
+      <i class="fa-solid fa-print"></i> Imprimer / Sauvegarder en PDF
+    </button>
   </div>
 </div>
 
-<div class="section-inner">
-  <div class="card glass-card">
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
-      {% for releve in releves %}
-      <div
-        style="background: rgba(0,0,0,0.2); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 12px; padding: 1.5rem; text-align: center; transition: all 0.3s ease;"
-        class="releve-card">
-        <i class="fa-solid fa-file-pdf fa-3x" style="color: var(--s-danger); margin-bottom: 1rem;"></i>
-        <h4 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Bulletin Semestriel</h4>
-        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">
-          Semestre: <strong>{{ releve.semestre.label }}</strong><br>
-          Généré le: {{ releve.date_generation.strftime('%d/%m/%Y') }}
+<div class="section-inner" style="display: flex; justify-content: center;">
+  <!-- A4 Page Container -->
+  <div class="a4-page">
+    
+    <!-- Header -->
+    <div class="transcript-header">
+      <div class="logo-area">
+        <h1 style="color: #2b3b5e; margin: 0; font-size: 24px; font-weight: 800;">EDUNOVA</h1>
+        <p style="margin: 0; font-size: 12px; color: #5a6b8a; text-transform: uppercase; letter-spacing: 1px;">Enseignement Supérieur</p>
+      </div>
+      <div class="title-area">
+        <h2 style="margin: 0; font-size: 20px; color: #2b3b5e; text-transform: uppercase;">Relevé de Notes Global</h2>
+        <p style="margin: 5px 0 0; font-size: 14px; color: #5a6b8a;">
+          Année Universitaire : <strong>{{ insc.annee_scolaire.label if insc else 'N/A' }}</strong>
         </p>
-        <a href="{{ url_for('etudiant.telecharger_releve', token=releve.qr_code_token) }}"
-          class="btn btn-primary btn-block">
-          <i class="fa-solid fa-download"></i> Télécharger
-        </a>
       </div>
-      {% else %}
-      <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 3rem;">
-        <i class="fa-solid fa-folder-open fa-3x mb-2"></i><br>
-        <p style="font-size: 1.1rem;">Aucun relevé de notes officiel n'a été publié pour le moment.</p>
+      <div class="qr-area" style="text-align: right;">
+        <img src="{{ url_for('static', filename=qr_url) }}" alt="QR Code d'authenticité" style="width: 80px; height: 80px; border: 1px solid #ccc; padding: 2px;">
       </div>
-      {% endfor %}
     </div>
+
+    <!-- Student Info -->
+    <div class="student-info" style="border: 1px solid #ccc; border-radius: 8px; padding: 15px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background-color: #f8fafc;">
+      <div>
+        <p style="margin: 3px 0;"><strong>Nom :</strong> <span style="text-transform: uppercase;">{{ etu.nom }}</span></p>
+        <p style="margin: 3px 0;"><strong>Prénom :</strong> {{ etu.prenom }}</p>
+        <p style="margin: 3px 0;"><strong>Matricule :</strong> {{ etu.matricule }}</p>
+      </div>
+      <div>
+        <p style="margin: 3px 0;"><strong>Niveau :</strong> {{ insc.section.niveau.nom if insc else '-' }}</p>
+        <p style="margin: 3px 0;"><strong>Spécialité :</strong> {{ insc.section.specialite.nom if insc else '-' }}</p>
+        <p style="margin: 3px 0;"><strong>Section :</strong> {{ insc.section.code_section if insc else '-' }}</p>
+      </div>
+    </div>
+
+    <!-- Semestre 1 -->
+    {% if rows_s1 %}
+    <h3 style="color: #2b3b5e; border-bottom: 2px solid #2b3b5e; padding-bottom: 5px; margin-top: 0; font-size: 16px;">
+      {{ sem1.label if sem1 else 'Semestre 1' }}
+    </h3>
+    <table class="transcript-table">
+      <thead>
+        <tr>
+          <th style="text-align: left; width: 45%;">Unité d'Enseignement / Matière</th>
+          <th>Coef.</th>
+          <th>Devoir 1</th>
+          <th>Devoir 2</th>
+          <th>Eval. Cont.</th>
+          <th>Examen</th>
+          <th style="text-align: right;">Moyenne</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows_s1 %}
+        <tr>
+          <td style="text-align: left;">{{ row.matiere.nom }}</td>
+          <td>{{ row.coeff }}</td>
+          <td>{{ "%.2f"|format(row.note.devoir1) if row.note and row.note.devoir1 else '-' }}</td>
+          <td>{{ "%.2f"|format(row.note.devoir2) if row.note and row.note.devoir2 else '-' }}</td>
+          <td>{{ "%.2f"|format(row.note.evaluation_continue) if row.note and row.note.evaluation_continue else '-' }}</td>
+          <td>{{ "%.2f"|format(row.note.examen) if row.note and row.note.examen else '-' }}</td>
+          <td style="text-align: right; font-weight: bold;">
+            {{ "%.2f"|format(row.note.moyenne) if row.note and row.note.moyenne else '-' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+      <div style="background-color: #f1f5f9; padding: 10px 20px; border: 1px solid #ccc; border-radius: 6px; font-weight: bold;">
+        Moyenne Semestrielle : 
+        <span style="color: #0f172a; font-size: 1.1em; margin-left: 10px;">
+          {{ "%.2f"|format(rs1.moyenne_generale) if rs1 and rs1.moyenne_generale else '-' }} / 20
+        </span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Semestre 2 -->
+    {% if rows_s2 %}
+    <h3 style="color: #2b3b5e; border-bottom: 2px solid #2b3b5e; padding-bottom: 5px; margin-top: 0; font-size: 16px;">
+      {{ sem2.label if sem2 else 'Semestre 2' }}
+    </h3>
+    <table class="transcript-table">
+      <thead>
+        <tr>
+          <th style="text-align: left; width: 45%;">Unité d'Enseignement / Matière</th>
+          <th>Coef.</th>
+          <th>Devoir 1</th>
+          <th>Devoir 2</th>
+          <th>Eval. Cont.</th>
+          <th>Examen</th>
+          <th style="text-align: right;">Moyenne</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows_s2 %}
+        <tr>
+          <td style="text-align: left;">{{ row.matiere.nom }}</td>
+          <td>{{ row.coeff }}</td>
+          <td>{{ "%.2f"|format(row.note.devoir1) if row.note and row.note.devoir1 else '-' }}</td>
+          <td>{{ "%.2f"|format(row.note.devoir2) if row.note and row.note.devoir2 else '-' }}</td>
+          <td>{{ "%.2f"|format(row.note.evaluation_continue) if row.note and row.note.evaluation_continue else '-' }}</td>
+          <td>{{ "%.2f"|format(row.note.examen) if row.note and row.note.examen else '-' }}</td>
+          <td style="text-align: right; font-weight: bold;">
+            {{ "%.2f"|format(row.note.moyenne) if row.note and row.note.moyenne else '-' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+      <div style="background-color: #f1f5f9; padding: 10px 20px; border: 1px solid #ccc; border-radius: 6px; font-weight: bold;">
+        Moyenne Semestrielle : 
+        <span style="color: #0f172a; font-size: 1.1em; margin-left: 10px;">
+          {{ "%.2f"|format(rs2.moyenne_generale) if rs2 and rs2.moyenne_generale else '-' }} / 20
+        </span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Résultat Annuel -->
+    {% if ra %}
+    <div style="border: 2px solid #2b3b5e; border-radius: 8px; padding: 20px; margin-top: 30px; display: flex; justify-content: space-between; align-items: center; background-color: #fff;">
+      <div>
+        <h3 style="margin: 0 0 5px 0; color: #2b3b5e; font-size: 18px;">RÉSULTAT DE L'ANNÉE</h3>
+        <p style="margin: 0; color: #64748b; font-size: 13px;">Décision du Jury</p>
+      </div>
+      
+      <div style="text-align: center;">
+        <div style="font-size: 24px; font-weight: bold; color: #0f172a;">
+          {{ "%.2f"|format(ra.moyenne_annuelle) if ra.moyenne_annuelle else '-' }} <span style="font-size: 14px; font-weight: normal; color: #64748b;">/ 20</span>
+        </div>
+        <div style="font-size: 12px; color: #64748b; text-transform: uppercase;">Moyenne Annuelle</div>
+      </div>
+      
+      <div style="text-align: right;">
+        <div style="font-size: 18px; font-weight: bold; padding: 5px 15px; border-radius: 4px; border: 1px solid #ccc; display: inline-block; text-transform: uppercase; background-color: #f8fafc; color: #0f172a;">
+          {{ ra.decision|upper if ra.decision else 'EN ATTENTE' }}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="transcript-footer" style="margin-top: 40px; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+      <div style="display: flex; justify-content: space-between;">
+        <p style="margin: 0;">Fait le {{ range(1, 1000) | random }} (Date de génération : Automatique)</p>
+        <p style="margin: 0;">Authenticité vérifiable par le QR Code</p>
+      </div>
+      <p style="text-align: center; margin-top: 10px;">Le Directeur / Le Chef de Département</p>
+      <div style="height: 60px;"></div>
+    </div>
+
   </div>
 </div>
 
 <style>
-  .releve-card:hover {
-    transform: translateY(-5px);
-    background: rgba(0, 0, 0, 0.4);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  /* A4 Paper styling for web */
+  .a4-page {
+    width: 210mm;
+    min-height: 297mm;
+    background-color: white;
+    color: #0f172a;
+    padding: 20mm;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    box-sizing: border-box;
+    position: relative;
+  }
+  
+  .transcript-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #2b3b5e;
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+  }
+
+  .transcript-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+    font-size: 13px;
+  }
+
+  .transcript-table th, .transcript-table td {
+    border: 1px solid #cbd5e1;
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  .transcript-table th {
+    background-color: #f1f5f9;
+    color: #334155;
+    font-weight: 600;
+  }
+  
+  /* Print-specific styling */
+  @media print {
+    body {
+      background: white !important;
+    }
+    
+    .print-hide, .sidebar, .top-nav {
+      display: none !important;
+    }
+    
+    .main-content {
+      margin-left: 0 !important;
+      padding: 0 !important;
+    }
+    
+    .a4-page {
+      box-shadow: none;
+      padding: 0;
+      width: 100%;
+      height: auto;
+    }
+    
+    /* Force background colors and borders on print */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
   }
 </style>
 {% endblock %}

@@ -9,12 +9,32 @@
   </div>
 </div>
 
-<div class="section-inner" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-
   <!-- Conversations Parents -->
-  <div class="card glass-card">
-    <h3 style="margin-bottom: 1.5rem; color: var(--c-nova-cyan);"><i class="fa-solid fa-users"></i> Parents</h3>
-    <div style="display: flex; flex-direction: column; gap: 1rem;">
+  <div class="card glass-card" style="grid-column: 1 / -1;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h3 style="margin: 0; color: var(--c-nova-cyan);"><i class="fa-solid fa-users"></i> Parents</h3>
+    </div>
+    
+    <!-- Nouvelle Discussion -->
+    <div style="margin-bottom: 1.5rem; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+      <form action="{{ url_for('professeur.nouveau_chat_parent') }}" method="POST" style="display: flex; gap: 1rem; align-items: flex-end;">
+        <div style="flex: 1;">
+          <label class="form-label" style="font-size: 0.85rem;"><i class="fa-solid fa-plus"></i> Nouvelle discussion avec un parent :</label>
+          <select name="parent_id" class="form-input" required id="parent_select">
+            <option value="">-- Sélectionnez un parent --</option>
+            {% for item in mes_parents %}
+            <option value="{{ item.parent.id }}" data-etu="{{ item.etudiant.id }}">
+              Parent de {{ item.etudiant.nom }} {{ item.etudiant.prenom }} ({{ item.parent.nom }} {{ item.parent.prenom }})
+            </option>
+            {% endfor %}
+          </select>
+          <input type="hidden" name="etudiant_id" id="etudiant_id_input" value="">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-paper-plane"></i> Démarrer</button>
+      </form>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
       {% for conv in parents_convs %}
       {% set unread = conv.messages.filter_by(est_lu=False, expediteur_role='parent').count() %}
       <a href="{{ url_for('professeur.conversation', conv_id=conv.id) }}" class="conv-item"
@@ -25,10 +45,14 @@
             <i class="fa-solid fa-user"></i>
           </div>
           <div>
-            <h4 style="margin: 0; color: #fff;">Parent (User #{{ conv.participant_a_id }})</h4>
+            {% if conv.etudiant_concerne %}
+            <h4 style="margin: 0; color: #fff;">Parent de {{ conv.etudiant_concerne.nom }}</h4>
             <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
-              Élève: {{ conv.etudiant.nom }} {{ conv.etudiant.prenom }}
+              {{ conv.etudiant_concerne.prenom }}
             </p>
+            {% else %}
+            <h4 style="margin: 0; color: #fff;">Parent (User #{{ conv.participant_a_id }})</h4>
+            {% endif %}
           </div>
         </div>
         {% if unread > 0 %}
@@ -40,7 +64,7 @@
         {% endif %}
       </a>
       {% else %}
-      <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+      <div style="text-align: center; color: var(--text-muted); padding: 2rem; grid-column: 1 / -1;">
         <i class="fa-regular fa-comments fa-2x mb-2"></i>
         <p>Aucune discussion avec des parents.</p>
       </div>
@@ -48,45 +72,18 @@
     </div>
   </div>
 
-  <!-- Conversations Étudiants -->
-  <div class="card glass-card">
-    <h3 style="margin-bottom: 1.5rem; color: var(--c-aurora-indigo);"><i class="fa-solid fa-user-graduate"></i>
-      Étudiants</h3>
-    <div style="display: flex; flex-direction: column; gap: 1rem;">
-      {% for conv in etudiants_convs %}
-      {% set unread = conv.messages.filter_by(est_lu=False, expediteur_role='etudiant').count() %}
-      <a href="{{ url_for('professeur.conversation', conv_id=conv.id) }}" class="conv-item"
-        style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-        <div style="display: flex; gap: 1rem; align-items: center;">
-          <div
-            style="width: 45px; height: 45px; border-radius: 50%; background: var(--c-aurora-indigo); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold;">
-            <i class="fa-solid fa-graduation-cap"></i>
-          </div>
-          <div>
-            <h4 style="margin: 0; color: #fff;">{{ conv.etudiant.nom }} {{ conv.etudiant.prenom }}</h4>
-            <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
-              Matricule: {{ conv.etudiant.matricule }}
-            </p>
-          </div>
-        </div>
-        {% if unread > 0 %}
-        <span class="badge"
-          style="background: var(--s-danger); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">{{
-          unread }}</span>
-        {% else %}
-        <i class="fa-solid fa-chevron-right text-muted"></i>
-        {% endif %}
-      </a>
-      {% else %}
-      <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
-        <i class="fa-regular fa-comments fa-2x mb-2"></i>
-        <p>Aucune discussion directe avec des étudiants.</p>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
 </div>
+
+<script>
+  document.getElementById('parent_select').addEventListener('change', function() {
+    var selectedOption = this.options[this.selectedIndex];
+    if(selectedOption.value) {
+      document.getElementById('etudiant_id_input').value = selectedOption.getAttribute('data-etu');
+    } else {
+      document.getElementById('etudiant_id_input').value = '';
+    }
+  });
+</script>
 
 <style>
   .conv-item:hover {

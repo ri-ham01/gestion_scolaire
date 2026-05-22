@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Espace Études — Connexion{% endblock %}
+
+{% block content %}
+<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+  <div class="card glass-card" style="max-width: 500px; width: 100%; padding: 3rem 2rem;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <div style="width: 70px; height: 70px; background: linear-gradient(135deg, var(--c-nova-cyan), var(--c-aurora-indigo)); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+        <i class="fa-solid fa-graduation-cap fa-2x" style="color: white;"></i>
+      </div>
+      <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Espace Études</h1>
+      <p style="color: var(--text-muted);">Bienvenue dans le portail d'apprentissage interactif.</p>
+    </div>
+
+    {% if error %}
+    <div class="flash danger" style="margin-bottom: 1.5rem;">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('espace_etudes.login') }}">
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Je suis un :</label>
+        <div style="display: flex; gap: 1rem;">
+          <label style="flex: 1; cursor: pointer;">
+            <input type="radio" name="role" value="etudiant" required style="display: none;" id="role_etudiant">
+            <div class="role-selector" id="btn_etudiant" style="border: 2px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1rem; text-align: center; transition: all 0.3s;">
+              <i class="fa-solid fa-user-graduate fa-2x" style="color: var(--c-nova-cyan); margin-bottom: 0.5rem;"></i>
+              <div style="font-weight: 600;">Étudiant</div>
+            </div>
+          </label>
+          <label style="flex: 1; cursor: pointer;">
+            <input type="radio" name="role" value="professeur" required style="display: none;" id="role_professeur">
+            <div class="role-selector" id="btn_professeur" style="border: 2px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1rem; text-align: center; transition: all 0.3s;">
+              <i class="fa-solid fa-chalkboard-user fa-2x" style="color: var(--c-aurora-indigo); margin-bottom: 0.5rem;"></i>
+              <div style="font-weight: 600;">Professeur</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="identifiant">Identifiant (Nom d'utilisateur)</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-user"></i>
+          <input type="text" id="identifiant" name="identifiant" class="form-control" required placeholder="Ex: info24_1">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="password" name="password" class="form-control" required placeholder="Votre mot de passe">
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top: 2rem;">
+        <i class="fa-solid fa-right-to-bracket"></i> Accéder à l'espace
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Simple script to highlight the selected role
+  document.getElementById('role_etudiant').addEventListener('change', function() {
+    document.getElementById('btn_etudiant').style.borderColor = 'var(--c-nova-cyan)';
+    document.getElementById('btn_etudiant').style.background = 'rgba(6,182,212,0.1)';
+    document.getElementById('btn_professeur').style.borderColor = 'rgba(255,255,255,0.1)';
+    document.getElementById('btn_professeur').style.background = 'transparent';
+  });
+  document.getElementById('role_professeur').addEventListener('change', function() {
+    document.getElementById('btn_professeur').style.borderColor = 'var(--c-aurora-indigo)';
+    document.getElementById('btn_professeur').style.background = 'rgba(139,92,246,0.1)';
+    document.getElementById('btn_etudiant').style.borderColor = 'rgba(255,255,255,0.1)';
+    document.getElementById('btn_etudiant').style.background = 'transparent';
+  });
+</script>
+{% endblock %}

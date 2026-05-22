@@ -58,6 +58,10 @@ class Semestre(db.Model):
     def __repr__(self):
         return f'<Semestre {self.numero} — {self.annee_scolaire_id}>'
 
+    @property
+    def label(self):
+        return f'Semestre {self.numero}'
+
     @staticmethod
     def get_active():
         return Semestre.query.filter_by(est_actif=True).first()

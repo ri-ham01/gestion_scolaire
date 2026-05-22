@@ -55,7 +55,12 @@ def professeurs():
         ).join(Utilisateur, Professeur.utilisateur_id == Utilisateur.id)
     profs = query.order_by(Professeur.nom).all()
     specialites = Specialite.query.filter_by(est_active=True).all()
-    return render_template('admin/professeurs.html', profs=profs, q=q, specialites=specialites)
+    annee = AnneeScolaire.get_active()
+    sections = Section.query.filter_by(annee_scolaire_id=annee.id if annee else 0).all()
+    matieres = Matiere.query.filter_by(est_active=True).all()
+    semestre = Semestre.query.filter_by(est_actif=True).first()
+    return render_template('admin/professeurs.html', profs=profs, q=q, 
+                           specialites=specialites, sections=sections, matieres=matieres, semestre=semestre)
 
 
 @admin_bp.route('/professeurs/ajouter', methods=['POST'])
@@ -79,6 +84,23 @@ def ajouter_professeur():
             date_naissance=date_naissance, lieu_naissance=lieu_naissance,
             grade=grade
         )
+        
+        section_id = request.form.get('section_id', type=int)
+        matiere_id = request.form.get('matiere_id', type=int)
+        
+        if section_id and matiere_id:
+            semestre = Semestre.query.filter_by(est_actif=True).first()
+            if semestre:
+                aff = AffectationEnseignement(
+                    professeur_id = user.professeur.id,
+                    matiere_id    = matiere_id,
+                    section_id    = section_id,
+                    semestre_id   = semestre.id,
+                    date_affectation = datetime.now(timezone.utc).date()
+                )
+                db.session.add(aff)
+                db.session.commit()
+
         _log_action('CREATE_PROFESSEUR', 'professeurs', user.id)
         flash(f'Professeur {prenom} {nom} créé — Username: {user.username} | Mot de passe: {password}', 'success')
     except Exception as e:
@@ -173,6 +195,16 @@ def ajouter_etudiant():
         if not annee:
             raise Exception('Aucune année scolaire active.')
 
+        # Extract group suffix from section code
+        code_sec = section.code_section.upper()
+        suffix = 'A'
+        if code_sec.endswith('B') or code_sec.endswith('2'):
+            suffix = 'B'
+        elif code_sec.endswith('C') or code_sec.endswith('3'):
+            suffix = 'C'
+        elif code_sec.endswith('D') or code_sec.endswith('4'):
+            suffix = 'D'
+            
         user, password = creer_compte_etudiant(
             nom=nom, prenom=prenom,
             specialite_code=section.specialite.code,
@@ -181,6 +213,7 @@ def ajouter_etudiant():
             date_naissance=date_naissance,
             lieu_naissance=lieu_naissance,
             sexe=sexe,
+            groupe_suffix=suffix
         )
         # Créer l'inscription
         insc = Inscription(
@@ -190,6 +223,39 @@ def ajouter_etudiant():
             date_inscription  = datetime.now(timezone.utc).date(),
         )
         db.session.add(insc)
+        
+        # Créer le compte parent associé automatiquement
+        from app.models.profiles import Parent, ParentEtudiant
+        from app.models import Utilisateur
+        from werkzeug.security import generate_password_hash
+        import string, random
+
+        prenom_clean = prenom.lower().replace(' ', '').replace('é', 'e').replace('è', 'e').replace('â', 'a')
+        nom_clean = nom.lower().replace(' ', '').replace('é', 'e').replace('è', 'e').replace('â', 'a')
+        email = f"parent.{prenom_clean}.{nom_clean}@edu.nova.dz"
+        
+        parent_user = Utilisateur(
+            username=email,
+            email=email,
+            password_hash=generate_password_hash('12345'),
+            role='parent'
+        )
+        db.session.add(parent_user)
+        db.session.flush()
+        
+        parent_profile = Parent(
+            utilisateur_id=parent_user.id,
+            nom=nom,
+            prenom='Parent de ' + prenom,
+            email=email,
+            telephone='0' + ''.join(random.choices(string.digits, k=9))
+        )
+        db.session.add(parent_profile)
+        db.session.flush()
+        
+        pe = ParentEtudiant(parent_id=parent_profile.id, etudiant_id=user.etudiant.id, lien='Père')
+        db.session.add(pe)
+        
         db.session.commit()
 
         _log_action('CREATE_ETUDIANT', 'etudiants', user.id)
@@ -548,8 +614,22 @@ def ajouter_annee():
         label = f'{debut}-{debut+1}'
         an    = AnneeScolaire(label=label, annee_debut=debut, annee_fin=debut+1)
         db.session.add(an)
+        db.session.flush() # Pour avoir an.id
+        
+        # Add basic semestres
+        import datetime
+        d1_start = datetime.date(debut, 9, 1)
+        d1_end   = datetime.date(debut + 1, 1, 31)
+        d2_start = datetime.date(debut + 1, 2, 1)
+        d2_end   = datetime.date(debut + 1, 6, 30)
+
+        s1 = Semestre(annee_scolaire_id=an.id, numero=1, date_debut=d1_start, date_fin=d1_end, est_actif=True)
+        s2 = Semestre(annee_scolaire_id=an.id, numero=2, date_debut=d2_start, date_fin=d2_end, est_actif=False)
+        db.session.add(s1)
+        db.session.add(s2)
+        
         db.session.commit()
-        flash(f'Année {label} créée.', 'success')
+        flash(f'Année {label} et ses 2 semestres ont été créés.', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Erreur : {str(e)}', 'danger')

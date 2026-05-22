@@ -9,25 +9,17 @@ from app.utils.helpers import get_param_float, mention_from_moyenne
 
 def calculer_moyenne_matiere(note_obj) -> float | None:
     """Calcule la moyenne d'une Note selon les coefficients configurés."""
-    c1 = get_param_float('coeff_devoir1', 1.0)
-    c2 = get_param_float('coeff_devoir2', 1.0)
-    c3 = get_param_float('coeff_evaluation_continue', 1.0)
-    c4 = get_param_float('coeff_examen', 2.0)
+    d1 = float(note_obj.devoir1) if note_obj.devoir1 is not None else None
+    d2 = float(note_obj.devoir2) if note_obj.devoir2 is not None else None
+    cc = float(note_obj.evaluation_continue) if note_obj.evaluation_continue is not None else None
+    ex = float(note_obj.examen) if note_obj.examen is not None else None
 
-    composants = [
-        (note_obj.devoir1,             c1),
-        (note_obj.devoir2,             c2),
-        (note_obj.evaluation_continue, c3),
-        (note_obj.examen,              c4),
-    ]
-    total_coeff = total_pond = 0.0
-    for val, coeff in composants:
-        if val is None:
-            return None
-        total_pond  += float(val) * coeff
-        total_coeff += coeff
-
-    return round(total_pond / total_coeff, 2) if total_coeff else None
+    if d1 is None or d2 is None or cc is None or ex is None:
+        return None
+        
+    # Formula: ( ((F1+F2+CC)/3) + (2*Examen) ) / 3
+    moy = (((d1 + d2 + cc) / 3.0) + (2.0 * ex)) / 3.0
+    return round(moy, 2)
 
 
 def calculer_moyenne_semestre(etudiant_id: int, inscription_id: int, semestre_id: int) -> float | None:

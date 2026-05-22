@@ -33,7 +33,7 @@
             20</small>
         </div>
         <span class="badge" style="background: rgba(255,255,255,0.1); margin-top: 0.5rem; display: inline-block;">
-          {{ ra.decision_jury|upper }}
+          {{ ra.decision|upper }}
         </span>
       </div>
     </div>
@@ -64,35 +64,33 @@
         <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
           <thead>
             <tr>
-              <th style="text-align: left; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Matière
-              </th>
+              <th style="text-align: left; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Matière</th>
               <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Coef</th>
-              <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">TD/TP
-              </th>
-              <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Examen
-              </th>
-              <th style="text-align: right; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Moyenne
-              </th>
+              <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Devoir 1</th>
+              <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Devoir 2</th>
+              <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Éval. Continue</th>
+              <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Examen</th>
+              <th style="text-align: right; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Moyenne</th>
             </tr>
           </thead>
           <tbody>
             {% for row in rows_s1 %}
             <tr>
               <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05);">{{ row.matiere.nom }}</td>
-              <td
-                style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: var(--text-muted);">
-                {{ row.coeff }}</td>
+              <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: var(--text-muted);">{{ row.coeff }}</td>
               <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                {% if row.note and (row.note.note_td or row.note.note_tp) %}
-                {{ row.note.note_td or '-' }} / {{ row.note.note_tp or '-' }}
-                {% else %}-{% endif %}
+                {{ row.note.devoir1 if row.note and row.note.devoir1 else '-' }}
               </td>
-              <td
-                style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; font-weight: bold;">
-                {{ row.note.note_examen if row.note else '-' }}
+              <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                {{ row.note.devoir2 if row.note and row.note.devoir2 else '-' }}
               </td>
-              <td
-                style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; color: var(--c-nova-cyan); font-weight: bold;">
+              <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                {{ row.note.evaluation_continue if row.note and row.note.evaluation_continue else '-' }}
+              </td>
+              <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; font-weight: bold;">
+                {{ row.note.examen if row.note and row.note.examen else '-' }}
+              </td>
+              <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; color: var(--c-nova-cyan); font-weight: bold;">
                 {{ "%.2f"|format(row.note.moyenne) if row.note and row.note.moyenne else '-' }}
               </td>
             </tr>
@@ -106,6 +104,7 @@
     </div>
 
     <!-- Semestre 2 -->
+    {% if insc.semestre_courant >= 2 %}
     <div class="card glass-card">
       <h3 style="margin-bottom: 1.5rem; color: var(--c-aurora-indigo);"><i class="fa-solid fa-2"></i> {{ sem2.label if
         sem2 else 'Semestre 2' }}</h3>
@@ -127,35 +126,33 @@
         <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
           <thead>
             <tr>
-              <th style="text-align: left; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Matière
-              </th>
+              <th style="text-align: left; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Matière</th>
               <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Coef</th>
-              <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">TD/TP
-              </th>
-              <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Examen
-              </th>
-              <th style="text-align: right; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Moyenne
-              </th>
+              <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Devoir 1</th>
+              <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Devoir 2</th>
+              <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Éval. Continue</th>
+              <th style="text-align: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Examen</th>
+              <th style="text-align: right; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Moyenne</th>
             </tr>
           </thead>
           <tbody>
             {% for row in rows_s2 %}
             <tr>
               <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05);">{{ row.matiere.nom }}</td>
-              <td
-                style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: var(--text-muted);">
-                {{ row.coeff }}</td>
+              <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: var(--text-muted);">{{ row.coeff }}</td>
               <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                {% if row.note and (row.note.note_td or row.note.note_tp) %}
-                {{ row.note.note_td or '-' }} / {{ row.note.note_tp or '-' }}
-                {% else %}-{% endif %}
+                {{ row.note.devoir1 if row.note and row.note.devoir1 else '-' }}
               </td>
-              <td
-                style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; font-weight: bold;">
-                {{ row.note.note_examen if row.note else '-' }}
+              <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                {{ row.note.devoir2 if row.note and row.note.devoir2 else '-' }}
               </td>
-              <td
-                style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; color: var(--c-nova-cyan); font-weight: bold;">
+              <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                {{ row.note.evaluation_continue if row.note and row.note.evaluation_continue else '-' }}
+              </td>
+              <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; font-weight: bold;">
+                {{ row.note.examen if row.note and row.note.examen else '-' }}
+              </td>
+              <td style="padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; color: var(--c-nova-cyan); font-weight: bold;">
                 {{ "%.2f"|format(row.note.moyenne) if row.note and row.note.moyenne else '-' }}
               </td>
             </tr>
@@ -164,11 +161,48 @@
         </table>
       </div>
       {% else %}
-      <p class="text-muted text-center">Aucune note disponible.</p>
+      <p class="text-muted text-center">Aucune note disponible pour le Semestre 2.</p>
       {% endif %}
     </div>
+    {% endif %}
 
   </div>
+  
+  <!-- Résultat Annuel -->
+  {% if ra and ra.est_calcule %}
+  <div class="card glass-card" style="margin-top: 2rem; border-top: 4px solid {% if ra.decision == 'admis' %}var(--s-success){% else %}var(--s-danger){% endif %}; text-align: center; padding: 2rem;">
+    <h2 style="margin-bottom: 0.5rem; color: #fff;">Bilan de l'Année</h2>
+    <p class="text-muted" style="margin-bottom: 2rem;">Résultats globaux et décision du jury</p>
+    
+    <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 2rem;">
+      <div>
+        <span style="font-size: 0.9rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 1px;">Moyenne Semestre 1</span>
+        <span style="font-size: 1.5rem; font-weight: bold; color: #fff;">{{ "%.2f"|format(ra.moyenne_s1) }}</span>
+      </div>
+      <div>
+        <span style="font-size: 0.9rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 1px;">Moyenne Semestre 2</span>
+        <span style="font-size: 1.5rem; font-weight: bold; color: #fff;">{{ "%.2f"|format(ra.moyenne_s2) }}</span>
+      </div>
+      <div>
+        <span style="font-size: 0.9rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 1px;">Moyenne Annuelle</span>
+        <span style="font-size: 2.2rem; font-weight: 800; color: {% if ra.moyenne_annuelle >= 10 %}var(--s-success){% else %}var(--s-danger){% endif %};">
+          {{ "%.2f"|format(ra.moyenne_annuelle) }}
+        </span>
+      </div>
+    </div>
+    
+    <div style="margin-top: 2.5rem; display: inline-block; padding: 1rem 3rem; border-radius: 50px; background: {% if ra.decision == 'admis' %}rgba(16, 185, 129, 0.15){% else %}rgba(239, 68, 68, 0.15){% endif %}; border: 1px solid {% if ra.decision == 'admis' %}rgba(16, 185, 129, 0.3){% else %}rgba(239, 68, 68, 0.3){% endif %};">
+      <span style="font-size: 1.2rem; font-weight: bold; color: {% if ra.decision == 'admis' %}var(--s-success){% else %}var(--s-danger){% endif %}; text-transform: uppercase; letter-spacing: 2px;">
+        <i class="fa-solid {% if ra.decision == 'admis' %}fa-graduation-cap{% else %}fa-triangle-exclamation{% endif %}"></i>
+        Décision : {{ ra.decision }}
+      </span>
+      {% if ra.decision == 'admis' %}
+      <p style="margin-top: 0.5rem; font-size: 0.95rem; color: var(--text-muted);">Félicitations, vous passez au niveau supérieur ! (Attente validation finale)</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+  
   {% endif %}
 </div>
 {% endblock %}

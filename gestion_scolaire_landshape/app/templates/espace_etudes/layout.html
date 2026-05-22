@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+/* ── Espace Etudes Layout ── */
+.etudes-layout {
+  display: flex;
+  gap: 0;
+  min-height: calc(100vh - 70px);
+}
+
+/* ── Sidebar ── */
+.etudes-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: rgba(10, 15, 30, 0.9);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255,255,255,0.08);
+  padding: 2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: sticky;
+  top: 70px;
+  height: calc(100vh - 70px);
+  overflow-y: auto;
+}
+
+.etudes-sidebar-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.etudes-main {
+  flex: 1;
+  padding: 2.5rem;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+</style>
+{% block etudes_head %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="etudes-layout">
+  
+  <!-- SIDEBAR -->
+  <aside class="etudes-sidebar">
+    <div class="etudes-sidebar-header">
+      <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--c-nova-cyan), var(--c-aurora-indigo)); border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+        <i class="fa-solid fa-graduation-cap fa-2x" style="color: white;"></i>
+      </div>
+      <h3 style="font-size: 1.2rem; margin: 0;">Espace Études</h3>
+      <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem;">
+        {% if current_user.role == 'professeur' %}Professeur: {{ current_user.professeur.nom }} {{ current_user.professeur.prenom }}
+        {% else %}Étudiant: {{ current_user.etudiant.nom }} {{ current_user.etudiant.prenom }}{% endif %}
+      </div>
+    </div>
+
+    {% block etudes_sidebar %}{% endblock %}
+
+    <div style="flex:1;"></div>
+    
+    <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+      <a href="{% if current_user.role == 'professeur' %}{{ url_for('professeur.dashboard') }}{% else %}{{ url_for('etudiant.dashboard') }}{% endif %}" class="btn btn-glass" style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+        <i class="fa-solid fa-arrow-left"></i> Retour au Dashboard
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="etudes-main">
+    {% block etudes_content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% block etudes_scripts %}{% endblock %}
+{% endblock %}

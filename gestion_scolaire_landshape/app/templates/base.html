@@ -74,8 +74,6 @@
             Notes</a></li>
         <li><a href="{{ url_for('professeur.presences') }}" class="nav-link"><i class="fa-solid fa-calendar-check"></i>
             Présences</a></li>
-        <li><a href="{{ url_for('professeur.cours') }}" class="nav-link"><i class="fa-solid fa-book-open"></i> Cours</a>
-        </li>
         <li><a href="{{ url_for('professeur.chat') }}" class="nav-link"><i class="fa-solid fa-message"></i> Messages</a>
         </li>
         {% elif current_user.role == 'etudiant' %}
@@ -83,12 +81,8 @@
             class="nav-link {% if request.blueprint == 'etudiant' %}active{% endif %}"><i
               class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
         <li><a href="{{ url_for('etudiant.notes') }}" class="nav-link"><i class="fa-solid fa-star"></i> Notes</a></li>
-        <li><a href="{{ url_for('etudiant.espace_cours') }}" class="nav-link"><i class="fa-solid fa-book-open"></i>
-            Cours</a></li>
         <li><a href="{{ url_for('etudiant.devoirs') }}" class="nav-link"><i class="fa-solid fa-file-pen"></i>
             Devoirs</a></li>
-        <li><a href="{{ url_for('etudiant.chat') }}" class="nav-link"><i class="fa-solid fa-message"></i> Messages</a>
-        </li>
         {% elif current_user.role == 'parent' %}
         <li><a href="{{ url_for('parent.dashboard') }}"
             class="nav-link {% if request.blueprint == 'parent' %}active{% endif %}"><i
@@ -116,6 +110,11 @@
           <a href="{{ url_for('auth.changer_langue', lang='en') }}"
             class="lang-circ {% if session.get('lang')=='en' %}active{% endif %}" aria-label="English">EN</a>
         </div>
+
+        <!-- Espace Etudes Button -->
+        <a href="{{ url_for('espace_etudes.login') }}" class="btn btn-glass btn-sm" style="margin-right: 15px; display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: white;">
+          <i class="fa-solid fa-book-open-reader"></i> فضاء الدراسة
+        </a>
 
         {% if current_user.is_authenticated %}
         <!-- Notifications -->

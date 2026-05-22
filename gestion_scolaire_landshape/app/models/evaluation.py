@@ -39,33 +39,21 @@ class Note(db.Model):
 
     def calculer_moyenne(self) -> float | None:
         """
-        Calcule la moyenne pondérée selon les coefficients du parametres_systeme.
-        Formule : (D1×c1 + D2×c2 + EC×c3 + EX×c4) / (c1+c2+c3+c4)
+        Calcule la moyenne selon la formule :
+        Moyenne = ( ((Devoir1 + Devoir2 + EvalContinue) / 3) + (2 * Examen) ) / 3
         Retourne None si l'un des composants est manquant.
         """
-        from app.utils.helpers import get_param_float
-        c1 = get_param_float('coeff_devoir1',           1.0)
-        c2 = get_param_float('coeff_devoir2',           1.0)
-        c3 = get_param_float('coeff_evaluation_continue', 1.0)
-        c4 = get_param_float('coeff_examen',            2.0)
+        d1 = float(self.devoir1) if self.devoir1 is not None else None
+        d2 = float(self.devoir2) if self.devoir2 is not None else None
+        cc = float(self.evaluation_continue) if self.evaluation_continue is not None else None
+        ex = float(self.examen) if self.examen is not None else None
 
-        valeurs = [
-            (self.devoir1,             c1),
-            (self.devoir2,             c2),
-            (self.evaluation_continue, c3),
-            (self.examen,              c4),
-        ]
-        total_coeff   = 0.0
-        total_pondere = 0.0
-        for val, coeff in valeurs:
-            if val is None:
-                return None          # manque encore une note
-            total_pondere += float(val) * coeff
-            total_coeff   += coeff
-
-        if total_coeff == 0:
+        if d1 is None or d2 is None or cc is None or ex is None:
             return None
-        return round(total_pondere / total_coeff, 2)
+
+        # Formula: (((d1 + d2 + cc)/3) + 2*ex) / 3
+        moy = (((d1 + d2 + cc) / 3.0) + (2.0 * ex)) / 3.0
+        return round(moy, 2)
 
     def sauvegarder_avec_calcul(self):
         """Met à jour self.moyenne puis pousse l'instance dans la session."""
