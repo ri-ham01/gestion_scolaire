@@ -50,39 +50,42 @@
     {% endif %}
 
     <div class="card glass-card" style="margin-bottom: 2rem;">
-      <h3 style="margin-bottom: 1.5rem; color: var(--c-nova-cyan);"><i class="fa-solid fa-newspaper"></i> Fil
-        d'actualité de vos professeurs</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="color: var(--c-nova-cyan);"><i class="fa-solid fa-chalkboard"></i> Mes Classes</h3>
+        <form method="GET" style="display: flex; gap: 0.5rem;">
+          <select name="annee_id" class="btn btn-sm btn-glass" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.25rem 0.5rem; border-radius: 6px;">
+            {% for a in annees %}
+            <option value="{{ a.id }}" {% if a.id == annee_id %}selected{% endif %}>{{ a.label }}</option>
+            {% endfor %}
+          </select>
+          <select name="sem" class="btn btn-sm btn-glass" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.25rem 0.5rem; border-radius: 6px;">
+            <option value="1" {% if sem_num == 1 %}selected{% endif %}>S1</option>
+            <option value="2" {% if sem_num == 2 %}selected{% endif %}>S2</option>
+          </select>
+          <button type="submit" class="btn btn-sm btn-primary">Filtrer</button>
+        </form>
+      </div>
 
-      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        {% for post in posts %}
-        <div
-          style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <div style="display: flex; align-items: center; gap: 0.8rem;">
-              <div
-                style="width: 40px; height: 40px; border-radius: 50%; background: var(--c-aurora-indigo); display: flex; align-items: center; justify-content: center; font-weight: bold;">
-                <i class="fa-solid fa-user-tie"></i>
-              </div>
-              <div>
-                <strong style="color: #fff;">Prof. {{ post.professeur.nom }}</strong><br>
-                <small class="text-muted">{{ post.created_at.strftime('%d/%m/%Y à %H:%M') }}</small>
-              </div>
-            </div>
-            {% if post.affectation %}
-            <span class="badge" style="background: rgba(255,255,255,0.1);"><i class="fa-solid fa-book"></i> {{
-              post.affectation.matiere.nom }}</span>
-            {% else %}
-            <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981;">Général</span>
-            {% endif %}
+      <div class="dashboard-grid" style="margin-top: 1rem;">
+        {% for aff in affs %}
+        <a href="{{ url_for('etudiant.sujet', aff_id=aff.id) }}" class="subject-card bg-gradient-{{ loop.cycle('1', '2', '3', '4', '5') }}">
+          <div class="subject-card-header">
+            <h3 class="subject-card-title">{{ aff.matiere.nom }}</h3>
+            <p class="subject-card-subtitle">{{ aff.professeur.prenom }} {{ aff.professeur.nom }}</p>
           </div>
-
-          <p style="color: var(--text-main); line-height: 1.6; margin-bottom: 1rem; white-space: pre-wrap;">{{
-            post.contenu }}</p>
-        </div>
+          <div class="subject-card-body">
+            <div class="subject-card-teacher">
+              <i class="fa-solid fa-layer-group"></i> {{ aff.section.nom }}
+            </div>
+          </div>
+          <div class="subject-card-footer">
+            <span class="subject-icon-btn" title="Ouvrir"><i class="fa-solid fa-arrow-right"></i></span>
+          </div>
+        </a>
         {% else %}
-        <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
-          <i class="fa-solid fa-inbox fa-3x mb-2"></i>
-          <p>Aucune publication récente de vos professeurs.</p>
+        <div style="text-align: center; color: var(--text-muted); padding: 2rem; grid-column: 1 / -1;">
+          <i class="fa-solid fa-folder-open fa-3x mb-2"></i>
+          <p>Aucune classe trouvée pour ce semestre.</p>
         </div>
         {% endfor %}
       </div>

@@ -526,3 +526,76 @@ def ajouter_post():
         db.session.rollback()
         flash(f'Erreur : {str(e)}', 'danger')
     return redirect(url_for('professeur.posts'))
+
+# ── Espace Sujet (Google Classroom Style) ──────────────────────
+@prof_bp.route('/sujet/<int:aff_id>')
+@login_required
+@professeur_requis
+def sujet(aff_id):
+    prof = get_prof()
+    aff = AffectationEnseignement.query.get_or_404(aff_id)
+    if aff.professeur_id != prof.id:
+        abort(403)
+        
+    cours_list = Cours.query.filter_by(affectation_id=aff_id).order_by(Cours.ordre).all()
+    devoirs_list = Devoir.query.filter_by(affectation_id=aff_id).all()
+    posts_list = PostProfesseur.query.filter_by(affectation_id=aff_id, professeur_id=prof.id).order_by(PostProfesseur.created_at.desc()).all()
+    
+    return render_template('professeur/sujet.html',
+                           aff=aff, cours_list=cours_list, 
+                           devoirs_list=devoirs_list, posts=posts_list)
+# ── Messagerie Privée (Google Classroom Style) ──────────────────────
+@prof_bp.route('/messages', defaults={'conv_id': None})
+@prof_bp.route('/messages/<int:conv_id>')
+@login_required
+@professeur_requis
+def messages(conv_id):
+    prof = get_prof()
+    
+    # Fetch all conversations for this professor
+    conversations = Conversation.query.filter_by(
+        participant_b_id=prof.id
+    ).order_by(Conversation.date_dernier_message.desc()).all()
+    
+    active_conv = None
+    if conv_id:
+        active_conv = Conversation.query.get_or_404(conv_id)
+        if active_conv.participant_b_id != prof.id:
+            abort(403)
+        # Marquer les messages comme lus (optionnel mais recommandé)
+        for msg in active_conv.messages:
+            if msg.expediteur_id != current_user.id and not msg.est_lu:
+                msg.est_lu = True
+                msg.date_lecture = datetime.now(timezone.utc)
+        db.session.commit()
+    elif conversations:
+        active_conv = conversations[0]
+        
+    return render_template('professeur/messages.html', 
+                           conversations=conversations, 
+                           active_conv=active_conv)
+
+@prof_bp.route('/envoyer_message_conv/<int:conv_id>', methods=['POST'])
+@login_required
+@professeur_requis
+def envoyer_message_conv(conv_id):
+    prof = get_prof()
+    conv = Conversation.query.get_or_404(conv_id)
+    if conv.participant_b_id != prof.id:
+        abort(403)
+        
+    contenu = request.form.get('contenu')
+    if contenu:
+        msg = Message(
+            conversation_id=conv.id,
+            expediteur_id=current_user.id,
+            contenu=contenu
+        )
+        db.session.add(msg)
+        conv.date_dernier_message = datetime.now(timezone.utc)
+        
+        from app.services.notif_service import notifier_message
+        notifier_message(db, current_user.id, conv.etudiant_concerne.utilisateur.id, conv.id, "Nouveau message du professeur")
+        db.session.commit()
+        
+    return redirect(url_for('professeur.messages', conv_id=conv.id))

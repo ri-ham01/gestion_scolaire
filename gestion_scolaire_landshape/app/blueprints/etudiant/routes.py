@@ -31,21 +31,26 @@ def dashboard():
     insc  = etu.get_inscription_active()
     notifs_count = Notification.query.filter_by(
         destinataire_id=current_user.id, est_lu=False).count()
-    posts = []
-    if insc:
-        affs = AffectationEnseignement.query.filter_by(
-            section_id=insc.section_id, semestre_id=insc.semestre_courant,
-            est_active=True).all()
-        aff_ids = [a.id for a in affs]
-        if aff_ids:
-            posts = PostProfesseur.query.filter(
-                PostProfesseur.affectation_id.in_(aff_ids),
-                PostProfesseur.est_publie == True
-            ).order_by(PostProfesseur.created_at.desc()).limit(5).all()
-        else:
-            posts = []
+    
+    annee_id = request.args.get('annee_id', type=int)
+    sem_num  = request.args.get('sem', 1, type=int)
+    if not annee_id and insc:
+        annee_id = insc.annee_scolaire_id
+        sem_num = insc.semestre_courant
+        
+    annees = AnneeScolaire.query.order_by(AnneeScolaire.annee_debut.desc()).all()
+    affs = []
+    
+    if insc and annee_id:
+        sem = Semestre.query.filter_by(
+            annee_scolaire_id=annee_id, numero=sem_num).first()
+        if sem:
+            affs = AffectationEnseignement.query.filter_by(
+                section_id=insc.section_id, semestre_id=sem.id).all()
+
     return render_template('etudiant/dashboard.html',
-                           etu=etu, insc=insc, notifs_count=notifs_count, posts=posts)
+                           etu=etu, insc=insc, notifs_count=notifs_count, 
+                           affs=affs, annees=annees, annee_id=annee_id, sem_num=sem_num)
 
 
 # ── Notes & Bulletin ──────────────────────────────────────────
@@ -388,3 +393,141 @@ def supprimer_message(msg_id):
         return jsonify({'ok': True})
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)}), 400
+
+# ── Espace Sujet (Google Classroom Style) ──────────────────────
+@etudiant_bp.route('/sujet/<int:aff_id>')
+@login_required
+@etudiant_requis
+def sujet(aff_id):
+    etu = get_etu()
+    insc = etu.get_inscription_active()
+    aff = AffectationEnseignement.query.get_or_404(aff_id)
+        
+    cours_list = Cours.query.filter_by(affectation_id=aff_id, est_publie=True).order_by(Cours.ordre).all()
+    devoirs_list = Devoir.query.filter_by(affectation_id=aff_id, est_publie=True).all()
+    posts_list = PostProfesseur.query.filter_by(affectation_id=aff_id, est_publie=True).order_by(PostProfesseur.created_at.desc()).all()
+    
+    soumissions = {}
+    for d in devoirs_list:
+        soum = SoumissionDevoir.query.filter_by(devoir_id=d.id, etudiant_id=etu.id).first()
+        soumissions[d.id] = soum
+        
+    return render_template('etudiant/sujet.html',
+                           aff=aff, cours_list=cours_list, 
+                           devoirs_list=devoirs_list, posts=posts_list,
+                           soumissions=soumissions)
+
+@etudiant_bp.route('/message_cours', methods=['POST'])
+@login_required
+@etudiant_requis
+def message_cours():
+    etu = get_etu()
+    cours_id = request.form.get('cours_id', type=int)
+    contenu = request.form.get('contenu')
+    if not cours_id or not contenu:
+        flash("Message invalide.", "danger")
+        return redirect(request.referrer or url_for('etudiant.dashboard'))
+        
+    cours = Cours.query.get_or_404(cours_id)
+    prof_id = cours.affectation.professeur_id
+    
+    conv = Conversation.query.filter_by(
+        type='cours_etudiant_professeur',
+        participant_a_id=etu.id,
+        participant_a_role='etudiant',
+        participant_b_id=prof_id,
+        cours_id=cours.id
+    ).first()
+    
+    if not conv:
+        conv = Conversation(
+            type='cours_etudiant_professeur',
+            participant_a_id=etu.id,
+            participant_a_role='etudiant',
+            participant_b_id=prof_id,
+            sujet=f"Question sur le cours: {cours.titre}",
+            matiere_id=cours.affectation.matiere_id,
+            etudiant_concerne_id=etu.id,
+            cours_id=cours.id
+        )
+        db.session.add(conv)
+        db.session.flush()
+        
+    msg = Message(
+        conversation_id=conv.id,
+        expediteur_id=current_user.id,
+        contenu=contenu
+    )
+    db.session.add(msg)
+    conv.date_dernier_message = datetime.now(timezone.utc)
+    
+    # Notify prof
+    notifier_message(
+        db, current_user.id, cours.affectation.professeur.utilisateur.id, 
+        conv.id, f"Question sur {cours.titre}"
+    )
+    
+    db.session.commit()
+    flash("Votre message a été envoyé au professeur.", "success")
+    return redirect(request.referrer or url_for('etudiant.sujet', aff_id=cours.affectation_id))
+
+# ── Messagerie Privée (Google Classroom Style) ──────────────────────
+@etudiant_bp.route('/messages', defaults={'conv_id': None})
+@etudiant_bp.route('/messages/<int:conv_id>')
+@login_required
+@etudiant_requis
+def messages(conv_id):
+    etu = get_etu()
+    
+    # Fetch all conversations for this student
+    conversations = Conversation.query.filter_by(
+        participant_a_id=etu.id,
+        participant_a_role='etudiant'
+    ).order_by(Conversation.date_dernier_message.desc()).all()
+    
+    active_conv = None
+    if conv_id:
+        active_conv = Conversation.query.get_or_404(conv_id)
+        if active_conv.participant_a_id != etu.id:
+            abort(403)
+        for msg in active_conv.messages:
+            if msg.expediteur_id != current_user.id and not msg.est_lu:
+                msg.est_lu = True
+                msg.date_lecture = datetime.now(timezone.utc)
+        db.session.commit()
+    elif conversations:
+        active_conv = conversations[0]
+        
+    return render_template('etudiant/messages.html', 
+                           conversations=conversations, 
+                           active_conv=active_conv)
+
+@etudiant_bp.route('/envoyer_message_conv/<int:conv_id>', methods=['POST'])
+@login_required
+@etudiant_requis
+def envoyer_message_conv(conv_id):
+    etu = get_etu()
+    conv = Conversation.query.get_or_404(conv_id)
+    if conv.participant_a_id != etu.id:
+        abort(403)
+        
+    contenu = request.form.get('contenu')
+    if contenu:
+        msg = Message(
+            conversation_id=conv.id,
+            expediteur_id=current_user.id,
+            contenu=contenu
+        )
+        db.session.add(msg)
+        conv.date_dernier_message = datetime.now(timezone.utc)
+        
+        # Notify prof (participant_b_id is prof id)
+        # We need to get the Utilisateur id of the prof
+        from app.models.profiles import Professeur
+        prof = Professeur.query.get(conv.participant_b_id)
+        
+        from app.services.notif_service import notifier_message
+        notifier_message(db, current_user.id, prof.utilisateur.id, conv.id, "Nouveau message de l'étudiant")
+        db.session.commit()
+        
+    return redirect(url_for('etudiant.messages', conv_id=conv.id))

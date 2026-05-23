@@ -1,0 +1,67 @@
+{% extends 'base_etudiant.html' %}
+{% block title %}Messages — EduNova{% endblock %}
+
+{% block etudiant_content %}
+<div class="etudiant-page-header">
+  <div class="header-left">
+    <h1><i class="fa-solid fa-comments"></i> Messagerie</h1>
+    <p>Échangez avec vos professeurs.</p>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; align-items: start; min-height: 60vh;">
+  <!-- Sidebar list -->
+  <div class="card glass-card" style="padding: 1rem;">
+    <h3 style="margin-bottom: 1rem; color: var(--c-nova-cyan);"><i class="fa-solid fa-list"></i> Conversations</h3>
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+      {% for conv in conversations %}
+      {% set is_active = active_conv and active_conv.id == conv.id %}
+      <a href="{{ url_for('etudiant.messages', conv_id=conv.id) }}" style="display: block; padding: 1rem; border-radius: 8px; background: {% if is_active %}rgba(6,182,212,0.1){% else %}rgba(0,0,0,0.2){% endif %}; border: 1px solid {% if is_active %}var(--c-nova-cyan){% else %}rgba(255,255,255,0.05){% endif %}; text-decoration: none; color: #fff; transition: all var(--transition-fast);">
+        <div style="font-weight: 600; margin-bottom: 0.25rem;">Prof. {{ conv.cours.affectation.professeur.nom if conv.cours else 'Enseignant' }}</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ conv.sujet }}</div>
+      </a>
+      {% else %}
+      <p class="text-muted text-center" style="font-size: 0.9rem;">Aucune conversation active.</p>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <!-- Chat View -->
+  <div class="card glass-card" style="display: flex; flex-direction: column; height: 100%;">
+    {% if active_conv %}
+    <div style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
+      <h3 style="color: #fff;">{{ active_conv.sujet }}</h3>
+      <div style="font-size: 0.85rem; color: var(--text-muted);">Avec: Prof. {{ active_conv.cours.affectation.professeur.nom if active_conv.cours else 'Enseignant' }}</div>
+    </div>
+    
+    <div style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding-right: 1rem; margin-bottom: 1rem; max-height: 50vh;">
+      {% for msg in active_conv.messages %}
+      {% set is_me = msg.expediteur_id == current_user.id %}
+      <div style="display: flex; flex-direction: column; align-items: {% if is_me %}flex-end{% else %}flex-start{% endif %};">
+        <div style="background: {% if is_me %}rgba(6,182,212,0.2){% else %}rgba(139,92,246,0.2){% endif %}; border: 1px solid {% if is_me %}var(--c-nova-cyan){% else %}var(--c-aurora-indigo){% endif %}; padding: 0.8rem 1.2rem; border-radius: 12px; max-width: 80%; color: #fff;">
+          {{ msg.contenu }}
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+          {{ msg.date_envoi.strftime('%d/%m à %H:%M') }}
+        </div>
+      </div>
+      {% else %}
+      <p class="text-muted text-center">Aucun message pour le moment.</p>
+      {% endfor %}
+    </div>
+    
+    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+      <form action="{{ url_for('etudiant.envoyer_message_conv', conv_id=active_conv.id) }}" method="POST" style="display: flex; gap: 1rem;">
+        <input type="text" name="contenu" class="cell-input" style="flex-grow: 1; height: 45px; min-height: 45px; padding: 0.5rem 1rem; text-align: left; border: 1px solid rgba(255,255,255,0.2); border-radius: 20px;" placeholder="Écrire un message..." required autocomplete="off">
+        <button type="submit" class="btn btn-primary" style="border-radius: 20px;"><i class="fa-solid fa-paper-plane"></i></button>
+      </form>
+    </div>
+    {% else %}
+    <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); padding: 3rem;">
+      <i class="fa-solid fa-comments fa-4x mb-3"></i>
+      <p>Sélectionnez une conversation pour afficher les messages.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

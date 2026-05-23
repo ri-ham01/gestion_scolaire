@@ -1,0 +1,210 @@
+{% extends 'base_professeur.html' %}
+{% block title %}{{ aff.matiere.nom }} — EduNova{% endblock %}
+
+{% block professeur_content %}
+<div class="subject-hero bg-gradient-{{ [1,2,3,4,5] | random }}">
+  <h1>{{ aff.matiere.nom }}</h1>
+  <p>{{ aff.section.specialite.nom }} — {{ aff.section.niveau.nom }} | Section: {{ aff.section.code_section }}</p>
+</div>
+
+<div class="gc-tabs">
+  <div class="gc-tab active" onclick="switchTab('stream')">Flux</div>
+  <div class="gc-tab" onclick="switchTab('classwork')">Travaux et Devoirs</div>
+  <div class="gc-tab" onclick="switchTab('people')">Participants</div>
+</div>
+
+<div id="tab-stream" class="gc-tab-content active">
+  <!-- Add Post -->
+  <div class="add-post-card" onclick="document.getElementById('postForm').style.display='block'; this.style.display='none';">
+    <div class="stream-post-avatar"><i class="fa-solid fa-plus"></i></div>
+    <div class="add-post-input-fake">Annoncer quelque chose à votre classe...</div>
+  </div>
+  <div id="postForm" style="display:none; background: var(--bg-card-glass); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: var(--border-glass);">
+    <form action="{{ url_for('professeur.ajouter_post') }}" method="POST">
+      <input type="hidden" name="aff_id" value="{{ aff.id }}">
+      <input type="hidden" name="type_public" value="section">
+      <textarea name="contenu" class="cell-input" style="min-height: 100px; text-align: left; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;" placeholder="Votre annonce..." required></textarea>
+      <div style="display:flex; justify-content: flex-end; gap: 1rem;">
+        <button type="button" class="btn btn-glass" onclick="document.getElementById('postForm').style.display='none'; document.querySelector('.add-post-card').style.display='flex';">Annuler</button>
+        <button type="submit" class="btn btn-primary">Publier</button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Posts List -->
+  {% for post in posts %}
+  <div class="stream-post">
+    <div class="stream-post-header">
+      <div class="stream-post-avatar">{{ post.professeur.prenom[0] }}{{ post.professeur.nom[0] }}</div>
+      <div class="stream-post-meta">
+        <h4>{{ post.professeur.prenom }} {{ post.professeur.nom }}</h4>
+        <span>{{ post.created_at.strftime('%d %b %Y') }}</span>
+      </div>
+    </div>
+    <div class="stream-post-body">
+      {{ post.contenu }}
+    </div>
+  </div>
+  {% else %}
+  <p class="text-muted text-center">Aucune annonce pour cette classe.</p>
+  {% endfor %}
+</div>
+
+<div id="tab-classwork" class="gc-tab-content">
+  <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h3>Cours et Supports</h3>
+    <button class="btn btn-primary btn-sm" onclick="document.getElementById('addCoursForm').style.display='block';"><i class="fa-solid fa-plus"></i> Ajouter un support</button>
+  </div>
+  
+  <!-- Formulaire Cours -->
+  <div id="addCoursForm" style="display:none; background: var(--bg-card-glass); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: var(--border-glass);">
+    <form action="{{ url_for('professeur.ajouter_cours') }}" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="aff_id" value="{{ aff.id }}">
+      <div style="display: grid; gap: 1rem; margin-bottom: 1rem;">
+        <input type="text" name="titre" class="cell-input" style="text-align: left; height: 40px; min-height: 40px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;" placeholder="Titre du cours" required>
+        <textarea name="description" class="cell-input" style="text-align: left; min-height: 80px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;" placeholder="Description (optionnel)"></textarea>
+        <input type="file" name="fichier" class="cell-input" style="text-align: left; height: 50px; min-height: 50px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;">
+      </div>
+      <div style="display:flex; justify-content: flex-end; gap: 1rem;">
+        <button type="button" class="btn btn-glass" onclick="document.getElementById('addCoursForm').style.display='none';">Annuler</button>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+
+  {% for c in cours_list %}
+  <div class="material-item">
+    <div class="material-icon"><i class="fa-solid fa-book-open"></i></div>
+    <div class="material-content">
+      <h4 class="material-title">{{ c.titre }}</h4>
+      <div class="material-meta">Publié le {{ c.date_publication.strftime('%d %b') }}</div>
+      {% if c.description %}<p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;">{{ c.description }}</p>{% endif %}
+      
+      <div class="material-actions">
+        {% if c.fichier_url %}
+        <a href="{{ url_for('etudiant.telecharger_cours', cours_id=c.id) }}" target="_blank" class="btn btn-glass btn-sm"><i class="fa-solid fa-download"></i> Fichier joint</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <p class="text-muted text-center" style="margin-bottom: 3rem;">Aucun cours publié.</p>
+  {% endfor %}
+  
+  <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; margin-top: 2rem;">
+    <h3>Devoirs</h3>
+    <button class="btn btn-primary btn-sm" onclick="document.getElementById('addDevoirForm').style.display='block';"><i class="fa-solid fa-plus"></i> Créer un devoir</button>
+  </div>
+  
+  <!-- Formulaire Devoir -->
+  <div id="addDevoirForm" style="display:none; background: var(--bg-card-glass); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: var(--border-glass);">
+    <form action="{{ url_for('professeur.ajouter_devoir') }}" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="aff_id" value="{{ aff.id }}">
+      <div style="display: grid; gap: 1rem; margin-bottom: 1rem;">
+        <input type="text" name="titre" class="cell-input" style="text-align: left; height: 40px; min-height: 40px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;" placeholder="Titre du devoir" required>
+        <textarea name="description" class="cell-input" style="text-align: left; min-height: 80px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;" placeholder="Instructions..." required></textarea>
+        <div>
+          <label class="text-muted" style="display: block; margin-bottom: 0.5rem;">Date limite :</label>
+          <input type="datetime-local" name="date_limite" class="cell-input" style="text-align: left; height: 40px; min-height: 40px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;" required>
+        </div>
+        <div>
+          <label class="text-muted" style="display: block; margin-bottom: 0.5rem;">Fichier (optionnel) :</label>
+          <input type="file" name="fichier" class="cell-input" style="text-align: left; height: 50px; min-height: 50px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;">
+        </div>
+      </div>
+      <div style="display:flex; justify-content: flex-end; gap: 1rem;">
+        <button type="button" class="btn btn-glass" onclick="document.getElementById('addDevoirForm').style.display='none';">Annuler</button>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+
+  {% for d in devoirs_list %}
+  <div class="material-item">
+    <div class="material-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--s-success);"><i class="fa-solid fa-clipboard-list"></i></div>
+    <div class="material-content" style="width: 100%;">
+      <div style="display: flex; justify-content: space-between;">
+        <h4 class="material-title">{{ d.titre }}</h4>
+        <span style="font-size: 0.85rem; color: var(--s-warning);">Limite: {{ d.date_limite_soumission.strftime('%d %b %H:%M') }}</span>
+      </div>
+      <div class="material-meta">Publié le {{ d.date_publication.strftime('%d %b') }}</div>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;">{{ d.description }}</p>
+      
+      <div style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
+        <h5 style="color: #fff; margin-bottom: 0.5rem;">Soumissions ({{ d.soumissions.count() }})</h5>
+        {% if d.soumissions.count() > 0 %}
+        <table class="spreadsheet-table" style="font-size: 0.85rem; width: 100%;">
+          <thead>
+            <tr>
+              <th>Étudiant</th>
+              <th>Username</th>
+              <th>Fichier</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in d.soumissions %}
+            <tr>
+              <td class="cell-readonly">{{ s.etudiant.prenom }} {{ s.etudiant.nom }}</td>
+              <td class="cell-readonly">{{ s.etudiant.utilisateur.username }}</td>
+              <td class="cell-readonly">
+                <span style="color: var(--c-nova-cyan);">{{ s.nom_fichier_original or 'Fichier soumis' }}</span>
+              </td>
+              <td class="cell-readonly">
+                {{ s.date_soumission.strftime('%d %b') }}
+                {% if s.est_en_retard %}<span style="color: var(--s-danger); margin-left: 5px;">(Retard)</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted" style="font-size: 0.85rem;">Aucune soumission pour le moment.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <p class="text-muted text-center">Aucun devoir publié.</p>
+  {% endfor %}
+</div>
+
+<div id="tab-people" class="gc-tab-content">
+  <h3>Étudiants Inscrits</h3>
+  <div class="spreadsheet-container" style="margin-top: 1rem;">
+    <table class="spreadsheet-table">
+      <thead>
+        <tr>
+          <th>Nom et Prénom</th>
+          <th>Username</th>
+          <th>Sexe</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for insc in aff.section.inscriptions %}
+        {% if insc.statut == 'actif' %}
+        <tr>
+          <td class="cell-readonly" style="font-weight: 600;">{{ insc.etudiant.prenom }} {{ insc.etudiant.nom }}</td>
+          <td class="cell-readonly">{{ insc.etudiant.utilisateur.username }}</td>
+          <td class="cell-readonly">{{ insc.etudiant.sexe }}</td>
+        </tr>
+        {% endif %}
+        {% else %}
+        <tr>
+          <td colspan="3" class="cell-readonly text-center">Aucun étudiant dans cette section.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function switchTab(tabId) {
+  document.querySelectorAll('.gc-tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.gc-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+</script>
+{% endblock %}
