@@ -50,12 +50,12 @@ def get_param_int(cle: str, defaut: int = 0) -> int:
 
 def generer_username_professeur(specialite_code: str) -> str:
     """
-    Format : <code_spe><NNN> → ex: ai001, ai002
+    Format : prof_<code_spe><NNN> → ex: prof_math1, prof_math2
     Cherche le max existant pour ce préfixe et incrémente.
     """
     from app.models.user import Utilisateur
     from app.extensions import db
-    prefix = specialite_code.lower().strip()
+    prefix = f"prof_{specialite_code.lower().strip()}"
     # Trouver le dernier numéro pour ce préfixe
     pattern = f'{prefix}%'
     existing = db.session.query(Utilisateur).filter(
@@ -68,7 +68,7 @@ def generer_username_professeur(specialite_code: str) -> str:
         if m:
             max_num = max(max_num, int(m.group(1)))
     num = max_num + 1
-    return f'{prefix}{num:03d}'
+    return f'{prefix}{num}'
 
 
 def generer_username_etudiant(annee_scolaire_debut: int,
@@ -127,6 +127,46 @@ def allowed_file(filename: str, categorie: str = 'all') -> bool:
     return ext in allowed
 
 
+def extension_fichier(filename: str) -> str:
+    if not filename or '.' not in filename:
+        return ''
+    return filename.rsplit('.', 1)[1].lower()
+
+
+def type_fichier_pedagogique(filename: str) -> str:
+    """Type stocké pour devoirs, corrections, soumissions (enum pdf/word/image/autre)."""
+    ext = extension_fichier(filename)
+    if ext == 'pdf':
+        return 'pdf'
+    if ext in ('doc', 'docx'):
+        return 'word'
+    if ext in ('jpg', 'jpeg', 'png', 'gif', 'webp'):
+        return 'image'
+    return 'autre'
+
+
+def type_contenu_cours(filename: str) -> str:
+    """Type stocké pour la table cours (enum sans valeur word)."""
+    ext = extension_fichier(filename)
+    if ext == 'pdf':
+        return 'pdf'
+    if ext in ('jpg', 'jpeg', 'png', 'gif', 'webp'):
+        return 'image'
+    if ext in ('doc', 'docx'):
+        return 'lien_externe'
+    return 'lien_externe'
+
+
+def chemin_absolu_upload(fichier_url_rel: str) -> str | None:
+    """Construit le chemin absolu à partir d'une URL relative (uploads/...)."""
+    if not fichier_url_rel:
+        return None
+    parts = fichier_url_rel.replace('\\', '/').split('/')
+    if not parts or parts[0] != 'uploads':
+        return None
+    return os.path.join(current_app.config['UPLOAD_FOLDER'], *parts[1:])
+
+
 def sauvegarder_fichier(file_obj, sous_dossier: str, prefix: str = '') -> str | None:
     """
     Sauvegarde un fichier uploadé et retourne le chemin relatif
@@ -135,7 +175,9 @@ def sauvegarder_fichier(file_obj, sous_dossier: str, prefix: str = '') -> str | 
     """
     if not file_obj or file_obj.filename == '':
         return None
-    original_ext = file_obj.filename.rsplit('.', 1)[-1].lower() if '.' in file_obj.filename else 'bin'
+    if not allowed_file(file_obj.filename, 'all'):
+        return None
+    original_ext = extension_fichier(file_obj.filename) or 'bin'
     filename  = secure_filename(file_obj.filename)
     if not filename:
         filename = f"fichier.{original_ext}"

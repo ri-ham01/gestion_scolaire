@@ -12,7 +12,7 @@ from app.services.auth_service import authentifier
 def login():
     """Main landing page to choose login portal."""
     if current_user.is_authenticated:
-        return _redirect_by_role(current_user.role)
+        return redirect(_redirect_by_role(current_user.role))
     return render_template('auth/choix_role.html')
 
 
@@ -27,7 +27,7 @@ def choix_role():
 def login_admin():
     """Administration Login Portal."""
     if current_user.is_authenticated:
-        return _redirect_by_role(current_user.role)
+        return redirect(_redirect_by_role(current_user.role))
 
     error = None
     if request.method == 'POST':
@@ -53,7 +53,7 @@ def login_admin():
 def login_professeur():
     """Professor Login Portal."""
     if current_user.is_authenticated:
-        return _redirect_by_role(current_user.role)
+        return redirect(_redirect_by_role(current_user.role))
 
     error = None
     if request.method == 'POST':
@@ -79,7 +79,7 @@ def login_professeur():
 def login_etudiant():
     """Student Login Portal."""
     if current_user.is_authenticated:
-        return _redirect_by_role(current_user.role)
+        return redirect(_redirect_by_role(current_user.role))
 
     error = None
     if request.method == 'POST':
@@ -105,7 +105,7 @@ def login_etudiant():
 def login_parent():
     """Parent Login Portal."""
     if current_user.is_authenticated:
-        return _redirect_by_role(current_user.role)
+        return redirect(_redirect_by_role(current_user.role))
 
     error = None
     if request.method == 'POST':

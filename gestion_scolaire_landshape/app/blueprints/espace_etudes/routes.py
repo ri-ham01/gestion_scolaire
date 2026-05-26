@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 from werkzeug.utils import secure_filename
-from flask import render_template, redirect, url_for, request, flash, session, current_app, abort, send_from_directory
+from flask import render_template, redirect, url_for, request, flash, session, current_app, abort, send_file
 from flask_login import login_required, current_user, login_user
 
 from app.blueprints.espace_etudes import espace_etudes_bp
@@ -12,32 +12,43 @@ from app.models.program import AffectationEnseignement, Inscription
 from app.models.pedagogy import Cours, Devoir, SoumissionDevoir, PostProfesseur, CommentairePost
 from app.models.communication import Conversation, Message
 
-# Helper function for file uploads
-def save_file(file_obj, subfolder=''):
-    if not file_obj or file_obj.filename == '':
-        return None, None
-    filename = secure_filename(file_obj.filename)
-    # Check allowed extensions
-    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-    allowed = current_app.config.get('ALLOWED_EXTENSIONS', {'pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp'})
-    if ext not in allowed:
-        return None, None
+from app.utils.helpers import (sauvegarder_fichier, allowed_file,
+                               type_fichier_pedagogique, type_contenu_cours,
+                               chemin_absolu_upload)
+from app.models.evaluation import CorrectionExamen
+from app.models.profiles import Etudiant
+from app.services.notif_service import (notifier_cours_publie, notifier_devoir_publie,
+                                        notifier_message_cours)
 
-    # Determine type
-    if ext == 'pdf': file_type = 'pdf'
-    elif ext in ['doc', 'docx']: file_type = 'word'
-    elif ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']: file_type = 'image'
-    else: file_type = 'autre'
 
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    unique_filename = f"{timestamp}_{filename}"
-    upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], subfolder)
-    os.makedirs(upload_dir, exist_ok=True)
-    file_path = os.path.join(upload_dir, unique_filename)
-    file_obj.save(file_path)
-    
-    # Return relative path for DB
-    return f"{subfolder}/{unique_filename}", file_type
+def _etudiant_peut_acceder_affectation(etu, aff) -> bool:
+    """Vérifie qu'un étudiant est inscrit dans la section de l'affectation."""
+    return Inscription.query.filter_by(
+        etudiant_id=etu.id, section_id=aff.section_id, statut='actif'
+    ).first() is not None
+
+
+def _messages_non_lus_count(user_id: int) -> int:
+    from app.models.communication import Message
+    convs = Conversation.query.filter(
+        (Conversation.participant_a_id == user_id) |
+        (Conversation.participant_b_id == user_id)
+    ).filter_by(type='cours_etudiant_professeur', est_active=True).all()
+    total = 0
+    for c in convs:
+        total += c.messages.filter(
+            Message.expediteur_utilisateur_id != user_id,
+            Message.est_lu == False  # noqa: E712
+        ).count()
+    return total
+
+
+def _prof_affectations(prof_id: int, semestre_id: int | None = None):
+    q = AffectationEnseignement.query.filter_by(
+        professeur_id=prof_id, est_active=True)
+    if semestre_id:
+        q = q.filter_by(semestre_id=semestre_id)
+    return q.order_by(AffectationEnseignement.id).all()
 
 
 @espace_etudes_bp.route('/', methods=['GET'])
@@ -85,29 +96,52 @@ def professeur_dashboard():
         return redirect(url_for('espace_etudes.login'))
 
     prof = current_user.professeur
-    affectations = AffectationEnseignement.query.filter_by(professeur_id=prof.id, est_active=True).all()
-    
+    semestre_id = request.args.get('semestre_id', type=int)
+    if not semestre_id:
+        sem_actif = Semestre.query.filter_by(est_actif=True).first()
+        semestre_id = sem_actif.id if sem_actif else None
+
+    annee = AnneeScolaire.get_active()
+    semestres = (Semestre.query.filter_by(annee_scolaire_id=annee.id)
+                 .order_by(Semestre.numero).all()) if annee else []
+    affectations = _prof_affectations(prof.id, semestre_id)
+
     selected_aff = None
     cours_list = []
     devoirs_list = []
     posts_list = []
+    tab = request.args.get('tab', 'cours')
 
     aff_id = request.args.get('aff_id', type=int)
     if aff_id:
         selected_aff = AffectationEnseignement.query.get(aff_id)
         if selected_aff and selected_aff.professeur_id == prof.id:
-            cours_list = Cours.query.filter_by(affectation_id=selected_aff.id).order_by(Cours.date_publication.desc()).all()
-            devoirs_list = Devoir.query.filter_by(affectation_id=selected_aff.id).order_by(Devoir.date_limite_soumission.desc()).all()
-            posts_list = PostProfesseur.query.filter_by(affectation_id=selected_aff.id).order_by(PostProfesseur.created_at.desc()).all()
+            cours_list = (Cours.query.filter_by(affectation_id=selected_aff.id)
+                          .order_by(Cours.date_publication.desc()).all())
+            devoirs_list = (Devoir.query.filter_by(affectation_id=selected_aff.id)
+                            .order_by(Devoir.date_limite_soumission.desc()).all())
+            from sqlalchemy import or_
+            prof_id = selected_aff.professeur_id
+            posts_list = (PostProfesseur.query.filter(
+                or_(
+                    PostProfesseur.affectation_id == selected_aff.id,
+                    db.and_(PostProfesseur.type_public == 'tous',
+                            PostProfesseur.professeur_id == prof_id),
+                )
+            ).order_by(PostProfesseur.created_at.desc()).all())
         else:
             selected_aff = None
 
-    return render_template('espace_etudes/professeur.html', 
+    return render_template('espace_etudes/professeur.html',
                            affectations=affectations,
                            selected_aff=selected_aff,
                            cours_list=cours_list,
                            devoirs_list=devoirs_list,
-                           posts_list=posts_list)
+                           posts_list=posts_list,
+                           semestres=semestres,
+                           semestre_id=semestre_id,
+                           tab=tab,
+                           messages_non_lus=_messages_non_lus_count(current_user.id))
 
 
 @espace_etudes_bp.route('/etudiant', methods=['GET'])
@@ -148,17 +182,63 @@ def etudiant_dashboard():
     aff_id = request.args.get('aff_id', type=int)
     if aff_id:
         selected_aff = AffectationEnseignement.query.get(aff_id)
-        if selected_aff:
-            cours_list = Cours.query.filter_by(affectation_id=selected_aff.id).order_by(Cours.date_publication.desc()).all()
-            devoirs_list = Devoir.query.filter_by(affectation_id=selected_aff.id).order_by(Devoir.date_limite_soumission.desc()).all()
-            posts_list = PostProfesseur.query.filter_by(affectation_id=selected_aff.id).order_by(PostProfesseur.created_at.desc()).all()
+        if selected_aff and _etudiant_peut_acceder_affectation(etu, selected_aff):
+            cours_list = Cours.query.filter_by(
+                affectation_id=selected_aff.id, est_publie=True
+            ).order_by(Cours.date_publication.desc()).all()
+            devoirs_list = Devoir.query.filter_by(
+                affectation_id=selected_aff.id, est_publie=True
+            ).order_by(Devoir.date_limite_soumission.desc()).all()
+            from sqlalchemy import or_
+            prof_id = selected_aff.professeur_id
+            posts_list = (PostProfesseur.query.filter(
+                or_(
+                    PostProfesseur.affectation_id == selected_aff.id,
+                    db.and_(PostProfesseur.type_public == 'tous',
+                            PostProfesseur.professeur_id == prof_id),
+                )
+            ).order_by(PostProfesseur.created_at.desc()).all())
+        else:
+            selected_aff = None
+
+    annee_sel = request.args.get('annee_id', type=int)
+    sem_sel = request.args.get('semestre_id', type=int)
+    if not annee_sel and inscriptions:
+        annee_sel = inscriptions[0].annee_scolaire_id
+    if not sem_sel and annee_sel:
+        ins = next((i for i in inscriptions if i.annee_scolaire_id == annee_sel), inscriptions[0] if inscriptions else None)
+        if ins:
+            sem = Semestre.query.filter_by(annee_scolaire_id=annee_sel, numero=ins.semestre_courant).first()
+            sem_sel = sem.id if sem else None
+
+    afficher_affs = []
+    semestres_disponibles = []
+    if annee_sel:
+        for annee, sem_map in cursus.items():
+            if annee.id == annee_sel:
+                semestres_disponibles = list(sem_map.keys())
+                break
+        if not sem_sel and semestres_disponibles:
+            sem_sel = semestres_disponibles[-1].id
+        ins = next((i for i in inscriptions if i.annee_scolaire_id == annee_sel), None)
+        if ins and sem_sel:
+            afficher_affs = AffectationEnseignement.query.filter_by(
+                section_id=ins.section_id, semestre_id=sem_sel, est_active=True
+            ).all()
 
     return render_template('espace_etudes/etudiant.html',
                            cursus=cursus,
                            selected_aff=selected_aff,
                            cours_list=cours_list,
                            devoirs_list=devoirs_list,
-                           posts_list=posts_list)
+                           posts_list=posts_list,
+                           inscriptions=inscriptions,
+                           afficher_affs=afficher_affs,
+                           semestres_disponibles=semestres_disponibles,
+                           annee_sel=annee_sel,
+                           sem_sel=sem_sel,
+                           tab=request.args.get('tab', 'cours'),
+                           messages_non_lus=_messages_non_lus_count(current_user.id))
 
 
 # --- ACTIONS PROFESSEUR ---
@@ -174,24 +254,32 @@ def publier_cours():
     aff = AffectationEnseignement.query.get_or_404(aff_id)
     if aff.professeur_id != current_user.professeur.id: return abort(403)
 
-    file_path, file_type = save_file(fichier, 'cours')
-    if not file_path:
+    if not fichier or not allowed_file(fichier.filename, 'all'):
         flash("Type de fichier non autorisé. Utilisez PDF, Word ou Image.", "danger")
         return redirect(url_for('espace_etudes.professeur_dashboard', aff_id=aff_id))
 
+    file_path = sauvegarder_fichier(fichier, 'cours')
+    if not file_path:
+        flash("Échec de l'enregistrement du fichier.", "danger")
+        return redirect(url_for('espace_etudes.professeur_dashboard', aff_id=aff_id))
+
+    ordre = Cours.query.filter_by(affectation_id=aff.id).count() + 1
     cours = Cours(
         affectation_id=aff.id,
         titre=titre,
-        type_contenu=file_type,
+        type_contenu=type_contenu_cours(fichier.filename),
         fichier_url=file_path,
         nom_fichier_original=fichier.filename,
+        ordre=ordre,
         est_publie=True,
         date_publication=datetime.now(timezone.utc),
         publie_par=current_user.professeur.id
     )
     db.session.add(cours)
+    db.session.flush()
+    notifier_cours_publie(aff.id, aff.matiere.nom, cours.id)
     db.session.commit()
-    flash("Cours publié avec succès.", "success")
+    flash("Cours publié et accessible à tous les étudiants de cette classe.", "success")
     return redirect(url_for('espace_etudes.professeur_dashboard', aff_id=aff_id))
 
 
@@ -213,7 +301,17 @@ def publier_devoir():
     except:
         date_limite = datetime.now()
 
-    file_path, file_type = save_file(fichier, 'devoirs')
+    file_path = None
+    file_type = None
+    if fichier and fichier.filename:
+        if not allowed_file(fichier.filename, 'all'):
+            flash("Type de fichier non autorisé pour le sujet du devoir.", "danger")
+            return redirect(url_for('espace_etudes.professeur_dashboard', aff_id=aff_id))
+        file_path = sauvegarder_fichier(fichier, 'devoirs')
+        if not file_path:
+            flash("Échec de l'enregistrement du fichier du devoir.", "danger")
+            return redirect(url_for('espace_etudes.professeur_dashboard', aff_id=aff_id))
+        file_type = type_fichier_pedagogique(fichier.filename)
 
     devoir = Devoir(
         affectation_id=aff.id,
@@ -221,15 +319,17 @@ def publier_devoir():
         description="Veuillez soumettre votre solution avant la date limite.",
         fichier_url=file_path,
         type_fichier=file_type,
-        nom_fichier_original=fichier.filename if fichier else None,
+        nom_fichier_original=fichier.filename if fichier and fichier.filename else None,
         date_publication=datetime.now(timezone.utc),
         date_limite_soumission=date_limite,
         est_publie=True,
         publie_par=current_user.professeur.id
     )
     db.session.add(devoir)
+    db.session.flush()
+    notifier_devoir_publie(aff.id, aff.matiere.nom, devoir.id)
     db.session.commit()
-    flash("Devoir publié avec succès.", "success")
+    flash("Devoir publié et accessible à tous les étudiants de cette classe.", "success")
     return redirect(url_for('espace_etudes.professeur_dashboard', aff_id=aff_id))
 
 
@@ -241,10 +341,14 @@ def publier_post():
     contenu = request.form.get('contenu')
     
     aff = AffectationEnseignement.query.get_or_404(aff_id)
+    if aff.professeur_id != current_user.professeur.id:
+        abort(403)
+    type_public = request.form.get('type_public', 'section')
     post = PostProfesseur(
         professeur_id=current_user.professeur.id,
-        affectation_id=aff.id,
-        contenu=contenu
+        affectation_id=aff.id if type_public == 'section' else None,
+        contenu=contenu,
+        type_public=type_public,
     )
     db.session.add(post)
     db.session.commit()
@@ -268,9 +372,10 @@ def commenter_post():
     db.session.commit()
     
     if current_user.role == 'professeur':
-        return redirect(url_for('espace_etudes.professeur_dashboard', aff_id=post.affectation_id))
-    else:
-        return redirect(url_for('espace_etudes.etudiant_dashboard', aff_id=post.affectation_id))
+        aff_id = post.affectation_id or request.args.get('aff_id')
+        return redirect(url_for('espace_etudes.professeur_dashboard', aff_id=aff_id, tab='posts'))
+    aff_id = post.affectation_id or request.form.get('aff_id')
+    return redirect(url_for('espace_etudes.etudiant_dashboard', aff_id=aff_id, tab='posts'))
 
 
 # --- ACTIONS ETUDIANT ---
@@ -284,21 +389,34 @@ def soumettre_devoir():
     
     devoir = Devoir.query.get_or_404(devoir_id)
     
-    file_path, file_type = save_file(fichier, 'soumissions')
-    if not file_path:
+    if not fichier or not allowed_file(fichier.filename, 'all'):
         flash("Veuillez sélectionner un fichier valide (PDF, Word).", "danger")
         return redirect(url_for('espace_etudes.etudiant_dashboard', aff_id=devoir.affectation_id))
 
-    soumission = SoumissionDevoir(
-        devoir_id=devoir.id,
-        etudiant_id=current_user.etudiant.id,
-        fichier_url=file_path,
-        type_fichier=file_type,
-        nom_fichier_original=fichier.filename,
-        statut='soumis',
-        date_soumission=datetime.now(timezone.utc)
-    )
-    db.session.add(soumission)
+    file_path = sauvegarder_fichier(fichier, 'soumissions')
+    if not file_path:
+        flash("Échec de l'enregistrement du fichier.", "danger")
+        return redirect(url_for('espace_etudes.etudiant_dashboard', aff_id=devoir.affectation_id))
+    file_type = type_fichier_pedagogique(fichier.filename)
+
+    existing = SoumissionDevoir.query.filter_by(
+        devoir_id=devoir.id, etudiant_id=current_user.etudiant.id
+    ).first()
+    if existing:
+        existing.fichier_url = file_path
+        existing.type_fichier = file_type
+        existing.nom_fichier_original = fichier.filename
+        existing.date_soumission = datetime.now(timezone.utc)
+    else:
+        soumission = SoumissionDevoir(
+            devoir_id=devoir.id,
+            etudiant_id=current_user.etudiant.id,
+            fichier_url=file_path,
+            type_fichier=file_type,
+            nom_fichier_original=fichier.filename,
+            date_soumission=datetime.now(timezone.utc),
+        )
+        db.session.add(soumission)
     db.session.commit()
     flash("Devoir soumis avec succès.", "success")
     return redirect(url_for('espace_etudes.etudiant_dashboard', aff_id=devoir.affectation_id))
@@ -309,19 +427,121 @@ def soumettre_devoir():
 @login_required
 def telecharger_fichier(type, id):
     obj = None
-    if type == 'cours': obj = Cours.query.get_or_404(id)
-    elif type == 'devoir': obj = Devoir.query.get_or_404(id)
-    elif type == 'soumission': obj = SoumissionDevoir.query.get_or_404(id)
-    else: abort(404)
+    aff = None
+    if type == 'cours':
+        obj = Cours.query.get_or_404(id)
+        aff = obj.affectation
+    elif type == 'devoir':
+        obj = Devoir.query.get_or_404(id)
+        aff = obj.affectation
+    elif type == 'soumission':
+        obj = SoumissionDevoir.query.get_or_404(id)
+        aff = obj.devoir.affectation
+    else:
+        abort(404)
 
-    if not obj.fichier_url: abort(404)
-    upload_dir = current_app.config['UPLOAD_FOLDER']
-    full_path = os.path.join(upload_dir, obj.fichier_url)
-    if not os.path.exists(full_path): abort(404)
-    
-    directory = os.path.dirname(full_path)
-    filename = os.path.basename(full_path)
-    return send_from_directory(directory, filename, as_attachment=True, download_name=obj.nom_fichier_original)
+    if not obj.fichier_url:
+        abort(404)
+
+    if current_user.role == 'professeur':
+        if aff.professeur_id != current_user.professeur.id:
+            abort(403)
+    elif current_user.role == 'etudiant':
+        etu = current_user.etudiant
+        if type == 'soumission':
+            if obj.etudiant_id != etu.id:
+                abort(403)
+        elif not _etudiant_peut_acceder_affectation(etu, aff):
+            abort(403)
+    else:
+        abort(403)
+
+    chemin = chemin_absolu_upload(obj.fichier_url)
+    if not chemin or not os.path.exists(chemin):
+        abort(404)
+
+    download_name = obj.nom_fichier_original or os.path.basename(chemin)
+    return send_file(chemin, as_attachment=True, download_name=download_name)
+
+
+# --- MESSAGES (Espace Études) ---
+@espace_etudes_bp.route('/messages')
+@login_required
+def messages_list():
+    if current_user.role == 'professeur':
+        prof_uid = current_user.id
+        convs = Conversation.query.filter_by(
+            type='cours_etudiant_professeur',
+            participant_b_id=prof_uid,
+            est_active=True,
+        ).order_by(Conversation.date_dernier_message.desc()).all()
+    elif current_user.role == 'etudiant':
+        convs = Conversation.query.filter_by(
+            type='cours_etudiant_professeur',
+            participant_a_id=current_user.id,
+            est_active=True,
+        ).order_by(Conversation.date_dernier_message.desc()).all()
+    else:
+        return redirect(url_for('espace_etudes.login'))
+
+    return render_template('espace_etudes/messages.html',
+                           conversations=convs,
+                           messages_non_lus=_messages_non_lus_count(current_user.id))
+
+
+@espace_etudes_bp.route('/messages/<int:conv_id>')
+@login_required
+def messages_thread(conv_id):
+    conv = Conversation.query.get_or_404(conv_id)
+    if current_user.id not in (conv.participant_a_id, conv.participant_b_id):
+        abort(403)
+
+    for msg in conv.messages:
+        if msg.expediteur_utilisateur_id != current_user.id and not msg.est_lu:
+            msg.est_lu = True
+            msg.date_lecture = datetime.now(timezone.utc)
+    db.session.commit()
+
+    cours = conv.cours
+    etu = conv.etudiant_concerne
+    msgs = conv.messages.order_by(Message.date_envoi).all()
+
+    return render_template('espace_etudes/message_thread.html',
+                           conversation=conv, cours=cours, etudiant=etu, msgs=msgs,
+                           messages_non_lus=_messages_non_lus_count(current_user.id))
+
+
+@espace_etudes_bp.route('/messages/envoyer', methods=['POST'])
+@login_required
+def messages_envoyer():
+    conv_id = int(request.form['conversation_id'])
+    contenu = request.form.get('contenu', '').strip()
+    if not contenu:
+        flash('Message vide.', 'warning')
+        return redirect(request.referrer or url_for('espace_etudes.messages_list'))
+
+    conv = Conversation.query.get_or_404(conv_id)
+    if current_user.id not in (conv.participant_a_id, conv.participant_b_id):
+        abort(403)
+
+    msg = Message(
+        conversation_id=conv.id,
+        expediteur_utilisateur_id=current_user.id,
+        expediteur_role=current_user.role,
+        contenu=contenu,
+    )
+    db.session.add(msg)
+    conv.date_dernier_message = datetime.now(timezone.utc)
+    db.session.flush()
+
+    cours_titre = conv.cours.titre if conv.cours else 'Cours'
+    if current_user.role == 'etudiant':
+        notifier_message_cours(conv.id, conv.participant_b_id, 'professeur', cours_titre)
+    else:
+        notifier_message_cours(conv.id, conv.participant_a_id, 'etudiant', cours_titre)
+
+    db.session.commit()
+    return redirect(url_for('espace_etudes.messages_thread', conv_id=conv.id))
 
 
 # --- CHAT PAR COURS ---
@@ -351,8 +571,8 @@ def chat_cours(cours_id):
             )
             db.session.add(conv)
             db.session.commit()
-            
-        return render_template('espace_etudes/chat_cours.html', cours=cours, conversation=conv)
+
+        return redirect(url_for('espace_etudes.messages_thread', conv_id=conv.id))
         
     elif current_user.role == 'professeur':
         # Pour le prof, on affiche la liste des étudiants ayant posé une question sur ce cours
@@ -366,15 +586,8 @@ def chat_cours(cours_id):
             ).first()
             if not conv:
                 abort(404)
-            return render_template('espace_etudes/chat_cours.html', cours=cours, conversation=conv)
-        else:
-            conversations = Conversation.query.filter_by(
-                type='cours_etudiant_professeur',
-                cours_id=cours.id
-            ).all()
-            # Pour faire simple, on va passer la liste des conversations au template professeur
-            # On peut réutiliser le dashboard ou faire une page simple
-            return render_template('espace_etudes/chat_liste.html', cours=cours, conversations=conversations)
+            return redirect(url_for('espace_etudes.messages_thread', conv_id=conv.id))
+        return redirect(url_for('espace_etudes.messages_list'))
 
 @espace_etudes_bp.route('/chat/envoyer', methods=['POST'])
 @login_required
@@ -401,11 +614,16 @@ def envoyer_message_cours():
     )
     db.session.add(msg)
     conv.date_dernier_message = datetime.now(timezone.utc)
-    db.session.commit()
-    
+    db.session.flush()
+    cours_titre = cours.titre
     if current_user.role == 'etudiant':
-        return redirect(url_for('espace_etudes.chat_cours', cours_id=cours.id))
+        notifier_message_cours(conv.id, conv.participant_b_id, 'professeur', cours_titre)
     else:
-        return redirect(url_for('espace_etudes.chat_cours', cours_id=cours.id, etudiant_id=conv.participant_a_id))
+        notifier_message_cours(conv.id, conv.participant_a_id, 'etudiant', cours_titre)
+    db.session.commit()
+
+    if current_user.role == 'etudiant':
+        return redirect(url_for('espace_etudes.messages_thread', conv_id=conv.id))
+    return redirect(url_for('espace_etudes.messages_thread', conv_id=conv.id))
 
 

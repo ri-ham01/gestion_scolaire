@@ -89,7 +89,7 @@ with app.app_context():
         try:
             # Create Etudiant
             user_etu, pwd = creer_compte_etudiant(
-                nom=nom, prenom=prenom, specialite_code="INFO", niveau_ordre=1, annee_debut=2026
+                nom=nom, prenom=prenom, specialite_code="INFO", niveau_ordre=1, annee_debut=2026, groupe_suffix="A"
             )
             db.session.flush()
             
@@ -106,15 +106,17 @@ with app.app_context():
                 nom=parent_nom, prenom=parent_prenom, email=parent_email, telephone="0000000000"
             )
             # Force parent password
-            user_parent.password_hash = generate_password_hash('12345')
+            from werkzeug.security import generate_password_hash
+            user_parent.password_hash = generate_password_hash('123')
             db.session.flush()
             
             # Link Parent and Etudiant
             from app.models.profiles import ParentEtudiant
-            lien = ParentEtudiant(parent_id=user_parent.parent.id, etudiant_id=user_etu.etudiant.id, relation="Père")
+            lien = ParentEtudiant(parent_id=user_parent.parent.id, etudiant_id=user_etu.etudiant.id, lien="pere")
             db.session.add(lien)
             
         except Exception as e:
+            db.session.rollback()
             print(f"Skipping {prenom} {nom} due to error: {str(e)}")
             
     db.session.commit()

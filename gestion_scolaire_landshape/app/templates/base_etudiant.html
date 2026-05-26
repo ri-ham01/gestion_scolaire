@@ -147,12 +147,9 @@
     </a>
 
     <div class="sidebar-divider"></div>
-    <div class="sidebar-section-label">Études</div>
-    <a href="{{ url_for('etudiant.espace_cours') }}" class="sidebar-link {% if 'cours' in request.endpoint %}active{% endif %}">
-      <i class="fa-solid fa-book-open"></i> Mes Cours
-    </a>
-    <a href="{{ url_for('etudiant.devoirs') }}" class="sidebar-link {% if 'devoir' in request.endpoint %}active{% endif %}">
-      <i class="fa-solid fa-pen-ruler"></i> Mes Devoirs
+    <div class="sidebar-section-label">Espace Études</div>
+    <a href="{{ url_for('espace_etudes.etudiant_dashboard') }}" class="sidebar-link" style="color: #10b981;">
+      <i class="fa-solid fa-graduation-cap"></i> Aller à l'Espace Études
     </a>
 
     <div class="sidebar-divider"></div>
@@ -162,6 +159,9 @@
     </a>
     <a href="{{ url_for('etudiant.releve') }}" class="sidebar-link {% if request.endpoint == 'etudiant.releve' %}active{% endif %}">
       <i class="fa-solid fa-file-contract"></i> Relevés
+    </a>
+    <a href="{{ url_for('etudiant.corrections') }}" class="sidebar-link {% if request.endpoint == 'etudiant.corrections' %}active{% endif %}">
+      <i class="fa-solid fa-file-circle-check"></i> Corrections d'Examens
     </a>
 
     <div class="sidebar-divider"></div>

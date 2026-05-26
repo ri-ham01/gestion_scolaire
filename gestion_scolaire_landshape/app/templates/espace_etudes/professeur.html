@@ -2,198 +2,164 @@
 {% block title %}Espace Études — Professeur{% endblock %}
 
 {% block etudes_sidebar %}
-<div class="sidebar-section-label" style="color: var(--c-aurora-indigo);">Mes Spécialités & Matières</div>
-<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem;">
-  {% for aff in affectations %}
-  <a href="{{ url_for('espace_etudes.professeur_dashboard', aff_id=aff.id) }}" 
-     class="sidebar-link {% if selected_aff and selected_aff.id == aff.id %}active{% endif %}"
-     style="{% if selected_aff and selected_aff.id == aff.id %}background: rgba(139,92,246,0.15); border-color: rgba(139,92,246,0.3); color: #fff;{% endif %}">
-    <i class="fa-solid fa-book"></i>
-    <div style="display: flex; flex-direction: column; line-height: 1.2;">
-      <span style="font-weight: 600; font-size: 0.9rem;">{{ aff.matiere.nom }}</span>
-      <span style="font-size: 0.75rem; color: var(--text-muted);">{{ aff.section.specialite.code }} - Niv. {{ aff.section.niveau.ordre }} - S{{ aff.semestre_id }}</span>
-    </div>
-  </a>
-  {% else %}
-  <div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem; text-align: center;">
-    Aucune matière affectée pour le moment.
-  </div>
-  {% endfor %}
-</div>
+<div style="font-size:0.7rem;text-transform:uppercase;color:#64748b;margin:1rem 0 0.5rem;padding-left:0.5rem;">Mes matières</div>
+{% for aff in affectations %}
+<a href="{{ url_for('espace_etudes.professeur_dashboard', aff_id=aff.id, semestre_id=semestre_id) }}"
+   class="etudes-nav-link {% if selected_aff and selected_aff.id == aff.id %}active{% endif %}">
+  <i class="fa-solid fa-book"></i>
+  <span>{{ aff.matiere.nom }}</span>
+</a>
+{% else %}
+<p style="font-size:0.85rem;color:#64748b;padding:0 0.5rem;">Aucune affectation pour ce semestre.</p>
+{% endfor %}
 {% endblock %}
 
 {% block etudes_content %}
-<div class="etudiant-page-header" data-aos="fade-down">
-  <div class="header-left">
-    <h1 style="font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #fff, var(--c-aurora-indigo)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-      <i class="fa-solid fa-chalkboard-user" style="color: #fff; -webkit-text-fill-color: initial;"></i> Espace Professeur
-    </h1>
-    <p style="color: var(--text-muted); font-size: 1.1rem; margin-top: 0.5rem;">Gérez vos cours, devoirs et intéractions avec les étudiants.</p>
-  </div>
+<div class="gc-header">
+  <h1>{% if selected_aff %}{{ selected_aff.matiere.nom }}{% else %}Mes classes{% endif %}</h1>
+  <p>{% if selected_aff %}{{ selected_aff.section.label }} — Semestre {{ selected_aff.semestre.numero }}{% else %}Sélectionnez une matière ou publiez du contenu{% endif %}</p>
 </div>
 
-{% if selected_aff %}
-<div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-bottom: 2rem;" data-aos="fade-up">
-  
-  <!-- UPLOAD COURS -->
-  <div class="card glass-card" style="border-top: 3px solid var(--c-nova-cyan);">
-    <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-upload" style="color: var(--c-nova-cyan);"></i> Ajouter un Cours</h3>
-    <form action="{{ url_for('espace_etudes.publier_cours') }}" method="POST" enctype="multipart/form-data">
-      <input type="hidden" name="aff_id" value="{{ selected_aff.id }}">
-      <div class="form-group mb-2">
-        <input type="text" name="titre" class="form-control" placeholder="Titre du cours" required>
-      </div>
-      <div class="form-group mb-2">
-        <input type="file" name="fichier" class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
-        <small class="text-muted">Formats acceptés : PDF, Word, JPG, PNG.</small>
-      </div>
-      <button type="submit" class="btn btn-primary btn-block btn-sm"><i class="fa-solid fa-paper-plane"></i> Publier le cours</button>
-    </form>
-  </div>
-
-  <!-- UPLOAD DEVOIR -->
-  <div class="card glass-card" style="border-top: 3px solid #f59e0b;">
-    <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-file-pen" style="color: #f59e0b;"></i> Ajouter un Devoir</h3>
-    <form action="{{ url_for('espace_etudes.publier_devoir') }}" method="POST" enctype="multipart/form-data">
-      <input type="hidden" name="aff_id" value="{{ selected_aff.id }}">
-      <div class="form-group mb-2">
-        <input type="text" name="titre" class="form-control" placeholder="Titre du devoir" required>
-      </div>
-      <div class="form-group mb-2" style="display: flex; gap: 0.5rem;">
-        <input type="datetime-local" name="date_limite" class="form-control" required title="Date limite">
-      </div>
-      <div class="form-group mb-2">
-        <input type="file" name="fichier" class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-      </div>
-      <button type="submit" class="btn btn-warning btn-block btn-sm" style="color: #fff;"><i class="fa-solid fa-paper-plane"></i> Publier le devoir</button>
-    </form>
-  </div>
+<div class="gc-filters">
+  <form method="GET" style="display:flex;gap:0.5rem;align-items:center;">
+    <label style="color:#94a3b8;font-size:0.9rem;">Semestre :</label>
+    <select name="semestre_id" onchange="this.form.submit()">
+      {% for s in semestres %}
+      <option value="{{ s.id }}" {% if semestre_id == s.id %}selected{% endif %}>{{ s.label }}</option>
+      {% endfor %}
+    </select>
+    {% if selected_aff %}<input type="hidden" name="aff_id" value="{{ selected_aff.id }}">{% endif %}
+  </form>
 </div>
 
-<!-- LISTE DES COURS ET DEVOIRS -->
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
-  
-  <div>
-    <!-- SECTION COURS -->
-    <div class="card glass-card mb-4">
-      <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;"><i class="fa-solid fa-book-open"></i> Cours publiés</h3>
-      <div style="display: flex; flex-direction: column; gap: 1rem;">
-        {% for cours in cours_list %}
-        <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 1rem; border-left: 3px solid var(--c-nova-cyan); display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <h4 style="margin: 0; font-size: 1.1rem;">{{ cours.titre }}</h4>
-            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">Publié le {{ cours.date_publication.strftime('%d/%m/%Y') }}</div>
-          </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <a href="{{ url_for('espace_etudes.telecharger_fichier', type='cours', id=cours.id) }}" class="btn btn-glass btn-sm" title="Télécharger"><i class="fa-solid fa-download"></i></a>
-            <!-- Le bouton de chat spécifique à ce cours -->
-            <a href="{{ url_for('espace_etudes.chat_cours', cours_id=cours.id) }}" class="btn btn-glass btn-sm" style="color: var(--c-nova-cyan);" title="Discussions sur ce cours"><i class="fa-solid fa-comments"></i> Chat</a>
-          </div>
-        </div>
-        {% else %}
-        <div style="text-align: center; color: var(--text-muted); padding: 1rem;">Aucun cours publié pour cette matière.</div>
-        {% endfor %}
-      </div>
+{% if not selected_aff %}
+<div class="gc-class-grid">
+  {% for aff in affectations %}
+  <a href="{{ url_for('espace_etudes.professeur_dashboard', aff_id=aff.id, semestre_id=semestre_id) }}" class="gc-class-card">
+    <div class="gc-class-card-top" style="background: linear-gradient(135deg, #1a73e8, #4285f4);">
+      <span style="color:#fff;font-weight:600;font-size:0.85rem;">{{ aff.section.specialite.code }}</span>
     </div>
-
-    <!-- SECTION DEVOIRS ET SOUMISSIONS -->
-    <div class="card glass-card mb-4">
-      <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;"><i class="fa-solid fa-inbox"></i> Devoirs et Soumissions</h3>
-      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        {% for devoir in devoirs_list %}
-        <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 1rem; border-left: 3px solid #f59e0b;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-            <div>
-              <h4 style="margin: 0; font-size: 1.1rem;">{{ devoir.titre }}</h4>
-              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;"><i class="fa-regular fa-clock"></i> Limite: {{ devoir.date_limite_soumission.strftime('%d/%m/%Y %H:%M') }}</div>
-            </div>
-            {% if devoir.fichier_url %}
-            <a href="{{ url_for('espace_etudes.telecharger_fichier', type='devoir', id=devoir.id) }}" class="btn btn-glass btn-sm" title="Sujet"><i class="fa-solid fa-download"></i> Sujet</a>
-            {% endif %}
-          </div>
-          
-          <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px;">
-            <h5 style="margin-bottom: 0.8rem; font-size: 0.9rem; color: var(--text-main);">Soumissions des étudiants :</h5>
-            {% set soumissions = devoir.soumissions.all() %}
-            {% if soumissions %}
-            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-              {% for s in soumissions %}
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 6px;">
-                <div style="display: flex; align-items: center; gap: 0.8rem;">
-                  <i class="fa-solid fa-user-graduate" style="color: var(--text-muted);"></i>
-                  <div>
-                    <span style="font-weight: 600; font-size: 0.9rem;">{{ s.etudiant.nom }} {{ s.etudiant.prenom }}</span>
-                    <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.5rem;">(@{{ s.etudiant.utilisateur.username }})</span>
-                  </div>
-                </div>
-                <a href="{{ url_for('espace_etudes.telecharger_fichier', type='soumission', id=s.id) }}" class="btn btn-sm btn-glass"><i class="fa-solid fa-file-arrow-down"></i> Solution</a>
-              </div>
-              {% endfor %}
-            </div>
-            {% else %}
-            <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">Aucun étudiant n'a encore soumis de solution.</div>
-            {% endif %}
-          </div>
-        </div>
-        {% else %}
-        <div style="text-align: center; color: var(--text-muted); padding: 1rem;">Aucun devoir publié.</div>
-        {% endfor %}
-      </div>
+    <div class="gc-class-card-body">
+      <h3>{{ aff.matiere.nom }}</h3>
+      <p>{{ aff.section.label }}</p>
     </div>
+  </a>
+  {% else %}
+  <div class="gc-stream-item" style="grid-column:1/-1;text-align:center;">
+    <p style="color:#94a3b8;">Aucune matière assignée. Contactez l'administration (section Affectations).</p>
   </div>
+  {% endfor %}
+</div>
 
-  <!-- SECTION MUR D'ANNONCES (POSTS) -->
-  <div>
-    <div class="card glass-card">
-      <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;"><i class="fa-solid fa-bullhorn"></i> Mur d'annonces</h3>
-      
-      <!-- Publier un post -->
-      <form action="{{ url_for('espace_etudes.publier_post') }}" method="POST" style="margin-bottom: 1.5rem;">
-        <input type="hidden" name="aff_id" value="{{ selected_aff.id }}">
-        <div class="form-group mb-2">
-          <textarea name="contenu" class="form-control" rows="3" placeholder="Écrire une annonce (ex: Absence, préparation du cours...)" required></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block btn-sm"><i class="fa-solid fa-paper-plane"></i> Publier</button>
-      </form>
+{% else %}
+<div class="gc-tabs">
+  <a href="{{ url_for('espace_etudes.professeur_dashboard', aff_id=selected_aff.id, semestre_id=semestre_id, tab='cours') }}" class="gc-tab {% if tab == 'cours' %}active{% endif %}">Cours</a>
+  <a href="{{ url_for('espace_etudes.professeur_dashboard', aff_id=selected_aff.id, semestre_id=semestre_id, tab='devoirs') }}" class="gc-tab {% if tab == 'devoirs' %}active{% endif %}">Devoirs</a>
+  <a href="{{ url_for('espace_etudes.professeur_dashboard', aff_id=selected_aff.id, semestre_id=semestre_id, tab='posts') }}" class="gc-tab {% if tab == 'posts' %}active{% endif %}">Annonces</a>
+</div>
 
-      <!-- Liste des posts -->
-      <div style="display: flex; flex-direction: column; gap: 1rem;">
-        {% for post in posts_list %}
-        <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 1rem;">
-          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">{{ post.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
-          <p style="margin-bottom: 1rem; font-size: 0.95rem; white-space: pre-wrap;">{{ post.contenu }}</p>
-          
-          <!-- Commentaires -->
-          <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.8rem;">
-            {% for c in post.commentaires %}
-            <div style="font-size: 0.85rem; margin-bottom: 0.5rem; display: flex; gap: 0.5rem;">
-              <strong style="color: {% if c.auteur_role == 'professeur' %}var(--c-aurora-indigo){% else %}var(--c-nova-cyan){% endif %};">
-                {% if c.auteur_role == 'professeur' %}Moi{% else %}Élève{% endif %} :
-              </strong>
-              <span>{{ c.contenu }}</span>
-            </div>
-            {% endfor %}
-            <form action="{{ url_for('espace_etudes.commenter_post') }}" method="POST" style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-              <input type="hidden" name="post_id" value="{{ post.id }}">
-              <input type="text" name="contenu" class="form-control" placeholder="Ajouter un commentaire..." style="padding: 0.4rem; font-size: 0.85rem;" required>
-              <button type="submit" class="btn btn-glass btn-sm"><i class="fa-solid fa-reply"></i></button>
-            </form>
-          </div>
-        </div>
-        {% else %}
-        <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">Aucune annonce sur ce mur.</div>
-        {% endfor %}
-      </div>
+{% if tab == 'cours' %}
+<div class="gc-upload-panel">
+  <h3><i class="fa-solid fa-cloud-arrow-up"></i> Publier un cours (PDF / Word)</h3>
+  <form action="{{ url_for('espace_etudes.publier_cours') }}" method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="aff_id" value="{{ selected_aff.id }}">
+    <div class="gc-form-row">
+      <input type="text" name="titre" placeholder="Titre du cours" required>
+      <input type="file" name="fichier" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
+      <button type="submit" class="gc-btn gc-btn-primary"><i class="fa-solid fa-paper-plane"></i> Publier</button>
     </div>
-  </div>
+  </form>
+</div>
 
+<h3 style="color:#e2e8f0;margin-bottom:1rem;font-size:1.1rem;"><i class="fa-solid fa-clock-rotate-left"></i> Historique des cours ({{ cours_list|length }})</h3>
+{% for cours in cours_list %}
+<div class="gc-stream-item">
+  <h4><i class="fa-solid fa-file-lines" style="color:#60a5fa;"></i> {{ cours.titre }}</h4>
+  <div class="gc-stream-meta">Publié le {% if cours.date_publication %}{{ cours.date_publication.strftime('%d/%m/%Y à %H:%M') }}{% else %}—{% endif %}
+    {% if cours.nom_fichier_original %} · {{ cours.nom_fichier_original }}{% endif %}
+  </div>
+  <div class="gc-actions-row">
+    {% if cours.fichier_url %}
+    <a href="{{ url_for('espace_etudes.telecharger_fichier', type='cours', id=cours.id) }}" class="gc-btn gc-btn-primary"><i class="fa-solid fa-download"></i> Télécharger</a>
+    {% endif %}
+    <a href="{{ url_for('espace_etudes.chat_cours', cours_id=cours.id) }}" class="gc-btn gc-btn-outline"><i class="fa-solid fa-comments"></i> Messages élèves</a>
+  </div>
 </div>
 {% else %}
-<div class="card glass-card" style="text-align: center; padding: 4rem 2rem;">
-  <i class="fa-solid fa-arrow-left fa-3x mb-3" style="color: var(--text-muted);"></i>
-  <h2>Sélectionnez une matière</h2>
-  <p style="color: var(--text-muted);">Veuillez choisir une spécialité et matière dans le menu de gauche pour commencer à gérer vos cours et devoirs.</p>
-</div>
-{% endif %}
+<div class="gc-stream-item"><p style="color:#94a3b8;margin:0;">Aucun cours publié pour cette matière.</p></div>
+{% endfor %}
 
+{% elif tab == 'devoirs' %}
+<div class="gc-upload-panel">
+  <h3><i class="fa-solid fa-file-pen"></i> Publier un devoir</h3>
+  <form action="{{ url_for('espace_etudes.publier_devoir') }}" method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="aff_id" value="{{ selected_aff.id }}">
+    <div class="gc-form-row">
+      <input type="text" name="titre" placeholder="Titre du devoir" required>
+      <input type="datetime-local" name="date_limite" required>
+      <input type="file" name="fichier" accept=".pdf,.doc,.docx">
+      <button type="submit" class="gc-btn gc-btn-primary" style="background:#f59e0b;"><i class="fa-solid fa-paper-plane"></i> Publier</button>
+    </div>
+  </form>
+</div>
+
+<h3 style="color:#e2e8f0;margin-bottom:1rem;"><i class="fa-solid fa-inbox"></i> Devoirs et soumissions</h3>
+{% for devoir in devoirs_list %}
+<div class="gc-stream-item">
+  <h4><i class="fa-solid fa-clipboard-list" style="color:#fbbf24;"></i> {{ devoir.titre }}</h4>
+  <div class="gc-stream-meta">Limite : {{ devoir.date_limite_soumission.strftime('%d/%m/%Y %H:%M') }}</div>
+  {% if devoir.fichier_url %}
+  <a href="{{ url_for('espace_etudes.telecharger_fichier', type='devoir', id=devoir.id) }}" class="gc-btn gc-btn-outline"><i class="fa-solid fa-download"></i> Sujet</a>
+  {% endif %}
+  <div class="gc-submissions">
+    <strong style="color:#cbd5e1;font-size:0.9rem;">Soumissions des étudiants</strong>
+    {% set soumissions = devoir.soumissions.all() %}
+    {% if soumissions %}
+    {% for s in soumissions %}
+    <div class="gc-submission-row">
+      <div>
+        <strong>{{ s.etudiant.nom }} {{ s.etudiant.prenom }}</strong>
+        <span style="color:#64748b;">@{{ s.etudiant.utilisateur.username }}</span>
+        <div style="font-size:0.75rem;color:#64748b;">{{ s.date_soumission.strftime('%d/%m/%Y %H:%M') }}</div>
+      </div>
+      <a href="{{ url_for('espace_etudes.telecharger_fichier', type='soumission', id=s.id) }}" class="gc-btn gc-btn-primary"><i class="fa-solid fa-file-arrow-down"></i> Solution</a>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p style="color:#64748b;font-size:0.85rem;margin:0.5rem 0 0;">Aucune soumission pour le moment.</p>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<div class="gc-stream-item"><p style="color:#94a3b8;margin:0;">Aucun devoir publié.</p></div>
+{% endfor %}
+
+{% else %}
+<div class="gc-upload-panel">
+  <h3><i class="fa-solid fa-bullhorn"></i> Publier une annonce</h3>
+  <form action="{{ url_for('espace_etudes.publier_post') }}" method="POST">
+    <input type="hidden" name="aff_id" value="{{ selected_aff.id }}">
+    <div class="gc-form-row">
+      <select name="type_public">
+        <option value="section">Cette matière / classe uniquement</option>
+        <option value="tous">Tous mes étudiants</option>
+      </select>
+    </div>
+    <textarea name="contenu" rows="3" placeholder="Annonce, absence, rappel..." required style="width:100%;margin-bottom:0.75rem;padding:0.75rem;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.2);color:#e2e8f0;"></textarea>
+    <button type="submit" class="gc-btn gc-btn-primary"><i class="fa-solid fa-paper-plane"></i> Publier</button>
+  </form>
+</div>
+{% for post in posts_list %}
+<div class="gc-stream-item">
+  <div class="gc-stream-meta">{{ post.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+  <p style="white-space:pre-wrap;color:#e2e8f0;">{{ post.contenu }}</p>
+  {% for c in post.commentaires %}
+  <div style="font-size:0.85rem;margin-top:0.5rem;padding-left:0.75rem;border-left:2px solid #334155;">
+    <strong>{% if c.auteur_role == 'professeur' %}Prof{% else %}Élève{% endif %} :</strong> {{ c.contenu }}
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+{% endif %}
+{% endif %}
 {% endblock %}

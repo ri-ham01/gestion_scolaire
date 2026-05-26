@@ -1,0 +1,36 @@
+{% extends "espace_etudes/layout.html" %}
+{% block title %}Messages — Espace Études{% endblock %}
+
+{% block etudes_content %}
+<div class="gc-header">
+  <h1><i class="fa-solid fa-envelope"></i> Messages</h1>
+  <p>Conversations liées à vos cours — questions et réponses avec votre professeur ou vos élèves.</p>
+</div>
+
+{% if conversations %}
+<div class="gc-msg-list">
+  {% for conv in conversations %}
+  <a href="{{ url_for('espace_etudes.messages_thread', conv_id=conv.id) }}" class="gc-msg-item">
+    <div style="font-weight:600;color:#f1f5f9;margin-bottom:0.25rem;">
+      {% if conv.cours %}{{ conv.cours.titre }}{% else %}Conversation{% endif %}
+    </div>
+    <div style="font-size:0.85rem;color:#94a3b8;">
+      {% if current_user.role == 'professeur' and conv.etudiant_concerne %}
+      {{ conv.etudiant_concerne.nom }} {{ conv.etudiant_concerne.prenom }} (@{{ conv.etudiant_concerne.utilisateur.username }})
+      {% elif current_user.role == 'etudiant' %}
+      Professeur — {{ conv.cours.affectation.matiere.nom if conv.cours else '' }}
+      {% endif %}
+    </div>
+    <div style="font-size:0.75rem;color:#64748b;margin-top:0.35rem;">
+      {{ conv.date_dernier_message.strftime('%d/%m/%Y %H:%M') if conv.date_dernier_message else '' }}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="gc-stream-item" style="text-align:center;padding:3rem;">
+  <i class="fa-solid fa-inbox fa-3x" style="color:#475569;margin-bottom:1rem;"></i>
+  <p style="color:#94a3b8;margin:0;">Aucun message. Ouvrez un cours et cliquez sur « Message au professeur » pour démarrer une conversation.</p>
+</div>
+{% endif %}
+{% endblock %}

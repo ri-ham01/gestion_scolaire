@@ -1,0 +1,42 @@
+{% extends "espace_etudes/layout.html" %}
+{% block title %}Conversation — Espace Études{% endblock %}
+
+{% block etudes_content %}
+<a href="{{ url_for('espace_etudes.messages_list') }}" class="gc-btn gc-btn-outline" style="margin-bottom:1rem;display:inline-flex;"><i class="fa-solid fa-arrow-left"></i> Retour aux messages</a>
+
+<div class="gc-thread">
+  <div class="gc-thread-header">
+  {% if cours %}
+    <h2 style="margin:0 0 0.5rem;font-size:1.2rem;color:#f8fafc;"><i class="fa-solid fa-book"></i> {{ cours.titre }}</h2>
+    <p style="margin:0;font-size:0.9rem;color:#94a3b8;">Matière : {{ cours.affectation.matiere.nom }} — {{ cours.affectation.section.label }}</p>
+  {% endif %}
+  {% if current_user.role == 'professeur' and etudiant %}
+    <div style="margin-top:0.75rem;padding:0.75rem;background:rgba(26,115,232,0.1);border-radius:8px;">
+      <strong style="color:#93c5fd;">Élève :</strong>
+      <span style="color:#e2e8f0;">{{ etudiant.nom }} {{ etudiant.prenom }}</span>
+      <span style="color:#64748b;"> — @{{ etudiant.utilisateur.username }}</span>
+    </div>
+  {% endif %}
+  </div>
+
+  <div class="gc-thread-messages">
+    {% for msg in msgs %}
+    <div class="gc-bubble {% if msg.expediteur_utilisateur_id == current_user.id %}mine{% else %}theirs{% endif %}">
+      <div style="font-size:0.7rem;opacity:0.8;margin-bottom:0.2rem;">
+        {% if msg.expediteur_role == 'professeur' %}Professeur{% else %}Étudiant{% endif %}
+        · {{ msg.date_envoi.strftime('%d/%m %H:%M') }}
+      </div>
+      {{ msg.contenu }}
+    </div>
+    {% else %}
+    <p style="color:#64748b;text-align:center;">Aucun message. Envoyez le premier.</p>
+    {% endfor %}
+  </div>
+
+  <form class="gc-thread-form" action="{{ url_for('espace_etudes.messages_envoyer') }}" method="POST">
+    <input type="hidden" name="conversation_id" value="{{ conversation.id }}">
+    <input type="text" name="contenu" placeholder="Écrire un message..." required autocomplete="off">
+    <button type="submit" class="gc-btn gc-btn-primary"><i class="fa-solid fa-paper-plane"></i></button>
+  </form>
+</div>
+{% endblock %}

@@ -107,8 +107,10 @@ with app.app_context():
                 continue
                 
             try:
+                groupe_suffix = 'A' if section.code_section == 'G1' else 'B'
                 user_etu, pwd = creer_compte_etudiant(
-                    nom=nom, prenom=prenom, specialite_code="MATH", niveau_ordre=1, annee_debut=2026
+                    nom=nom, prenom=prenom, specialite_code="MATH", niveau_ordre=1, annee_debut=2026,
+                    groupe_suffix=groupe_suffix
                 )
                 db.session.flush()
                 # Inscription

@@ -31,10 +31,11 @@
     <table class="glass-table">
       <thead>
         <tr>
-          <th>Matricule</th>
           <th>Étudiant</th>
           <th>Username</th>
-          <th style="text-align: center;">Sexe</th>
+          <th>Date de Naiss.</th>
+          <th>Lieu de Naiss.</th>
+          <th>Spécialité</th>
           <th style="text-align: center;">Statut</th>
           <th style="text-align: right;">Actions</th>
         </tr>
@@ -42,13 +43,17 @@
       <tbody>
         {% for etu in etus %}
         <tr>
-          <td style="font-family: var(--font-mono); color: var(--text-muted);">{{ etu.matricule }}</td>
           <td><strong>{{ etu.nom }} {{ etu.prenom }}</strong></td>
           <td>{{ etu.utilisateur.username }}</td>
-          <td style="text-align: center;">
-            {% if etu.sexe == 'M' %}<i class="fa-solid fa-mars" style="color:var(--c-nova-cyan);"></i>
-            {% elif etu.sexe == 'F' %}<i class="fa-solid fa-venus" style="color:var(--s-warning);"></i>
-            {% else %}-{% endif %}
+          <td>{{ etu.date_naissance.strftime('%d/%m/%Y') if etu.date_naissance else '—' }}</td>
+          <td>{{ etu.lieu_naissance or '—' }}</td>
+          <td>
+            {% set ins = etu.inscriptions.all() %}
+            {% if ins %}
+                {{ ins[-1].section.specialite.nom }}
+            {% else %}
+                —
+            {% endif %}
           </td>
           <td style="text-align: center;">
             {% if etu.est_actif %}
@@ -59,6 +64,9 @@
           </td>
           <td style="text-align: right;">
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+              <a href="{{ url_for('admin.modifier_etudiant', etu_id=etu.id) }}" class="btn btn-primary btn-sm" title="Modifier" style="padding: 0.4rem 0.8rem; border-radius: 6px;">
+                <i class="fa-solid fa-edit"></i>
+              </a>
               {% if etu.est_actif %}
               <form action="{{ url_for('admin.supprimer_etudiant', etu_id=etu.id) }}" method="POST"
                 onsubmit="return confirm('Désactiver cet étudiant ?');">
@@ -71,7 +79,7 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+          <td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">
             <i class="fa-solid fa-users-slash fa-2x mb-1"></i><br>Aucun étudiant trouvé.
           </td>
         </tr>

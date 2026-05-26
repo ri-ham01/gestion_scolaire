@@ -13,10 +13,17 @@
 
   <!-- Liste des Spécialités -->
   <div class="card glass-card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
       <h3 style="margin: 0; color: var(--c-nova-cyan);"><i class="fa-solid fa-graduation-cap"></i> Spécialités</h3>
-      <button class="btn btn-primary btn-sm" onclick="document.getElementById('modalAjouterSpe').showModal()" style="border-radius: 8px;"><i
-          class="fa-solid fa-plus"></i> Nouvelle Spécialité</button>
+      <div style="display: flex; gap: 0.5rem;">
+        <form method="GET" action="{{ url_for('admin.specialites') }}" class="search-form" style="display: flex; gap: 0.5rem;">
+            <input type="text" name="q" value="{{ q }}" placeholder="Rechercher (Code, Nom)..."
+                   class="form-input" style="padding: 0.4rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: #fff;">
+            <button type="submit" class="btn btn-primary btn-sm" style="border-radius: 8px;"><i class="fa-solid fa-search"></i></button>
+            {% if q %}<a href="{{ url_for('admin.specialites') }}" class="btn danger btn-sm" style="border-radius: 8px;"><i class="fa-solid fa-xmark"></i></a>{% endif %}
+        </form>
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('modalAjouterSpe').showModal()" style="border-radius: 8px;"><i class="fa-solid fa-plus"></i> Nouvelle Spécialité</button>
+      </div>
     </div>
 
     <div class="glass-table-container">
@@ -42,6 +49,7 @@
               {% endif %}
             </td>
             <td style="text-align: right;">
+              <a href="{{ url_for('admin.specialite_matieres', spe_id=spe.id) }}" class="btn btn-sm" style="background: rgba(255,255,255,0.1); color: #fff; padding: 0.4rem 0.8rem; border-radius: 6px;" title="Gérer les matières"><i class="fa-solid fa-book"></i> Matières</a>
               {% if spe.est_active %}
               <form action="{{ url_for('admin.supprimer_specialite', spe_id=spe.id) }}" method="POST"
                 onsubmit="return confirm('Désactiver cette spécialité ?');" style="display:inline;">

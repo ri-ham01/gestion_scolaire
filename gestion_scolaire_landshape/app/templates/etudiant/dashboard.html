@@ -9,34 +9,6 @@
   </div>
 </div>
 
-<!-- KPIs -->
-<div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 2rem;" data-aos="fade-up">
-  <div class="card glass-card" style="border-top: 3px solid var(--c-nova-cyan);">
-    <div class="feature-icon icon-cyan" style="background: rgba(6,182,212,0.15); color: var(--c-nova-cyan); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 1.4rem; margin-bottom: 1rem;"><i class="fa-solid fa-book-open"></i></div>
-    <h3 style="font-size: 1.6rem; margin-bottom: 0.2rem;">Mes Cours</h3>
-    <p style="color: var(--text-muted); font-size: 0.85rem;">Accès rapide aux ressources</p>
-    <a href="{{ url_for('etudiant.espace_cours') }}" class="btn btn-sm btn-glass" style="margin-top: 1rem; width: 100%;">Voir <i class="fa-solid fa-arrow-right"></i></a>
-  </div>
-  <div class="card glass-card" style="border-top: 3px solid var(--c-aurora-indigo);">
-    <div class="feature-icon icon-indigo" style="background: rgba(139,92,246,0.15); color: #8b5cf6; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 1.4rem; margin-bottom: 1rem;"><i class="fa-solid fa-star"></i></div>
-    <h3 style="font-size: 1.6rem; margin-bottom: 0.2rem;">Résultats</h3>
-    <p style="color: var(--text-muted); font-size: 0.85rem;">Consulter mon évolution</p>
-    <a href="{{ url_for('etudiant.notes') }}" class="btn btn-sm btn-glass" style="margin-top: 1rem; width: 100%;">Notes <i class="fa-solid fa-arrow-right"></i></a>
-  </div>
-  <div class="card glass-card" style="border-top: 3px solid #f59e0b;">
-    <div class="feature-icon icon-amber" style="background: rgba(245,158,11,0.15); color: #f59e0b; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 1.4rem; margin-bottom: 1rem;"><i class="fa-solid fa-file-pen"></i></div>
-    <h3 style="font-size: 1.6rem; margin-bottom: 0.2rem;">Devoirs</h3>
-    <p style="color: var(--text-muted); font-size: 0.85rem;">Travaux à rendre</p>
-    <a href="{{ url_for('etudiant.devoirs') }}" class="btn btn-sm btn-glass" style="margin-top: 1rem; width: 100%;">Devoirs <i class="fa-solid fa-arrow-right"></i></a>
-  </div>
-  <div class="card glass-card" style="border-top: 3px solid #ec4899;">
-    <div class="feature-icon icon-pink" style="background: rgba(236,72,153,0.15); color: #ec4899; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 1.4rem; margin-bottom: 1rem;"><i class="fa-solid fa-bell"></i></div>
-    <h3 style="font-size: 1.6rem; margin-bottom: 0.2rem;">{{ notifs_count }}</h3>
-    <p style="color: var(--text-muted); font-size: 0.85rem;">Notifications non lues</p>
-    <a href="#" class="btn btn-sm btn-glass" style="margin-top: 1rem; width: 100%;">Ouvrir <i class="fa-solid fa-arrow-right"></i></a>
-  </div>
-</div>
-
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start;">
 
   <!-- Main Content -->
@@ -51,43 +23,29 @@
 
     <div class="card glass-card" style="margin-bottom: 2rem;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h3 style="color: var(--c-nova-cyan);"><i class="fa-solid fa-chalkboard"></i> Mes Classes</h3>
-        <form method="GET" style="display: flex; gap: 0.5rem;">
-          <select name="annee_id" class="btn btn-sm btn-glass" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.25rem 0.5rem; border-radius: 6px;">
-            {% for a in annees %}
-            <option value="{{ a.id }}" {% if a.id == annee_id %}selected{% endif %}>{{ a.label }}</option>
-            {% endfor %}
-          </select>
-          <select name="sem" class="btn btn-sm btn-glass" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.25rem 0.5rem; border-radius: 6px;">
-            <option value="1" {% if sem_num == 1 %}selected{% endif %}>S1</option>
-            <option value="2" {% if sem_num == 2 %}selected{% endif %}>S2</option>
-          </select>
-          <button type="submit" class="btn btn-sm btn-primary">Filtrer</button>
-        </form>
+        <h3 style="color: var(--c-nova-cyan);"><i class="fa-solid fa-calendar-days"></i> Emploi du Temps</h3>
       </div>
-
-      <div class="dashboard-grid" style="margin-top: 1rem;">
-        {% for aff in affs %}
-        <a href="{{ url_for('etudiant.sujet', aff_id=aff.id) }}" class="subject-card bg-gradient-{{ loop.cycle('1', '2', '3', '4', '5') }}">
-          <div class="subject-card-header">
-            <h3 class="subject-card-title">{{ aff.matiere.nom }}</h3>
-            <p class="subject-card-subtitle">{{ aff.professeur.prenom }} {{ aff.professeur.nom }}</p>
-          </div>
-          <div class="subject-card-body">
-            <div class="subject-card-teacher">
-              <i class="fa-solid fa-layer-group"></i> {{ aff.section.nom }}
-            </div>
-          </div>
-          <div class="subject-card-footer">
-            <span class="subject-icon-btn" title="Ouvrir"><i class="fa-solid fa-arrow-right"></i></span>
-          </div>
+      <div style="text-align: center; padding: 2rem; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+        <i class="fa-solid fa-file-pdf fa-3x" style="color: #f59e0b; margin-bottom: 1rem;"></i>
+        <h4>Télécharger l'Emploi du Temps</h4>
+        <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 1.5rem;">Consultez votre emploi du temps pour l'année scolaire en cours.</p>
+        <a href="{{ url_for('public.emploi_du_temps') }}" class="btn btn-primary"><i class="fa-solid fa-download"></i> Télécharger</a>
+      </div>
+    </div>
+    
+    <div class="card glass-card" style="margin-bottom: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="color: var(--c-aurora-indigo);"><i class="fa-solid fa-star"></i> Accès Rapides</h3>
+      </div>
+      <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <a href="{{ url_for('etudiant.notes') }}" class="card glass-card" style="text-align: center; text-decoration: none; color: inherit; transition: 0.2s;">
+          <i class="fa-solid fa-clipboard-list fa-2x mb-2" style="color: var(--c-aurora-indigo);"></i>
+          <h4>Relevé de Notes</h4>
         </a>
-        {% else %}
-        <div style="text-align: center; color: var(--text-muted); padding: 2rem; grid-column: 1 / -1;">
-          <i class="fa-solid fa-folder-open fa-3x mb-2"></i>
-          <p>Aucune classe trouvée pour ce semestre.</p>
-        </div>
-        {% endfor %}
+        <a href="{{ url_for('etudiant.corrections') }}" class="card glass-card" style="text-align: center; text-decoration: none; color: inherit; transition: 0.2s;">
+          <i class="fa-solid fa-check-double fa-2x mb-2" style="color: #10b981;"></i>
+          <h4>Corrections</h4>
+        </a>
       </div>
     </div>
   </div>
@@ -111,13 +69,6 @@
         insc.section.nom }} (Niv. {{ insc.section.niveau.ordre }})</p>
       <p style="margin-bottom: 0.5rem;"><i class="fa-solid fa-calendar text-muted"></i> <strong>Année:</strong> {{
         insc.annee_scolaire.label }}</p>
-
-      <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
-        <a href="{{ url_for('etudiant.espace_cours') }}" class="btn btn-glass btn-block" style="text-align: left;"><i
-            class="fa-solid fa-book-open"></i> Accéder aux cours</a>
-        <a href="{{ url_for('etudiant.notes') }}" class="btn btn-glass btn-block" style="text-align: left;"><i
-            class="fa-solid fa-star"></i> Consulter les notes</a>
-      </div>
       {% else %}
       <div class="flash danger" style="margin-top: 1rem;">
         <i class="fa-solid fa-triangle-exclamation"></i>

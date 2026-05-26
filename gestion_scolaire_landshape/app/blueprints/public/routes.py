@@ -7,7 +7,8 @@ import os
 from flask import (render_template, send_file, abort,
                    request, current_app)
 from app.blueprints.public import public_bp
-from app.models.academic import Semestre, Specialite
+from app.models.academic import Semestre, Specialite, AnneeScolaire
+from app.utils.helpers import chemin_absolu_upload
 from app.models.communication import Annonce
 from app.models.planning import PdfEmploiTemps
 from app.models.evaluation import ReleverNotes
@@ -19,7 +20,28 @@ def index():
                 .filter_by(est_publie=True)
                 .order_by(Annonce.est_epinglee.desc(), Annonce.date_publication.desc())
                 .limit(3).all())
-    return render_template('public/home.html', annonces=annonces)
+
+    semestre_actif = Semestre.query.filter_by(est_actif=True).first()
+    if not semestre_actif:
+        annee_active = AnneeScolaire.query.filter_by(est_active=True).first()
+        if annee_active:
+            semestre_actif = (Semestre.query
+                              .filter_by(annee_scolaire_id=annee_active.id)
+                              .order_by(Semestre.numero.desc())
+                              .first())
+
+    edt_pdfs = []
+    if semestre_actif:
+        edt_pdfs = (PdfEmploiTemps.query
+                    .filter_by(semestre_id=semestre_actif.id, type_pdf='hebdomadaire')
+                    .join(Specialite)
+                    .order_by(Specialite.nom)
+                    .all())
+
+    return render_template('public/home.html',
+                           annonces=annonces,
+                           semestre_actif=semestre_actif,
+                           edt_pdfs=edt_pdfs)
 
 
 # ── Emploi du temps ───────────────────────────────────────────
@@ -65,9 +87,8 @@ def telecharger_edt(spe_id):
     ).first()
     if not pdf_record:
         abort(404)
-    chemin = os.path.join(current_app.config['UPLOAD_FOLDER'],
-                          *pdf_record.fichier_url.split('/')[1:])
-    if not os.path.exists(chemin):
+    chemin = chemin_absolu_upload(pdf_record.fichier_url)
+    if not chemin or not os.path.exists(chemin):
         abort(404)
     return send_file(chemin, as_attachment=True,
                      download_name=pdf_record.nom_fichier,
@@ -117,9 +138,8 @@ def telecharger_examen(spe_id):
     ).first()
     if not pdf_record:
         abort(404)
-    chemin = os.path.join(current_app.config['UPLOAD_FOLDER'],
-                          *pdf_record.fichier_url.split('/')[1:])
-    if not os.path.exists(chemin):
+    chemin = chemin_absolu_upload(pdf_record.fichier_url)
+    if not chemin or not os.path.exists(chemin):
         abort(404)
     return send_file(chemin, as_attachment=True,
                      download_name=pdf_record.nom_fichier,

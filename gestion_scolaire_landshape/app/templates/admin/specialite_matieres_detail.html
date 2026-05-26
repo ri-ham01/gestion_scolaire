@@ -1,0 +1,119 @@
+{% extends 'base_admin.html' %}
+{% block title %}Matières — {{ spe.nom }}{% endblock %}
+
+{% block admin_content %}
+<div class="page-header">
+  <div class="section-inner" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <h1><i class="fa-solid fa-book-open"></i> {{ spe.nom }} ({{ spe.code }})</h1>
+      <p class="text-muted">Programme de la spécialité — liez ou créez des matières.</p>
+    </div>
+    <a href="{{ url_for('admin.specialites') }}" class="btn btn-glass"><i class="fa-solid fa-arrow-left"></i> Retour</a>
+  </div>
+</div>
+
+<div class="section-inner">
+  <button class="btn btn-primary" onclick="document.getElementById('modalAjouterProg').showModal()" style="margin-bottom: 2rem;">
+    <i class="fa-solid fa-plus"></i> Ajouter une matière
+  </button>
+
+  <div class="glass-table-container">
+    <table class="glass-table">
+      <thead>
+        <tr><th>Code</th><th>Matière</th><th>Niveau</th><th>Sem.</th><th>Coef.</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for prog in programmes %}
+        <tr>
+          <td style="font-family:var(--font-mono);color:var(--c-nova-cyan);">{{ prog.matiere.code }}</td>
+          <td><strong>{{ prog.matiere.nom }}</strong></td>
+          <td>{{ prog.niveau.nom }}</td>
+          <td>S{{ prog.semestre_numero }}</td>
+          <td>{{ prog.coefficient }}</td>
+          <td style="text-align:right;">
+            <form method="POST" style="display:inline;" onsubmit="return confirm('Retirer ?');">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="prog_id" value="{{ prog.id }}">
+              <button type="submit" class="btn danger btn-sm"><i class="fa-solid fa-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">Aucune matière dans ce programme.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<dialog id="modalAjouterProg" class="edunova-dialog" style="max-width: 520px; width:100%; padding:2rem; border-radius:16px; background:var(--bg-midnight-slate); color:var(--text-main);">
+  <h3 style="margin:0 0 1.5rem;"><i class="fa-solid fa-plus"></i> Ajouter une matière</h3>
+  <form method="POST">
+    <input type="hidden" name="action" value="add">
+
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label class="form-label">Type</label>
+      <div style="display:flex;gap:1rem;">
+        <label><input type="radio" name="matiere_mode" value="existing" checked onchange="toggleMatiereMode()"> Matière existante</label>
+        <label><input type="radio" name="matiere_mode" value="new" onchange="toggleMatiereMode()"> Nouvelle matière</label>
+      </div>
+    </div>
+
+    <div id="blockExisting">
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label class="form-label">Matière existante</label>
+        <select name="matiere_id" class="form-input">
+          <option value="">— Choisir —</option>
+          {% for mat in all_matieres %}
+          <option value="{{ mat.id }}">{{ mat.code }} — {{ mat.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div id="blockNew" style="display:none;">
+      <div class="form-group" style="margin-bottom:0.75rem;">
+        <label class="form-label">Code *</label>
+        <input type="text" name="nouveau_code" class="form-input" placeholder="ex: ALG3">
+      </div>
+      <div class="form-group" style="margin-bottom:0.75rem;">
+        <label class="form-label">Nom *</label>
+        <input type="text" name="nouveau_nom" class="form-input" placeholder="ex: Algèbre avancée">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label class="form-label">Niveau *</label>
+      <select name="niveau_id" class="form-input" required>
+        {% for niv in niveaux %}<option value="{{ niv.id }}">{{ niv.nom }}</option>{% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label class="form-label">Semestre *</label>
+      <select name="semestre_numero" class="form-input" required>
+        <option value="1">Semestre 1</option>
+        <option value="2">Semestre 2</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:1.5rem;">
+      <label class="form-label">Coefficient *</label>
+      <input type="number" name="coefficient" class="form-input" value="1" min="1" required>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:1rem;">
+      <button type="button" class="btn btn-glass" onclick="document.getElementById('modalAjouterProg').close()">Annuler</button>
+      <button type="submit" class="btn btn-primary">Ajouter</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+function toggleMatiereMode() {
+  const isNew = document.querySelector('input[name="matiere_mode"]:checked').value === 'new';
+  document.getElementById('blockExisting').style.display = isNew ? 'none' : 'block';
+  document.getElementById('blockNew').style.display = isNew ? 'block' : 'none';
+}
+</script>
+{% endblock %}

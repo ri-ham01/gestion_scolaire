@@ -36,7 +36,7 @@
   </h3>
   <div class="dashboard-grid">
     {% for aff in affs %}
-    <a href="{{ url_for('professeur.sujet', aff_id=aff.id) }}" class="subject-card bg-gradient-{{ loop.cycle('1', '2', '3', '4', '5') }}">
+    <a href="{{ url_for('espace_etudes.professeur_dashboard', aff_id=aff.id) }}" class="subject-card bg-gradient-{{ loop.cycle('1', '2', '3', '4', '5') }}">
       <div class="subject-card-header">
         <h3 class="subject-card-title">{{ aff.matiere.nom }}</h3>
         <p class="subject-card-subtitle">{{ aff.section.specialite.nom }} — {{ aff.section.niveau.nom }}</p>

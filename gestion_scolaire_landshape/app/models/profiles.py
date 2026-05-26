@@ -70,6 +70,17 @@ class Professeur(db.Model):
     def nom_complet(self):
         return f'{self.prenom} {self.nom}'
 
+    @property
+    def specialite(self):
+        """Spécialité déduite du username (prof_info1) ou d'une affectation active."""
+        from app.services.professeur_service import resoudre_specialite_professeur
+        return resoudre_specialite_professeur(self)
+
+    @property
+    def specialite_id(self):
+        spe = self.specialite
+        return spe.id if spe else None
+
 
 class Etudiant(db.Model):
     __tablename__ = 'etudiants'

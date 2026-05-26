@@ -197,11 +197,14 @@ CREATE TABLE IF NOT EXISTS professeurs (
     photo_url               VARCHAR(500),
     date_recrutement        DATE,
     grade                   VARCHAR(100),
+    specialite_id           INT UNSIGNED    NULL,
     est_actif               TINYINT(1)      NOT NULL DEFAULT 1,
     created_at              TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_prof_usr  FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
-    INDEX idx_prof_mat      (matricule)
+    CONSTRAINT fk_prof_spe  FOREIGN KEY (specialite_id) REFERENCES specialites(id) ON DELETE SET NULL,
+    INDEX idx_prof_mat      (matricule),
+    INDEX idx_prof_spe      (specialite_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS etudiants (

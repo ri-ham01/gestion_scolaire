@@ -17,7 +17,7 @@ with app.app_context():
             est_actif=True,
             email_verifie=True
         )
-        admin.set_password('1234')
+        admin.set_password('123')
         db.session.add(admin)
         db.session.flush() # to get admin.id
         
@@ -29,10 +29,10 @@ with app.app_context():
         )
         db.session.add(admin_profile)
         db.session.commit()
-        print("Admin user created successfully (username: 'admin', password: '1234').")
+        print("Admin user created successfully (username: 'admin', password: '123').")
     else:
-        print("Admin user exists. Updating password to '1234'...")
-        admin.set_password('1234')
+        print("Admin user exists. Updating password to '123'...")
+        admin.set_password('123')
         admin.est_actif = True
         db.session.commit()
-        print("Admin user updated successfully (password: '1234').")
+        print("Admin user updated successfully (password: '123').")

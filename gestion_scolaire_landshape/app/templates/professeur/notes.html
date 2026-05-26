@@ -10,26 +10,41 @@
 </div>
 
 <div class="section-inner">
-  <!-- Sélection de l'affectation -->
-  <div class="card glass-card mb-2">
+  <!-- Sélection de l'affectation (Drill-down) -->
+  <div class="card glass-card mb-4">
     <form method="GET" action="{{ url_for('professeur.notes') }}" class="flex-form">
       <div class="form-group flex-1">
-        <label for="aff_id" class="form-label">Sélectionnez une matière et une section</label>
-        <select name="aff_id" id="aff_id" class="form-input" onchange="this.form.submit()">
-          <option value="">-- Choisir une affectation --</option>
-          {% for aff in affs %}
-          <option value="{{ aff.id }}" {% if aff_selectionnee and aff_selectionnee.id==aff.id %}selected{% endif %}>
-            {{ aff.matiere.nom }} — {{ aff.section.niveau.nom }} ({{ aff.section.code_section }})
+        <label for="spec_id" class="form-label">1. Spécialité enseignée</label>
+        <select name="spec_id" id="spec_id" class="form-input" onchange="this.form.submit()">
+          <option value="">-- Choisir une spécialité --</option>
+          {% for spec_id, spec in spec_dict.items() %}
+          <option value="{{ spec_id }}" {% if spec_sel_id == spec_id %}selected{% endif %}>
+            {{ spec.nom }}
           </option>
           {% endfor %}
         </select>
       </div>
-      {% if aff_selectionnee %}
+
+      {% if spec_sel_id and spec_sel_id in hierarchie %}
       <div class="form-group flex-1">
-        <label for="q" class="form-label">Rechercher un étudiant</label>
+        <label for="mat_id" class="form-label">2. Matière enseignée</label>
+        <select name="mat_id" id="mat_id" class="form-input" onchange="this.form.submit()">
+          <option value="">-- Choisir une matière --</option>
+          {% for mat_id, affs_list in hierarchie[spec_sel_id].items() %}
+          <option value="{{ mat_id }}" {% if mat_sel_id == mat_id %}selected{% endif %}>
+            {{ mat_dict[mat_id].nom }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      {% if classes_notes %}
+      <div class="form-group flex-1">
+        <label for="q" class="form-label">Rechercher (Username, Nom...)</label>
         <div class="input-wrapper">
-          <input type="text" name="q" id="q" class="form-input" placeholder="Matricule ou Username..."
-            value="{{ request.args.get('q','') }}">
+          <input type="text" name="q" id="q" class="form-input" placeholder="Matricule, Nom..."
+            value="{{ q }}">
           <button type="submit" class="btn btn-primary"
             style="position:absolute; right:5px; top:5px; bottom:5px; padding:0 15px;"><i
               class="fa-solid fa-search"></i></button>
@@ -39,10 +54,19 @@
     </form>
   </div>
 
-  <!-- Le Tableur (Spreadsheet) -->
-  {% if aff_selectionnee %}
-  <div class="spreadsheet-container">
-    <table class="spreadsheet-table" id="notesSpreadsheet">
+  <!-- Les Tableurs (Spreadsheet) par classe -->
+  {% if classes_notes %}
+    <div class="mb-2 text-muted" style="font-size: 0.85rem; text-align: right;">
+      <i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarde automatique activée
+    </div>
+    
+    {% for class_data in classes_notes %}
+    <div class="card glass-card mb-4">
+      <h3 class="mb-3" style="color: var(--c-nova-cyan); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        <i class="fa-solid fa-users-rectangle"></i> Classe : {{ class_data.section.niveau.nom }} ({{ class_data.section.code_section }})
+      </h3>
+      <div class="spreadsheet-container">
+        <table class="spreadsheet-table" data-aff-id="{{ class_data.affectation.id }}">
       <thead>
         <tr>
           <th style="width: 250px;">Étudiant</th>
@@ -54,7 +78,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for item in etudiants_notes %}
+        {% for item in class_data.etudiants_notes %}
         <tr data-etu-id="{{ item.etudiant.id }}">
           <td class="cell-readonly">
             {{ item.etudiant.prenom }} {{ item.etudiant.nom }}
@@ -83,23 +107,23 @@
           </td>
         </tr>
         {% endfor %}
+        {% if not class_data.etudiants_notes %}
+        <tr><td colspan="6" class="text-center text-muted py-3">Aucun étudiant trouvé dans cette classe.</td></tr>
+        {% endif %}
       </tbody>
     </table>
   </div>
-
-  <div class="mt-2 text-muted" style="font-size: 0.85rem; text-align: right;">
-    <i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarde automatique activée
   </div>
+  {% endfor %}
   {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
-{% if aff_selectionnee %}
+{% if classes_notes %}
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const inputs = document.querySelectorAll('.cell-input');
-    const affId = {{ aff_selectionnee.id }};
     let typingTimer;
   const doneTypingInterval = 1000; // 1 seconde de debounce
 
@@ -146,6 +170,9 @@
 
   function saveRow(tr, currentInput) {
     const etuId = tr.getAttribute('data-etu-id');
+    const table = tr.closest('table');
+    const affId = table.getAttribute('data-aff-id');
+    
     const data = {
       aff_id: affId,
       etu_id: etuId,

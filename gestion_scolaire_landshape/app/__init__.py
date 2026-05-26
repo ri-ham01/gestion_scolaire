@@ -65,4 +65,8 @@ def create_app(config_name='default'):
     def make_shell_context():
         return dict(db=db, app=app)
 
+    @app.teardown_appcontext
+    def _shutdown_session(exception=None):
+        db.session.remove()
+
     return app

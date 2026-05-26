@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block title %}Communication Parents — EduNova{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="section-inner">
+    <h1><i class="fa-solid fa-users"></i> Communication avec les Parents</h1>
+    <p class="text-muted">Sélectionnez une spécialité et une matière pour contacter les parents de vos étudiants.</p>
+  </div>
+</div>
+
+<div class="section-inner">
+  <!-- Sélecteur d'Affectation (Drill-down) -->
+  <div class="card glass-card mb-4">
+    <form method="GET" action="{{ url_for('professeur.parents') }}" class="flex-form">
+      <div class="form-group flex-1">
+        <label for="spec_id" class="form-label">1. Spécialité enseignée</label>
+        <select name="spec_id" id="spec_id" class="form-input" onchange="this.form.submit()">
+          <option value="">-- Choisir une spécialité --</option>
+          {% for spec_id, spec in spec_dict.items() %}
+          <option value="{{ spec_id }}" {% if spec_sel_id == spec_id %}selected{% endif %}>
+            {{ spec.nom }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {% if spec_sel_id and spec_sel_id in hierarchie %}
+      <div class="form-group flex-1">
+        <label for="mat_id" class="form-label">2. Matière enseignée</label>
+        <select name="mat_id" id="mat_id" class="form-input" onchange="this.form.submit()">
+          <option value="">-- Choisir une matière --</option>
+          {% for mat_id, affs_list in hierarchie[spec_sel_id].items() %}
+          <option value="{{ mat_id }}" {% if mat_sel_id == mat_id %}selected{% endif %}>
+            {{ mat_dict[mat_id].nom }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      {% if classes_parents %}
+      <div class="form-group flex-1">
+        <label for="q" class="form-label">Rechercher (Username, Nom...)</label>
+        <div class="input-wrapper">
+          <input type="text" name="q" id="q" class="form-input" placeholder="Matricule, Nom..."
+            value="{{ q }}">
+          <button type="submit" class="btn btn-primary"
+            style="position:absolute; right:5px; top:5px; bottom:5px; padding:0 15px;"><i
+              class="fa-solid fa-search"></i></button>
+        </div>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="grid-layout" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+    <div>
+      {% if classes_parents %}
+        {% for class_data in classes_parents %}
+        <div class="card glass-card mb-4">
+          <h3 class="mb-3" style="color: var(--c-nova-cyan); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+              <i class="fa-solid fa-users-rectangle"></i> Classe : {{ class_data.section.niveau.nom }} ({{ class_data.section.code_section }})
+          </h3>
+          <div style="display: grid; gap: 1rem;">
+            {% for item in class_data.parents %}
+            <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="margin: 0; color: #fff;">{{ item.parent.nom }} {{ item.parent.prenom }}</h4>
+                <p class="text-muted" style="margin: 0; font-size: 0.85rem;">
+                  Parent de l'étudiant: <strong>{{ item.etudiant.nom }} {{ item.etudiant.prenom }}</strong>
+                </p>
+              </div>
+              <form action="{{ url_for('professeur.nouveau_chat_parent') }}" method="POST">
+                <input type="hidden" name="parent_id" value="{{ item.parent.id }}">
+                <input type="hidden" name="etudiant_id" value="{{ item.etudiant.id }}">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-comments"></i> Contacter</button>
+              </form>
+            </div>
+            {% else %}
+            <p class="text-muted" style="text-align: center; padding: 1rem;">Aucun parent trouvé pour cette classe.</p>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="card glass-card" style="text-align: center; padding: 4rem;">
+          <i class="fa-solid fa-users fa-3x mb-2" style="color: var(--text-muted);"></i>
+          <p class="text-muted" style="font-size: 1.2rem;">Veuillez sélectionner une spécialité et une matière pour afficher les parents.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Active Conversations -->
+    <div class="card glass-card" style="align-self: start;">
+      <h3 style="margin-bottom: 1.5rem; color: var(--c-nova-cyan);"><i class="fa-solid fa-comments"></i> Discussions Récentes</h3>
+      <div style="display: grid; gap: 1rem;">
+        {% for conv in parents_convs %}
+        {% set unread = conv.messages.filter_by(est_lu=False, expediteur_role='parent').count() %}
+        <a href="{{ url_for('professeur.conversation', conv_id=conv.id) }}" class="conv-item"
+          style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <div
+              style="width: 45px; height: 45px; border-radius: 50%; background: var(--c-nova-cyan); color: #000; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold;">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <div>
+              {% if conv.etudiant_concerne %}
+              <h4 style="margin: 0; color: #fff;">Parent de {{ conv.etudiant_concerne.nom }}</h4>
+              <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
+                {{ conv.etudiant_concerne.prenom }}
+              </p>
+              {% else %}
+              <h4 style="margin: 0; color: #fff;">Parent (User #{{ conv.participant_a_id }})</h4>
+              {% endif %}
+            </div>
+          </div>
+          {% if unread > 0 %}
+          <span class="badge"
+            style="background: var(--s-danger); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">{{
+            unread }}</span>
+          {% else %}
+          <i class="fa-solid fa-chevron-right text-muted"></i>
+          {% endif %}
+        </a>
+        {% else %}
+        <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+          <i class="fa-regular fa-comments fa-2x mb-2"></i>
+          <p>Aucune discussion avec des parents.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .conv-item:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: var(--c-nova-cyan) !important;
+  }
+</style>
+{% endblock %}

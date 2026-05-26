@@ -1,4 +1,5 @@
 import os
+from sqlalchemy.pool import NullPool
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -9,28 +10,24 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'EduNova2026$SecretKey!XyZ#9f3mK8pQ2rL7vN')
 
     # ── Database filess.io (MySQL) ───────────────────────────
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', (
-        'mysql+pymysql://'
-        'gestion_scolaire_landshape'
-        ':a635b506c2c42970e3c7b09d88e3e7d657fca2d2'
-        '@b7z9qy.h.filess.io'
-        ':61001'
-        '/gestion_scolaire_landshape'
-    ))
+    SQLALCHEMY_DATABASE_URI = (
+        'mysql+pymysql://gestion_scolaire_landshape:a635b506c2c42970e3c7b09d88e3e7d657fca2d2@b7z9qy.h.filess.io:61001/gestion_scolaire_landshape'
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # filess.io allows max 5 simultaneous connections
-    # Strict pooling to ensure we never open more than 3 connections
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': 1,
-        'max_overflow': 2,
-        'pool_recycle': 280,
-        'pool_timeout': 30,
-        'pool_pre_ping': True,
-        'connect_args': {
-            'connect_timeout': 60
+    # Dynamic engine options to support both MySQL (with NullPool to prevent max_user_connections limit) and SQLite
+    if 'sqlite' in SQLALCHEMY_DATABASE_URI:
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'pool_pre_ping': True,
         }
-    }
+    else:
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'poolclass': NullPool,
+            'pool_pre_ping': True,
+            'connect_args': {
+                'connect_timeout': 60
+            }
+        }
 
     # ── Flask-Babel (i18n) ───────────────────────────────────
     BABEL_DEFAULT_LOCALE    = 'fr'
@@ -55,7 +52,8 @@ class Config:
     MAX_CONTENT_LENGTH = 52_428_800  # 50 MB
 
     UPLOAD_SUBFOLDERS = ['cours', 'devoirs', 'soumissions',
-                         'corrections', 'justifications', 'releves', 'logos']
+                         'corrections', 'justifications', 'releves', 'logos',
+                         'emplois_temps', 'annonces']
 
     ALLOWED_EXTENSIONS = {
         'document': {'pdf', 'doc', 'docx'},

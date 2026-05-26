@@ -55,48 +55,7 @@
 
       <!-- Nav Links -->
       <ul class="nav-links" id="navLinks">
-        {% if current_user.is_authenticated %}
-        {% if current_user.role == 'admin' %}
-        <li><a href="{{ url_for('admin.dashboard') }}"
-            class="nav-link {% if request.blueprint == 'admin' %}active{% endif %}"><i
-              class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
-        <li><a href="{{ url_for('admin.professeurs') }}" class="nav-link"><i class="fa-solid fa-chalkboard-user"></i>
-            Professeurs</a></li>
-        <li><a href="{{ url_for('admin.etudiants') }}" class="nav-link"><i class="fa-solid fa-user-graduate"></i>
-            Étudiants</a></li>
-        <li><a href="{{ url_for('admin.annonces') }}" class="nav-link"><i class="fa-solid fa-bullhorn"></i> Annonces</a>
-        </li>
-        {% elif current_user.role == 'professeur' %}
-        <li><a href="{{ url_for('professeur.dashboard') }}"
-            class="nav-link {% if request.blueprint == 'professeur' %}active{% endif %}"><i
-              class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
-        <li><a href="{{ url_for('professeur.notes') }}" class="nav-link"><i class="fa-solid fa-pen-to-square"></i>
-            Notes</a></li>
-        <li><a href="{{ url_for('professeur.presences') }}" class="nav-link"><i class="fa-solid fa-calendar-check"></i>
-            Présences</a></li>
-        <li><a href="{{ url_for('professeur.chat') }}" class="nav-link"><i class="fa-solid fa-message"></i> Messages</a>
-        </li>
-        {% elif current_user.role == 'etudiant' %}
-        <li><a href="{{ url_for('etudiant.dashboard') }}"
-            class="nav-link {% if request.blueprint == 'etudiant' %}active{% endif %}"><i
-              class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
-        <li><a href="{{ url_for('etudiant.notes') }}" class="nav-link"><i class="fa-solid fa-star"></i> Notes</a></li>
-        <li><a href="{{ url_for('etudiant.devoirs') }}" class="nav-link"><i class="fa-solid fa-file-pen"></i>
-            Devoirs</a></li>
-        {% elif current_user.role == 'parent' %}
-        <li><a href="{{ url_for('parent.dashboard') }}"
-            class="nav-link {% if request.blueprint == 'parent' %}active{% endif %}"><i
-              class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
-        <li><a href="{{ url_for('parent.absences') }}" class="nav-link"><i class="fa-solid fa-calendar-xmark"></i>
-            Absences</a></li>
-        <li><a href="{{ url_for('parent.releve') }}" class="nav-link"><i class="fa-solid fa-file-contract"></i>
-            Relevés</a></li>
-        <li><a href="{{ url_for('parent.chat') }}" class="nav-link"><i class="fa-solid fa-message"></i> Messages</a>
-        </li>
-        {% endif %}
-        {% else %}
-        <!-- Navigation épurée pour les visiteurs -->
-        {% endif %}
+        <!-- Navigation épurée pour tous les utilisateurs comme demandé -->
       </ul>
 
       <!-- Right Actions -->
@@ -245,7 +204,7 @@
     {% if current_user.role == 'professeur' %}
     window.EDUNOVA_URLS.notes = "{{ url_for('professeur.notes') }}";
     window.EDUNOVA_URLS.presences = "{{ url_for('professeur.presences') }}";
-    window.EDUNOVA_URLS.chat = "{{ url_for('professeur.chat') }}";
+    window.EDUNOVA_URLS.chat = "{{ url_for('professeur.messages') }}";
     {% endif %}
   </script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>

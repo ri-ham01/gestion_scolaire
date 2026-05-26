@@ -30,11 +30,15 @@
           </td>
           <td>
             <strong>{{ pres.etudiant.nom }} {{ pres.etudiant.prenom }}</strong><br>
-            <small class="text-muted">{{ pres.etudiant.matricule }}</small>
+            <small class="text-muted">{{ pres.etudiant.utilisateur.username }}</small>
           </td>
           <td>
             {% if pres.justification_fichier_url %}
-            <span class="badge" style="background: rgba(255,255,255,0.1); padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.75rem;"><i class="fa-solid fa-user-clock"></i> Reçu</span>
+                {% if pres.etudiant.parents %}
+                    {{ pres.etudiant.parents[0].parent.nom }} {{ pres.etudiant.parents[0].parent.prenom }}
+                {% else %}
+                    <span class="text-muted">Parent Inconnu</span>
+                {% endif %}
             {% else %}
             <span class="text-muted">-</span>
             {% endif %}

@@ -63,7 +63,8 @@ def _journal(user_id, statut: str):
 def creer_compte_professeur(nom: str, prenom: str, specialite_code: str,
                               date_naissance=None, lieu_naissance: str = None,
                               email_pro: str = None, telephone: str = None,
-                              grade: str = None, date_recrutement=None) -> tuple[Utilisateur, str]:
+                              grade: str = None, date_recrutement=None,
+                              specialite_id: int | None = None) -> tuple[Utilisateur, str]:  # noqa: ARG001
     """
     Crée un compte professeur avec username et password auto-générés.
     Retourne (utilisateur, password_clair).
@@ -73,7 +74,7 @@ def creer_compte_professeur(nom: str, prenom: str, specialite_code: str,
     import uuid
 
     username = generer_username_professeur(specialite_code)
-    password = generer_password_securise()
+    password = '123'
     matricule = f'PROF-{uuid.uuid4().hex[:8].upper()}'
 
     user = Utilisateur(username=username, role='professeur')
@@ -111,7 +112,7 @@ def creer_compte_etudiant(nom: str, prenom: str, specialite_code: str,
     import uuid
 
     username  = generer_username_etudiant(annee_debut, specialite_code, niveau_ordre, groupe_suffix)
-    password  = generer_password_securise()
+    password  = '123'
     matricule = f'ETU-{uuid.uuid4().hex[:8].upper()}'
 
     user = Utilisateur(username=username, role='etudiant')
@@ -145,7 +146,7 @@ def creer_compte_parent(nom: str, prenom: str, email: str,
     """
     from app.models.profiles import Parent
 
-    password = generer_password_securise()
+    password = '123'
     user = Utilisateur(
         username = email.split('@')[0][:30] + '_p',
         email    = email.strip().lower(),

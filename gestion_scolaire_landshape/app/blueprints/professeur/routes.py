@@ -3,12 +3,14 @@
 # =============================================================
 from datetime import datetime, timezone
 from flask import (render_template, redirect, url_for, request,
-                   flash, abort, jsonify)
+                   flash, abort, jsonify, send_file)
+import os
 from flask_login import login_required, current_user
 from app.blueprints.professeur import prof_bp
 from app.extensions import db
 from app.utils.decorators import professeur_requis
-from app.utils.helpers import sauvegarder_fichier
+from app.utils.helpers import (sauvegarder_fichier, allowed_file,
+                               type_fichier_pedagogique, chemin_absolu_upload)
 from app.models.profiles import Professeur
 from app.models.program import AffectationEnseignement, Inscription
 from app.models.evaluation import Note, CorrectionExamen
@@ -16,7 +18,8 @@ from app.models.presence import Seance, Presence
 from app.models.pedagogy import Cours, Devoir, PostProfesseur
 from app.models.communication import Conversation, Message
 from app.services.note_service import sauvegarder_note
-from app.services.notif_service import notifier_message, notifier_note_publiee
+from app.services.notif_service import (notifier_message, notifier_note_publiee,
+                                        notifier_correction_publiee)
 
 
 def get_prof() -> Professeur:
@@ -73,26 +76,56 @@ def notes():
     prof = get_prof()
     affs = AffectationEnseignement.query.filter_by(
         professeur_id=prof.id, est_active=True).all()
-    aff_id = request.args.get('aff_id', type=int)
-    etudiants_notes = []
-    aff_selectionnee = None
-    if aff_id:
-        aff_selectionnee = AffectationEnseignement.query.get_or_404(aff_id)
-        if aff_selectionnee.professeur_id != prof.id:
-            abort(403)
-        inscs = Inscription.query.filter_by(
-            section_id=aff_selectionnee.section_id, statut='actif').all()
-        q = request.args.get('q', '').strip()
-        for insc in inscs:
-            etu = insc.etudiant
-            if q and q.lower() not in etu.utilisateur.username.lower():
-                continue
-            note = Note.query.filter_by(
-                etudiant_id=etu.id, affectation_id=aff_id).first()
-            etudiants_notes.append({'etudiant': etu, 'note': note})
+        
+    hierarchie = {}
+    spec_dict = {}
+    mat_dict = {}
+    
+    for aff in affs:
+        spec = aff.section.specialite
+        mat = aff.matiere
+        spec_dict[spec.id] = spec
+        mat_dict[mat.id] = mat
+        
+        if spec.id not in hierarchie:
+            hierarchie[spec.id] = {}
+        if mat.id not in hierarchie[spec.id]:
+            hierarchie[spec.id][mat.id] = []
+        hierarchie[spec.id][mat.id].append(aff)
+        
+    spec_sel_id = request.args.get('spec_id', type=int)
+    mat_sel_id = request.args.get('mat_id', type=int)
+    q = request.args.get('q', '').strip()
+    
+    classes_notes = []
+    
+    if spec_sel_id and mat_sel_id and spec_sel_id in hierarchie and mat_sel_id in hierarchie[spec_sel_id]:
+        for aff in hierarchie[spec_sel_id][mat_sel_id]:
+            inscs = Inscription.query.filter_by(section_id=aff.section_id, statut='actif').all()
+            etudiants_notes = []
+            for insc in inscs:
+                etu = insc.etudiant
+                # Advanced search: check username, nom, prenom
+                if q:
+                    search_str = f"{etu.utilisateur.username} {etu.nom} {etu.prenom}".lower()
+                    if q.lower() not in search_str:
+                        continue
+                note = Note.query.filter_by(etudiant_id=etu.id, affectation_id=aff.id).first()
+                etudiants_notes.append({'etudiant': etu, 'note': note})
+            classes_notes.append({
+                'affectation': aff,
+                'section': aff.section,
+                'etudiants_notes': etudiants_notes
+            })
+            
     return render_template('professeur/notes.html',
-                           affs=affs, aff_selectionnee=aff_selectionnee,
-                           etudiants_notes=etudiants_notes)
+                           hierarchie=hierarchie,
+                           spec_dict=spec_dict,
+                           mat_dict=mat_dict,
+                           spec_sel_id=spec_sel_id,
+                           mat_sel_id=mat_sel_id,
+                           classes_notes=classes_notes,
+                           q=q)
 
 
 @prof_bp.route('/notes/sauvegarder', methods=['POST'])
@@ -163,24 +196,54 @@ def presences():
     prof = get_prof()
     affs = AffectationEnseignement.query.filter_by(
         professeur_id=prof.id, est_active=True).all()
-    aff_id = request.args.get('aff_id', type=int)
-    etudiants_liste = []
-    aff_sel = None
-    if aff_id:
-        aff_sel = AffectationEnseignement.query.get_or_404(aff_id)
-        if aff_sel.professeur_id != prof.id:
-            abort(403)
-        q = request.args.get('q', '').strip()
-        inscs = Inscription.query.filter_by(
-            section_id=aff_sel.section_id, statut='actif').all()
-        for insc in inscs:
-            etu = insc.etudiant
-            if q and q.lower() not in etu.utilisateur.username.lower():
-                continue
-            etudiants_liste.append(etu)
+        
+    hierarchie = {}
+    spec_dict = {}
+    mat_dict = {}
+    
+    for aff in affs:
+        spec = aff.section.specialite
+        mat = aff.matiere
+        spec_dict[spec.id] = spec
+        mat_dict[mat.id] = mat
+        
+        if spec.id not in hierarchie:
+            hierarchie[spec.id] = {}
+        if mat.id not in hierarchie[spec.id]:
+            hierarchie[spec.id][mat.id] = []
+        hierarchie[spec.id][mat.id].append(aff)
+        
+    spec_sel_id = request.args.get('spec_id', type=int)
+    mat_sel_id = request.args.get('mat_id', type=int)
+    q = request.args.get('q', '').strip()
+    
+    classes_etudiants = []
+    
+    if spec_sel_id and mat_sel_id and spec_sel_id in hierarchie and mat_sel_id in hierarchie[spec_sel_id]:
+        for aff in hierarchie[spec_sel_id][mat_sel_id]:
+            inscs = Inscription.query.filter_by(section_id=aff.section_id, statut='actif').all()
+            etudiants_liste = []
+            for insc in inscs:
+                etu = insc.etudiant
+                if q:
+                    search_str = f"{etu.utilisateur.username} {etu.nom} {etu.prenom}".lower()
+                    if q.lower() not in search_str:
+                        continue
+                etudiants_liste.append(etu)
+            classes_etudiants.append({
+                'affectation': aff,
+                'section': aff.section,
+                'etudiants': etudiants_liste
+            })
+            
     return render_template('professeur/presences.html',
-                           affs=affs, aff_selectionnee=aff_sel,
-                           etudiants=etudiants_liste)
+                           hierarchie=hierarchie,
+                           spec_dict=spec_dict,
+                           mat_dict=mat_dict,
+                           spec_sel_id=spec_sel_id,
+                           mat_sel_id=mat_sel_id,
+                           classes_etudiants=classes_etudiants,
+                           q=q)
 
 
 @prof_bp.route('/presences/enregistrer', methods=['POST'])
@@ -248,7 +311,15 @@ def corrections():
     prof = get_prof()
     affs = AffectationEnseignement.query.filter_by(
         professeur_id=prof.id, est_active=True).all()
-    corrections_list = CorrectionExamen.query.filter_by(publie_par=prof.id).all()
+    corrections_list = (
+        CorrectionExamen.query
+        .join(AffectationEnseignement,
+              CorrectionExamen.affectation_id == AffectationEnseignement.id)
+        .filter(AffectationEnseignement.professeur_id == prof.id)
+        .order_by(CorrectionExamen.date_publication.desc(),
+                  CorrectionExamen.updated_at.desc())
+        .all()
+    )
     return render_template('professeur/corrections.html',
                            affs=affs, corrections=corrections_list)
 
@@ -259,23 +330,39 @@ def corrections():
 def ajouter_correction():
     prof = get_prof()
     try:
-        aff_id       = int(request.form['aff_id'])
-        type_eval    = request.form['type_evaluation']
-        titre        = request.form['titre'].strip()
-        fichier      = request.files.get('fichier')
-        chemin       = sauvegarder_fichier(fichier, 'corrections')
-        ext          = fichier.filename.rsplit('.', 1)[-1].lower() if fichier else 'autre'
-        type_fichier = 'pdf' if ext == 'pdf' else ('word' if ext in ('doc','docx') else 'image')
+        aff_raw = request.form.get('aff_id') or request.form.get('affectation_id')
+        if not aff_raw:
+            raise ValueError('Veuillez sélectionner une matière et une section.')
+        aff_id    = int(aff_raw)
+        type_eval = request.form['type_evaluation']
+        titre     = request.form['titre'].strip()
+        fichier   = request.files.get('fichier')
 
-        # Un seul par type d'évaluation et affectation
+        aff = AffectationEnseignement.query.get_or_404(aff_id)
+        if aff.professeur_id != prof.id:
+            abort(403)
+
+        if not fichier or fichier.filename == '':
+            raise ValueError('Veuillez sélectionner un fichier (PDF, Word ou image).')
+        if not allowed_file(fichier.filename, 'all'):
+            raise ValueError('Type de fichier non autorisé. Utilisez PDF, Word (.doc/.docx) ou image.')
+
+        chemin = sauvegarder_fichier(fichier, 'corrections')
+        if not chemin:
+            raise ValueError('Échec de l\'enregistrement du fichier.')
+
+        type_fichier = type_fichier_pedagogique(fichier.filename)
+
         existing = CorrectionExamen.query.filter_by(
             affectation_id=aff_id, type_evaluation=type_eval).first()
         if existing:
-            existing.fichier_url  = chemin
+            existing.titre = titre
+            existing.fichier_url = chemin
             existing.type_fichier = type_fichier
             existing.nom_fichier_original = fichier.filename
-            existing.est_publie   = True
+            existing.est_publie = True
             existing.date_publication = datetime.now(timezone.utc)
+            corr = existing
         else:
             corr = CorrectionExamen(
                 affectation_id=aff_id, type_evaluation=type_eval,
@@ -285,137 +372,104 @@ def ajouter_correction():
                 publie_par=prof.id,
             )
             db.session.add(corr)
+        db.session.flush()
+        notifier_correction_publiee(aff_id, aff.matiere.nom, corr.id)
         db.session.commit()
-        flash('Correction publiée.', 'success')
+        flash('Correction publiée et accessible à tous les étudiants de cette classe.', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Erreur : {str(e)}', 'danger')
     return redirect(url_for('professeur.corrections'))
 
 
-# ── Cours ─────────────────────────────────────────────────────
-@prof_bp.route('/cours')
+@prof_bp.route('/corrections/telecharger/<int:corr_id>')
 @login_required
 @professeur_requis
-def cours():
+def telecharger_correction(corr_id):
     prof = get_prof()
+    corr = CorrectionExamen.query.get_or_404(corr_id)
+    if corr.publie_par != prof.id:
+        abort(403)
+    chemin = chemin_absolu_upload(corr.fichier_url)
+    if not chemin or not os.path.exists(chemin):
+        abort(404)
+        
+    nom = corr.nom_fichier_original
+    if not nom:
+        ext = corr.fichier_url.rsplit('.', 1)[-1] if '.' in corr.fichier_url else 'pdf'
+        nom = f'correction.{ext}'
+        
+    return send_file(chemin, as_attachment=True, download_name=nom)
+
+
+# ── Les routes pour les cours et les devoirs ont été déplacées vers l'Espace Études ──
+
+
+# ── Communication Parents ───────────────────────────────────────
+@prof_bp.route('/parents')
+@login_required
+@professeur_requis
+def parents():
+    prof = current_user.professeur
     affs = AffectationEnseignement.query.filter_by(
         professeur_id=prof.id, est_active=True).all()
-    aff_id = request.args.get('aff_id', type=int)
-    cours_list = []
-    aff_sel    = None
-    if aff_id:
-        aff_sel    = AffectationEnseignement.query.get_or_404(aff_id)
-        cours_list = Cours.query.filter_by(affectation_id=aff_id)\
-                         .order_by(Cours.ordre).all()
-    return render_template('professeur/cours.html',
-                           affs=affs, aff_selectionnee=aff_sel, cours_list=cours_list)
-
-
-@prof_bp.route('/cours/ajouter', methods=['POST'])
-@login_required
-@professeur_requis
-def ajouter_cours():
-    prof = get_prof()
-    try:
-        aff_id      = int(request.form['aff_id'])
-        titre       = request.form['titre'].strip()
-        ordre       = int(request.form.get('ordre', 1))
-        description = request.form.get('description', '').strip()
-        url_video   = request.form.get('url_video', '').strip()
         
-        fichier = request.files.get('fichier')
-        chemin  = sauvegarder_fichier(fichier, 'cours') if fichier and fichier.filename else None
-        ext     = fichier.filename.rsplit('.', 1)[-1].lower() if fichier and '.' in fichier.filename else ''
-        type_c  = 'pdf' if ext == 'pdf' else ('video' if ext in ('mp4','avi') else
-                  'audio' if ext in ('mp3',) else 'image' if ext in ('jpg','jpeg','png') else 'pdf')
-                  
-        c = Cours(
-            affectation_id=aff_id, titre=titre, type_contenu=type_c,
-            fichier_url=chemin, nom_fichier_original=fichier.filename if fichier and fichier.filename else None,
-            est_publie=True, date_publication=datetime.now(timezone.utc),
-            publie_par=prof.id,
-            ordre=ordre, description=description, url_video=url_video
-        )
-        db.session.add(c)
-        db.session.commit()
-        flash('Cours publié.', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Erreur : {str(e)}', 'danger')
-    return redirect(url_for('professeur.cours', aff_id=request.form.get('aff_id')))
-
-
-# ── Devoirs ───────────────────────────────────────────────────
-@prof_bp.route('/devoirs')
-@login_required
-@professeur_requis
-def devoirs():
-    prof       = get_prof()
-    affs       = AffectationEnseignement.query.filter_by(
-        professeur_id=prof.id, est_active=True).all()
-    dev_list   = Devoir.query.filter_by(publie_par=prof.id).all()
-    return render_template('professeur/devoirs.html', affs=affs, devoirs=dev_list)
-
-
-@prof_bp.route('/devoirs/ajouter', methods=['POST'])
-@login_required
-@professeur_requis
-def ajouter_devoir():
-    prof = get_prof()
-    try:
-        aff_id  = int(request.form['aff_id'])
-        titre   = request.form['titre'].strip()
-        desc    = request.form['description'].strip()
-        limite  = datetime.strptime(request.form['date_limite'], '%Y-%m-%dT%H:%M')
-        fichier = request.files.get('fichier')
-        chemin  = sauvegarder_fichier(fichier, 'devoirs') if fichier else None
-        dev = Devoir(
-            affectation_id=aff_id, titre=titre, description=desc,
-            fichier_url=chemin, date_publication=datetime.now(timezone.utc),
-            date_limite_soumission=limite, est_publie=True, publie_par=prof.id,
-        )
-        db.session.add(dev)
-        db.session.commit()
-        flash('Devoir publié.', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Erreur : {str(e)}', 'danger')
-    return redirect(url_for('professeur.devoirs'))
-
-
-# ── Chat ──────────────────────────────────────────────────────
-@prof_bp.route('/chat')
-@login_required
-@professeur_requis
-def chat():
-    prof = current_user.professeur
+    hierarchie = {}
+    spec_dict = {}
+    mat_dict = {}
+    
+    for aff in affs:
+        spec = aff.section.specialite
+        mat = aff.matiere
+        spec_dict[spec.id] = spec
+        mat_dict[mat.id] = mat
+        
+        if spec.id not in hierarchie:
+            hierarchie[spec.id] = {}
+        if mat.id not in hierarchie[spec.id]:
+            hierarchie[spec.id][mat.id] = []
+        hierarchie[spec.id][mat.id].append(aff)
+        
+    spec_sel_id = request.args.get('spec_id', type=int)
+    mat_sel_id = request.args.get('mat_id', type=int)
+    q = request.args.get('q', '').strip()
+    
+    classes_parents = []
+    
+    if spec_sel_id and mat_sel_id and spec_sel_id in hierarchie and mat_sel_id in hierarchie[spec_sel_id]:
+        for aff in hierarchie[spec_sel_id][mat_sel_id]:
+            inscs = Inscription.query.filter_by(section_id=aff.section_id, statut='actif').all()
+            parents_list = []
+            for insc in inscs:
+                etu = insc.etudiant
+                if q:
+                    search_str = f"{etu.utilisateur.username} {etu.nom} {etu.prenom}".lower()
+                    if q.lower() not in search_str:
+                        continue
+                for pe in etu.parents_link:
+                    parents_list.append({
+                        'parent': pe.parent,
+                        'etudiant': etu
+                    })
+            classes_parents.append({
+                'affectation': aff,
+                'section': aff.section,
+                'parents': parents_list
+            })
+            
+    # Keep track of active conversations
     convs = Conversation.query.filter_by(participant_b_id=current_user.id).all()
     parents_convs = [c for c in convs if c.participant_a_role == 'parent']
-    
-    # Students the professor teaches -> Get their parents
-    from app.models.program import AffectationEnseignement, Inscription
-    affs = AffectationEnseignement.query.filter_by(professeur_id=prof.id, est_active=True).all()
-    section_ids = [aff.section_id for aff in affs]
-    
-    mes_parents = []
-    if section_ids:
-        inscriptions = Inscription.query.filter(Inscription.section_id.in_(section_ids), Inscription.statut == 'actif').all()
-        parents_dict = {}
-        for insc in inscriptions:
-            etu = insc.etudiant
-            for pe in etu.parents_link:
-                parent = pe.parent
-                if parent.id not in parents_dict:
-                    parents_dict[parent.id] = {
-                        'parent': parent,
-                        'etudiant': etu
-                    }
-        mes_parents = list(parents_dict.values())
-        
-    return render_template('professeur/chat.html',
-                           parents_convs=parents_convs,
-                           mes_parents=mes_parents)
+
+    return render_template('professeur/parents.html',
+                           hierarchie=hierarchie,
+                           spec_dict=spec_dict,
+                           mat_dict=mat_dict,
+                           spec_sel_id=spec_sel_id,
+                           mat_sel_id=mat_sel_id,
+                           classes_parents=classes_parents,
+                           q=q,
+                           parents_convs=parents_convs)
 
 
 @prof_bp.route('/chat/nouveau_parent', methods=['POST'])
@@ -492,58 +546,7 @@ def envoyer_message():
         return jsonify({'ok': False, 'error': str(e)}), 400
 
 
-# ── Posts ─────────────────────────────────────────────────────
-@prof_bp.route('/posts')
-@login_required
-@professeur_requis
-def posts():
-    prof      = get_prof()
-    affs      = AffectationEnseignement.query.filter_by(
-        professeur_id=prof.id, est_active=True).all()
-    posts_list = PostProfesseur.query.filter_by(professeur_id=prof.id)\
-                     .order_by(PostProfesseur.created_at.desc()).all()
-    return render_template('professeur/posts.html', affs=affs, posts=posts_list)
-
-
-@prof_bp.route('/posts/ajouter', methods=['POST'])
-@login_required
-@professeur_requis
-def ajouter_post():
-    prof = get_prof()
-    try:
-        contenu     = request.form['contenu'].strip()
-        type_public = request.form.get('type_public', 'tous')
-        aff_id      = request.form.get('aff_id', type=int)
-        post = PostProfesseur(
-            professeur_id=prof.id, contenu=contenu,
-            type_public=type_public,
-            affectation_id=aff_id if type_public == 'section' else None,
-        )
-        db.session.add(post)
-        db.session.commit()
-        flash('Post publié.', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Erreur : {str(e)}', 'danger')
-    return redirect(url_for('professeur.posts'))
-
-# ── Espace Sujet (Google Classroom Style) ──────────────────────
-@prof_bp.route('/sujet/<int:aff_id>')
-@login_required
-@professeur_requis
-def sujet(aff_id):
-    prof = get_prof()
-    aff = AffectationEnseignement.query.get_or_404(aff_id)
-    if aff.professeur_id != prof.id:
-        abort(403)
-        
-    cours_list = Cours.query.filter_by(affectation_id=aff_id).order_by(Cours.ordre).all()
-    devoirs_list = Devoir.query.filter_by(affectation_id=aff_id).all()
-    posts_list = PostProfesseur.query.filter_by(affectation_id=aff_id, professeur_id=prof.id).order_by(PostProfesseur.created_at.desc()).all()
-    
-    return render_template('professeur/sujet.html',
-                           aff=aff, cours_list=cours_list, 
-                           devoirs_list=devoirs_list, posts=posts_list)
+# ── Les routes pour les posts et le sujet ont été déplacées vers l'Espace Études ──
 # ── Messagerie Privée (Google Classroom Style) ──────────────────────
 @prof_bp.route('/messages', defaults={'conv_id': None})
 @prof_bp.route('/messages/<int:conv_id>')

@@ -5,186 +5,221 @@
 <div class="page-header">
   <div class="section-inner">
     <h1><i class="fa-solid fa-chalkboard-user"></i> Gestion des Professeurs</h1>
-    <p class="text-muted">Consultez, ajoutez ou désactivez les professeurs.</p>
+    <p class="text-muted">Créez des comptes professeurs et assignez spécialité, section et matière(s).</p>
   </div>
 </div>
 
 <div class="section-inner">
-  <div
-    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-    <!-- Recherche -->
-    <form method="GET" action="{{ url_for('admin.professeurs') }}" class="search-form"
-      style="display: flex; gap: 0.5rem;">
-      <input type="text" name="q" value="{{ q }}" placeholder="Rechercher par nom, prénom, username..."
-        class="form-input" style="width: 300px; padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: #fff;">
-      <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1rem; border-radius: 8px;"><i class="fa-solid fa-search"></i></button>
-      {% if q %}<a href="{{ url_for('admin.professeurs') }}" class="btn danger" style="padding: 0.6rem 1rem; border-radius: 8px;"><i
-          class="fa-solid fa-xmark"></i></a>{% endif %}
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <form method="GET" action="{{ url_for('admin.professeurs') }}" style="display: flex; gap: 0.5rem;">
+      <input type="text" name="q" value="{{ q }}" placeholder="Rechercher..." class="form-input" style="width: 300px;">
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-search"></i></button>
     </form>
-
-    <button class="btn btn-primary" onclick="document.getElementById('modalAjouterProf').showModal()" style="border-radius: 8px;"><i
-        class="fa-solid fa-plus"></i> Nouveau Professeur</button>
+    <button class="btn btn-primary" onclick="document.getElementById('modalAjouterProf').showModal()">
+      <i class="fa-solid fa-plus"></i> Nouveau Professeur
+    </button>
   </div>
 
   <div class="glass-table-container">
     <table class="glass-table">
       <thead>
         <tr>
-          <th>Matricule</th>
           <th>Professeur</th>
           <th>Username</th>
-          <th>Grade</th>
-          <th style="text-align: center;">Statut</th>
+          <th>Spécialité / Matières enseignées</th>
+          <th>Statut</th>
           <th style="text-align: right;">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for prof in profs %}
         <tr>
-          <td style="font-family: var(--font-mono); color: var(--text-muted);">{{ prof.matricule }}</td>
           <td><strong>{{ prof.nom }} {{ prof.prenom }}</strong></td>
           <td>{{ prof.utilisateur.username }}</td>
-          <td>
-            {% if prof.grade %}<span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-main);">{{ prof.grade }}</span>{% else %}-{% endif %}
-          </td>
-          <td style="text-align: center;">
-            {% if prof.est_actif %}
-            <span class="badge-status status-active"><i class="fa-solid fa-check-circle"></i> Actif</span>
-            {% else %}
-            <span class="badge-status status-inactive"><i class="fa-solid fa-ban"></i> Inactif</span>
+          <td style="font-size: 0.9rem;">
+            {% if prof.specialite %}
+            <div style="margin-bottom: 0.35rem;">
+              <span class="badge" style="background: rgba(26,115,232,0.25); color: #93c5fd; font-weight: 600;">
+                <i class="fa-solid fa-layer-group"></i> {{ prof.specialite.nom }} ({{ prof.specialite.code }})
+              </span>
+            </div>
             {% endif %}
+            {% set ns_aff = namespace(has_active=false) %}
+            {% for aff in prof.affectations %}
+              {% if aff.est_active %}
+              {% set ns_aff.has_active = true %}
+              <div style="margin-bottom: 0.25rem; padding-left: 0.25rem;">
+                <i class="fa-solid fa-book fa-xs" style="color: var(--text-muted);"></i>
+                {{ aff.matiere.nom }} — {{ aff.section.label }}
+                <span class="text-muted">(S{{ aff.semestre.numero }})</span>
+              </div>
+              {% endif %}
+            {% endfor %}
+            {% if not ns_aff.has_active and not prof.specialite %}
+              <span class="text-muted">Non affecté</span>
+            {% else %}
+              <span class="text-muted" style="font-size: 0.85rem;">Aucune matière liée — complétez via Affectations</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if prof.est_actif %}<span class="badge-status status-active">Actif</span>
+            {% else %}<span class="badge-status status-inactive">Inactif</span>{% endif %}
           </td>
           <td style="text-align: right;">
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-              <a href="{{ url_for('admin.modifier_professeur', prof_id=prof.id) }}" class="btn btn-sm" style="background: rgba(255,255,255,0.1); color: #fff; padding: 0.4rem 0.8rem; border-radius: 6px;"
-                title="Modifier"><i class="fa-solid fa-pen"></i></a>
-              {% if prof.est_actif %}
+              <a href="{{ url_for('admin.modifier_professeur', prof_id=prof.id) }}" class="btn btn-sm" style="background: rgba(255,255,255,0.1); color:#fff;" title="Modifier">
+                <i class="fa-solid fa-pen"></i>
+              </a>
               <form action="{{ url_for('admin.supprimer_professeur', prof_id=prof.id) }}" method="POST"
-                onsubmit="return confirm('Êtes-vous sûr de vouloir désactiver ce professeur ?');">
-                <button type="submit" class="btn danger btn-sm" title="Désactiver" style="padding: 0.4rem 0.8rem; border-radius: 6px;"><i
-                    class="fa-solid fa-trash"></i></button>
+                onsubmit="return confirm('Supprimer définitivement {{ prof.prenom }} {{ prof.nom }} ? Cette action est irréversible.');">
+                <button type="submit" class="btn danger btn-sm" title="Supprimer">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
               </form>
-              {% endif %}
             </div>
           </td>
         </tr>
         {% else %}
-        <tr>
-          <td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">
-            <i class="fa-solid fa-folder-open fa-2x mb-1"></i><br>Aucun professeur trouvé.
-          </td>
-        </tr>
+        <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted);">Aucun professeur.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
 
-<!-- Modal Ajouter Professeur -->
-<dialog id="modalAjouterProf" class="edunova-dialog"
-  style="width: 100%; max-width: 500px; padding: 2rem; border-radius: 16px; border: var(--border-glass); background: var(--bg-midnight-slate); color: var(--text-main);">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-    <h3 style="margin: 0;"><i class="fa-solid fa-user-plus"></i> Nouveau Professeur</h3>
-    <button onclick="document.getElementById('modalAjouterProf').close()" class="btn btn-glass"
-      style="padding: 0.5rem;"><i class="fa-solid fa-xmark"></i></button>
-  </div>
-
-  <form action="{{ url_for('admin.ajouter_professeur') }}" method="POST">
+<dialog id="modalAjouterProf" class="edunova-dialog" style="max-width: 620px; width: 100%; padding: 2rem; border-radius: 16px; border: var(--border-glass); background: var(--bg-midnight-slate); color: var(--text-main);">
+  <h3 style="margin: 0 0 1.5rem;"><i class="fa-solid fa-user-plus"></i> Nouveau Professeur</h3>
+  <form action="{{ url_for('admin.ajouter_professeur') }}" method="POST" id="formProf">
     <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-      <div style="flex: 1;">
-        <label class="form-label">Nom <span style="color:var(--s-danger);">*</span></label>
-        <input type="text" name="nom" class="form-input" required>
-      </div>
-      <div style="flex: 1;">
-        <label class="form-label">Prénom <span style="color:var(--s-danger);">*</span></label>
-        <input type="text" name="prenom" class="form-input" required>
-      </div>
+      <div style="flex:1"><label class="form-label">Nom *</label><input type="text" name="nom" class="form-input" required></div>
+      <div style="flex:1"><label class="form-label">Prénom *</label><input type="text" name="prenom" class="form-input" required></div>
     </div>
 
     <div class="form-group" style="margin-bottom: 1rem;">
-      <label class="form-label">Spécialité (Pour la génération de l'Username) <span
-          style="color:var(--s-danger);">*</span></label>
-      <select name="specialite_code" class="form-input" required>
-        <option value="">Sélectionnez une spécialité</option>
+      <label class="form-label">Spécialité *</label>
+      <select name="specialite_id" id="speSelect" class="form-input" required>
+        <option value="" data-code="">— Choisir —</option>
         {% for spe in specialites %}
-        <option value="{{ spe.code }}">{{ spe.code }} - {{ spe.nom }}</option>
+        <option value="{{ spe.id }}" data-code="{{ spe.code }}">{{ spe.code }} — {{ spe.nom }}</option>
+        {% endfor %}
+      </select>
+      <input type="hidden" name="specialite_code" id="speCodeHidden" value="">
+    </div>
+
+    <div class="form-group" style="margin-bottom: 1rem;">
+      <label class="form-label">Section / Classe *</label>
+      <select name="section_id" id="sectionSelect" class="form-input" required>
+        <option value="">— Sélectionnez une spécialité —</option>
+        {% for sec in sections %}
+        <option value="{{ sec.id }}" data-spe-id="{{ sec.specialite_id }}">{{ sec.label }}</option>
         {% endfor %}
       </select>
     </div>
 
     <div class="form-group" style="margin-bottom: 1rem;">
+      <label class="form-label">Semestre *</label>
+      <select name="semestre_id" class="form-input" required>
+        {% if semestres %}
+        {% for s in semestres %}
+        <option value="{{ s.id }}" {% if semestre and semestre.id == s.id %}selected{% endif %}>{{ s.label }}</option>
+        {% endfor %}
+        {% else %}
+        <option value="">Aucun semestre — configurez l'année scolaire</option>
+        {% endif %}
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 1rem;">
+      <label class="form-label">Matière(s) enseignée(s) *</label>
+      <div id="matieresCheckboxes" style="max-height: 180px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0.75rem;">
+        <p id="matieresHint" class="text-muted" style="font-size: 0.85rem; margin: 0;">Sélectionnez une spécialité pour afficher les matières.</p>
+        {% for prog in programmes %}
+        <label class="matiere-option" data-spe-id="{{ prog.specialite_id }}" style="display:none; align-items:center; gap:0.5rem; margin-bottom:0.4rem; cursor:pointer;">
+          <input type="checkbox" name="matiere_ids" value="{{ prog.matiere_id }}">
+          <span>{{ prog.matiere.nom }} ({{ prog.matiere.code }}) — Niv. {{ prog.niveau.nom }} S{{ prog.semestre_numero }}</span>
+        </label>
+        {% endfor %}
+        {% for mat in matieres %}
+        <label class="matiere-fallback" data-spe-id="fallback" style="display:none; align-items:center; gap:0.5rem; margin-bottom:0.4rem; cursor:pointer;">
+          <input type="checkbox" name="matiere_ids" value="{{ mat.id }}">
+          <span>{{ mat.nom }} ({{ mat.code }})</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 1rem;">
       <label class="form-label">Grade</label>
-      <input type="text" name="grade" class="form-input" placeholder="ex: Maître de Conférences, Assistant...">
+      <input type="text" name="grade" class="form-input" placeholder="Maître de conférences...">
     </div>
 
     <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-      <div style="flex: 1;">
-        <label class="form-label">Affecter à une section (Optionnel)</label>
-        <select name="section_id" class="form-input">
-          <option value="">-- Ne pas affecter pour le moment --</option>
-          {% for sec in sections %}
-          <option value="{{ sec.id }}">{{ sec.nom }} ({{ sec.specialite.code }})</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div style="flex: 1;">
-        <label class="form-label">Matière enseignée (Optionnel)</label>
-        <select name="matiere_id" class="form-input">
-          <option value="">-- Sélectionnez une matière --</option>
-          {% for mat in matieres %}
-          <option value="{{ mat.id }}">{{ mat.nom }} ({{ mat.code }})</option>
-          {% endfor %}
-        </select>
-      </div>
+      <div style="flex:1"><label class="form-label">Date de naissance</label><input type="date" name="date_naissance" class="form-input"></div>
+      <div style="flex:1"><label class="form-label">Lieu de naissance</label><input type="text" name="lieu_naissance" class="form-input"></div>
     </div>
 
-    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-      <div style="flex: 1;">
-        <label class="form-label">Date de naissance</label>
-        <input type="date" name="date_naissance" class="form-input">
-      </div>
-      <div style="flex: 1;">
-        <label class="form-label">Lieu de naissance</label>
-        <input type="text" name="lieu_naissance" class="form-input">
-      </div>
-    </div>
-
-    <div class="flash info" style="margin-bottom: 1.5rem;">
-      <i class="fa-solid fa-robot"></i>
-      <span>Le nom d'utilisateur (ex: ai001) et le mot de passe seront générés automatiquement et affichés à la
-        prochaine étape.</span>
-    </div>
+    <div class="flash info" style="margin-bottom: 1rem;"><i class="fa-solid fa-robot"></i> Username et mot de passe générés automatiquement.</div>
 
     <div style="display: flex; justify-content: flex-end; gap: 1rem;">
-      <button type="button" class="btn" style="background: rgba(255,255,255,0.1); color:#fff;"
-        onclick="document.getElementById('modalAjouterProf').close()">Annuler</button>
-      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Créer le compte</button>
+      <button type="button" class="btn btn-glass" onclick="document.getElementById('modalAjouterProf').close()">Annuler</button>
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Créer</button>
     </div>
   </form>
 </dialog>
 
-<style>
-  /* Reset basic dialog styles */
-  dialog::backdrop {
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-  }
+<script>
+(function() {
+  const speSelect = document.getElementById('speSelect');
+  const speCodeHidden = document.getElementById('speCodeHidden');
+  const sectionSelect = document.getElementById('sectionSelect');
+  const matiereOptions = document.querySelectorAll('.matiere-option');
+  const matiereFallbacks = document.querySelectorAll('.matiere-fallback');
+  const matieresHint = document.getElementById('matieresHint');
 
-  .edunova-dialog {
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-    animation: slideInUp 0.3s ease-out;
-  }
+  function filterBySpe() {
+    const opt = speSelect.options[speSelect.selectedIndex];
+    const speId = opt ? opt.value : null;
+    const speCode = opt ? opt.getAttribute('data-code') : '';
+    speCodeHidden.value = speCode || '';
 
-  @keyframes slideInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
+    let visibleSections = 0;
+    sectionSelect.querySelectorAll('option').forEach(o => {
+      if (!o.value) return;
+      const match = speId && o.getAttribute('data-spe-id') === speId;
+      o.hidden = !match;
+      o.disabled = !match;
+      if (match) visibleSections++;
+    });
+    if (!speId) {
+      sectionSelect.value = '';
     }
 
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    let visibleMatieres = 0;
+    matiereOptions.forEach(l => {
+      const show = speId && l.getAttribute('data-spe-id') === speId;
+      l.style.display = show ? 'flex' : 'none';
+      if (!show) l.querySelector('input').checked = false;
+      else visibleMatieres++;
+    });
+    matiereFallbacks.forEach(l => {
+      const show = speId && visibleMatieres === 0;
+      l.style.display = show ? 'flex' : 'none';
+      if (!show) l.querySelector('input').checked = false;
+    });
+    matieresHint.textContent = speId
+      ? (visibleMatieres ? 'Cochez une ou plusieurs matières.' : 'Aucune matière au programme — liste complète affichée.')
+      : 'Sélectionnez une spécialité pour afficher les matières.';
   }
-</style>
+
+  speSelect.addEventListener('change', filterBySpe);
+
+  document.getElementById('formProf').addEventListener('submit', function(e) {
+    const checked = document.querySelectorAll('input[name="matiere_ids"]:checked');
+    if (checked.length === 0) {
+      e.preventDefault();
+      alert('Veuillez cocher au moins une matière enseignée.');
+    }
+  });
+})();
+</script>
 {% endblock %}

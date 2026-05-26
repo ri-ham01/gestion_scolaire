@@ -24,15 +24,16 @@
         <div class="form-group">
           <label class="form-label">Type d'Évaluation</label>
           <select name="type_evaluation" class="form-input" required>
-            <option value="devoir">Devoir</option>
-            <option value="evaluation_continue">Évaluation Continue</option>
+            <option value="devoir1">Devoir 1</option>
+            <option value="devoir2">Devoir 2</option>
+            <option value="evaluation_continue">Évaluation Continue (Test)</option>
             <option value="examen">Examen</option>
           </select>
         </div>
 
         <div class="form-group">
           <label class="form-label">Matière et Section</label>
-          <select name="affectation_id" class="form-input" required>
+          <select name="aff_id" class="form-input" required>
             {% for aff in affs %}
             <option value="{{ aff.id }}">{{ aff.matiere.nom }} — {{ aff.section.niveau.nom }} ({{ aff.section.code_section }})</option>
             {% endfor %}
@@ -73,9 +74,14 @@
           <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0.5rem;">
             {{ corr.affectation.matiere.nom }} ({{ corr.affectation.section.code_section }})<br>
             Type: {{ corr.type_evaluation }}<br>
-            Date: {{ corr.date_publication.strftime('%d/%m/%Y') }}
+            Date: {% if corr.date_publication %}{{ corr.date_publication.strftime('%d/%m/%Y') }}{% else %}—{% endif %}
           </p>
           <span class="badge" style="background: var(--s-success);"><i class="fa-solid fa-check"></i> Publiée</span>
+          {% if corr.fichier_url %}
+          <a href="{{ url_for('professeur.telecharger_correction', corr_id=corr.id) }}" class="btn btn-glass btn-sm btn-block" style="margin-top: 0.75rem;">
+            <i class="fa-solid fa-download"></i> Télécharger
+          </a>
+          {% endif %}
         </div>
         {% endfor %}
       </div>

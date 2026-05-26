@@ -10,38 +10,59 @@
 </div>
 
 <div class="section-inner">
-  <!-- Sélecteur d'Affectation -->
-  <div class="card glass-card" style="margin-bottom: 2rem;">
-    <form action="{{ url_for('professeur.presences') }}" method="GET"
-      style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
-      <div style="flex: 1; min-width: 250px;">
-        <label class="form-label">Sélectionner un module / classe :</label>
-        <select name="aff_id" class="form-input" onchange="this.form.submit()" required>
-          <option value="">-- Choisissez --</option>
-          {% for aff in affs %}
-          <option value="{{ aff.id }}" {% if aff_selectionnee and aff_selectionnee.id==aff.id %}selected{% endif %}>
-            {{ aff.matiere.nom }} ({{ aff.section.nom }} - Niv. {{ aff.section.niveau.ordre }})
+  <!-- Sélecteur d'Affectation (Drill-down) -->
+  <div class="card glass-card mb-4">
+    <form method="GET" action="{{ url_for('professeur.presences') }}" class="flex-form">
+      <div class="form-group flex-1">
+        <label for="spec_id" class="form-label">1. Spécialité enseignée</label>
+        <select name="spec_id" id="spec_id" class="form-input" onchange="this.form.submit()">
+          <option value="">-- Choisir une spécialité --</option>
+          {% for spec_id, spec in spec_dict.items() %}
+          <option value="{{ spec_id }}" {% if spec_sel_id == spec_id %}selected{% endif %}>
+            {{ spec.nom }}
           </option>
           {% endfor %}
         </select>
       </div>
-      {% if aff_selectionnee %}
-      <div style="flex: 0 0 300px;">
-        <label class="form-label">Rechercher un étudiant :</label>
-        <div style="display: flex; gap: 0.5rem;">
-          <input type="text" name="q" value="{{ request.args.get('q', '') }}" placeholder="Username, nom..."
-            class="form-input">
-          <button type="submit" class="btn btn-glass"><i class="fa-solid fa-search"></i></button>
+
+      {% if spec_sel_id and spec_sel_id in hierarchie %}
+      <div class="form-group flex-1">
+        <label for="mat_id" class="form-label">2. Matière enseignée</label>
+        <select name="mat_id" id="mat_id" class="form-input" onchange="this.form.submit()">
+          <option value="">-- Choisir une matière --</option>
+          {% for mat_id, affs_list in hierarchie[spec_sel_id].items() %}
+          <option value="{{ mat_id }}" {% if mat_sel_id == mat_id %}selected{% endif %}>
+            {{ mat_dict[mat_id].nom }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      {% if classes_etudiants %}
+      <div class="form-group flex-1">
+        <label for="q" class="form-label">Rechercher (Username, Nom...)</label>
+        <div class="input-wrapper">
+          <input type="text" name="q" id="q" class="form-input" placeholder="Matricule, Nom..."
+            value="{{ q }}">
+          <button type="submit" class="btn btn-primary"
+            style="position:absolute; right:5px; top:5px; bottom:5px; padding:0 15px;"><i
+              class="fa-solid fa-search"></i></button>
         </div>
       </div>
       {% endif %}
     </form>
   </div>
 
-  {% if aff_selectionnee %}
-  <!-- Formulaire d'enregistrement -->
-  <form action="{{ url_for('professeur.enregistrer_presences') }}" method="POST">
-    <input type="hidden" name="aff_id" value="{{ aff_selectionnee.id }}">
+  {% if classes_etudiants %}
+  <!-- Formulaires d'enregistrement par classe -->
+  {% for class_data in classes_etudiants %}
+  <form action="{{ url_for('professeur.enregistrer_presences') }}" method="POST" class="mb-5">
+    <input type="hidden" name="aff_id" value="{{ class_data.affectation.id }}">
+    
+    <h3 class="mb-3" style="color: var(--c-nova-cyan); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        <i class="fa-solid fa-users-rectangle"></i> Classe : {{ class_data.section.niveau.nom }} ({{ class_data.section.code_section }})
+    </h3>
 
     <div class="card glass-card" style="margin-bottom: 2rem; border: 1px solid var(--c-nova-cyan);">
       <h3 style="margin-bottom: 1.5rem; color: var(--c-nova-cyan);"><i class="fa-solid fa-clock"></i> Détails de la
@@ -75,9 +96,9 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h3 style="margin: 0;"><i class="fa-solid fa-users"></i> Liste d'appel</h3>
         <div style="display: flex; gap: 1rem;">
-          <button type="button" class="btn btn-glass btn-sm" onclick="marquerTous('present')"><i
+          <button type="button" class="btn btn-glass btn-sm" onclick="marquerTous(this, 'present')"><i
               class="fa-solid fa-check"></i> Tous Présents</button>
-          <button type="button" class="btn btn-glass btn-sm danger" onclick="marquerTous('absent')"><i
+          <button type="button" class="btn btn-glass btn-sm danger" onclick="marquerTous(this, 'absent')"><i
               class="fa-solid fa-xmark"></i> Tous Absents</button>
         </div>
       </div>
@@ -95,7 +116,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for etu in etudiants %}
+            {% for etu in class_data.etudiants %}
             <tr>
               <td
                 style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">
@@ -132,16 +153,16 @@
 
       <div style="text-align: right;">
         <button type="submit" class="btn btn-primary btn-lg"><i class="fa-solid fa-save"></i> Enregistrer les
-          présences</button>
+          présences pour cette classe</button>
       </div>
     </div>
   </form>
+  {% endfor %}
 
   {% else %}
   <div class="card glass-card" style="text-align: center; padding: 4rem;">
     <i class="fa-solid fa-list-check fa-3x mb-2" style="color: var(--text-muted);"></i>
-    <p class="text-muted" style="font-size: 1.2rem;">Veuillez sélectionner un module et une classe pour afficher la
-      liste d'appel.</p>
+    <p class="text-muted" style="font-size: 1.2rem;">Veuillez sélectionner une spécialité et une matière pour afficher les listes d'appel.</p>
   </div>
   {% endif %}
 </div>
@@ -150,14 +171,17 @@
 <script>
   // Pré-remplir la date d'aujourd'hui
   document.addEventListener('DOMContentLoaded', () => {
-    const dateInput = document.getElementById('dateInput');
-    if (dateInput && !dateInput.value) {
-      dateInput.value = new Date().toISOString().split('T')[0];
-    }
+    const dateInputs = document.querySelectorAll('#dateInput, input[type="date"]');
+    dateInputs.forEach(dateInput => {
+      if (!dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+      }
+    });
   });
 
-  function marquerTous(valeur) {
-    const radios = document.querySelectorAll(`input[type="radio"][value="${valeur}"]`);
+  function marquerTous(btn, valeur) {
+    const form = btn.closest('form');
+    const radios = form.querySelectorAll(`input[type="radio"][value="${valeur}"]`);
     radios.forEach(r => r.checked = true);
   }
 </script>

@@ -21,6 +21,27 @@ from app.models.planning import PdfEmploiTemps
 from app.models.audit import JournalAdmin
 
 
+def _upsert_affectation(professeur_id: int, matiere_id: int,
+                        section_id: int, semestre_id: int) -> None:
+    """Crée ou met à jour une affectation (contrainte unique matière/section/semestre)."""
+    aff = AffectationEnseignement.query.filter_by(
+        matiere_id=matiere_id, section_id=section_id, semestre_id=semestre_id
+    ).first()
+    if aff:
+        aff.professeur_id = professeur_id
+        aff.est_active = True
+        aff.date_affectation = datetime.now(timezone.utc).date()
+    else:
+        db.session.add(AffectationEnseignement(
+            professeur_id=professeur_id,
+            matiere_id=matiere_id,
+            section_id=section_id,
+            semestre_id=semestre_id,
+            date_affectation=datetime.now(timezone.utc).date(),
+            est_active=True,
+        ))
+
+
 # ─────────────────────────────────────────────────────────────
 #  DASHBOARD
 # ─────────────────────────────────────────────────────────────
@@ -59,8 +80,12 @@ def professeurs():
     sections = Section.query.filter_by(annee_scolaire_id=annee.id if annee else 0).all()
     matieres = Matiere.query.filter_by(est_active=True).all()
     semestre = Semestre.query.filter_by(est_actif=True).first()
-    return render_template('admin/professeurs.html', profs=profs, q=q, 
-                           specialites=specialites, sections=sections, matieres=matieres, semestre=semestre)
+    from app.models.program import Programme
+    programmes = Programme.query.all()
+    semestres = Semestre.query.filter_by(annee_scolaire_id=annee.id).order_by(Semestre.numero).all() if annee else []
+    return render_template('admin/professeurs.html', profs=profs, q=q,
+                           specialites=specialites, sections=sections, matieres=matieres,
+                           semestre=semestre, semestres=semestres, programmes=programmes, annee=annee)
 
 
 @admin_bp.route('/professeurs/ajouter', methods=['POST'])
@@ -71,7 +96,19 @@ def ajouter_professeur():
     try:
         nom            = request.form['nom'].strip()
         prenom         = request.form['prenom'].strip()
-        spe_code       = request.form['specialite_code'].strip()
+        spe_id         = request.form.get('specialite_id', type=int)
+        spe_code       = request.form.get('specialite_code', '').strip()
+        if spe_id:
+            spe = Specialite.query.get(spe_id)
+            if not spe:
+                raise ValueError('Spécialité invalide.')
+            spe_code = spe.code
+        elif spe_code:
+            spe = Specialite.query.filter_by(code=spe_code.upper()).first()
+            spe_id = spe.id if spe else None
+        else:
+            raise ValueError('Veuillez sélectionner une spécialité.')
+
         date_naissance = request.form.get('date_naissance') or None
         lieu_naissance = request.form.get('lieu_naissance') or None
         grade          = request.form.get('grade') or None
@@ -79,27 +116,38 @@ def ajouter_professeur():
         if date_naissance:
             date_naissance = datetime.strptime(date_naissance, '%Y-%m-%d').date()
 
+        section_id = request.form.get('section_id', type=int)
+        matiere_ids = [int(m) for m in request.form.getlist('matiere_ids') if m]
+        semestre_id = request.form.get('semestre_id', type=int)
+
+        if not section_id:
+            raise ValueError('Veuillez sélectionner une section.')
+        if not matiere_ids:
+            raise ValueError('Veuillez cocher au moins une matière enseignée.')
+        if not semestre_id:
+            sem = Semestre.query.filter_by(est_actif=True).first()
+            if not sem:
+                raise ValueError('Aucun semestre actif. Activez un semestre avant d\'ajouter un professeur.')
+            semestre_id = sem.id
+
+        sec = Section.query.get(section_id)
+        if sec and sec.specialite_id != spe_id:
+            raise ValueError('La section choisie ne correspond pas à la spécialité sélectionnée.')
+
         user, password = creer_compte_professeur(
             nom=nom, prenom=prenom, specialite_code=spe_code,
             date_naissance=date_naissance, lieu_naissance=lieu_naissance,
-            grade=grade
+            grade=grade, specialite_id=spe_id,
         )
-        
-        section_id = request.form.get('section_id', type=int)
-        matiere_id = request.form.get('matiere_id', type=int)
-        
-        if section_id and matiere_id:
-            semestre = Semestre.query.filter_by(est_actif=True).first()
-            if semestre:
-                aff = AffectationEnseignement(
-                    professeur_id = user.professeur.id,
-                    matiere_id    = matiere_id,
-                    section_id    = section_id,
-                    semestre_id   = semestre.id,
-                    date_affectation = datetime.now(timezone.utc).date()
-                )
-                db.session.add(aff)
-                db.session.commit()
+
+        for matiere_id in matiere_ids:
+            _upsert_affectation(
+                professeur_id=user.professeur.id,
+                matiere_id=matiere_id,
+                section_id=section_id,
+                semestre_id=semestre_id,
+            )
+        db.session.commit()
 
         _log_action('CREATE_PROFESSEUR', 'professeurs', user.id)
         flash(f'Professeur {prenom} {nom} créé — Username: {user.username} | Mot de passe: {password}', 'success')
@@ -113,16 +161,16 @@ def ajouter_professeur():
 @login_required
 @admin_requis
 def supprimer_professeur(prof_id):
-    prof = Professeur.query.get_or_404(prof_id)
+    from app.services.professeur_service import supprimer_professeur_definitif
+    Professeur.query.get_or_404(prof_id)
     try:
-        prof.est_actif                = False
-        prof.utilisateur.est_actif    = False
+        supprimer_professeur_definitif(prof_id)
         db.session.commit()
         _log_action('DELETE_PROFESSEUR', 'professeurs', prof_id)
-        flash('Professeur désactivé avec succès.', 'success')
+        flash('Professeur supprimé définitivement de la base de données.', 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'Erreur : {str(e)}', 'danger')
+        flash(f'Erreur lors de la suppression : {str(e)}', 'danger')
     return redirect(url_for('admin.professeurs'))
 
 
@@ -283,6 +331,29 @@ def supprimer_etudiant(etu_id):
     return redirect(url_for('admin.etudiants'))
 
 
+@admin_bp.route('/etudiants/modifier/<int:etu_id>', methods=['GET', 'POST'])
+@login_required
+@admin_requis
+def modifier_etudiant(etu_id):
+    etu = Etudiant.query.get_or_404(etu_id)
+    if request.method == 'POST':
+        try:
+            etu.nom    = request.form['nom'].strip().upper()
+            etu.prenom = request.form['prenom'].strip().capitalize()
+            dn          = request.form.get('date_naissance')
+            if dn:
+                etu.date_naissance = datetime.strptime(dn, '%Y-%m-%d').date()
+            etu.lieu_naissance = request.form.get('lieu_naissance') or None
+            db.session.commit()
+            _log_action('UPDATE_ETUDIANT', 'etudiants', etu_id)
+            flash('Étudiant mis à jour.', 'success')
+            return redirect(url_for('admin.etudiants'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erreur : {str(e)}', 'danger')
+    return render_template('admin/modifier_etudiant.html', etu=etu)
+
+
 # ─────────────────────────────────────────────────────────────
 #  PARENTS
 # ─────────────────────────────────────────────────────────────
@@ -380,8 +451,77 @@ def supprimer_specialite(spe_id):
         flash('Spécialité désactivée.', 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'Erreur : {str(e)}', 'danger')
     return redirect(url_for('admin.specialites'))
+
+
+@admin_bp.route('/specialites/<int:spe_id>/matieres', methods=['GET', 'POST'])
+@login_required
+@admin_requis
+def specialite_matieres(spe_id):
+    from app.models.program import Programme, Matiere
+    spe = Specialite.query.get_or_404(spe_id)
+    niveaux = Niveau.query.filter_by(est_actif=True).order_by(Niveau.ordre).all()
+    all_matieres = Matiere.query.filter_by(est_active=True).all()
+    semestre = Semestre.query.filter_by(est_actif=True).first()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        try:
+            if action == 'add':
+                niveau_id = int(request.form.get('niveau_id'))
+                coef = int(request.form.get('coefficient', 1))
+                sem_num = int(request.form.get('semestre_numero', semestre.numero if semestre else 1))
+                mode = request.form.get('matiere_mode', 'existing')
+
+                if mode == 'new':
+                    code_m = request.form.get('nouveau_code', '').strip().upper()
+                    nom_m = request.form.get('nouveau_nom', '').strip()
+                    if not code_m or not nom_m:
+                        raise ValueError('Code et nom de la nouvelle matière sont obligatoires.')
+                    matiere = Matiere.query.filter_by(code=code_m).first()
+                    if not matiere:
+                        matiere = Matiere(code=code_m, nom=nom_m,
+                                          nom_ar=request.form.get('nouveau_nom_ar') or None,
+                                          nom_en=request.form.get('nouveau_nom_en') or None)
+                        db.session.add(matiere)
+                        db.session.flush()
+                    matiere_id = matiere.id
+                else:
+                    matiere_id = int(request.form.get('matiere_id'))
+
+                exists = Programme.query.filter_by(
+                    matiere_id=matiere_id, specialite_id=spe.id,
+                    niveau_id=niveau_id, semestre_numero=sem_num
+                ).first()
+                if exists:
+                    flash('Cette matière est déjà liée à cette spécialité pour ce niveau et semestre.', 'warning')
+                else:
+                    prog = Programme(
+                        matiere_id=matiere_id, specialite_id=spe.id,
+                        niveau_id=niveau_id, semestre_numero=sem_num, coefficient=coef
+                    )
+                    db.session.add(prog)
+                    db.session.commit()
+                    flash('Matière ajoutée à la spécialité.', 'success')
+            elif action == 'delete':
+                prog_id = int(request.form.get('prog_id'))
+                prog = Programme.query.get_or_404(prog_id)
+                db.session.delete(prog)
+                db.session.commit()
+                flash('Matière retirée de la spécialité.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erreur : {str(e)}', 'danger')
+            
+        return redirect(url_for('admin.specialite_matieres', spe_id=spe.id))
+        
+    programmes = Programme.query.filter_by(specialite_id=spe.id).all()
+    annee_active = AnneeScolaire.get_active()
+    semestres = (Semestre.query.filter_by(annee_scolaire_id=annee_active.id)
+                 .order_by(Semestre.numero).all()) if annee_active else []
+    return render_template('admin/specialite_matieres_detail.html',
+                           spe=spe, programmes=programmes, niveaux=niveaux,
+                           all_matieres=all_matieres, semestres=semestres, semestre=semestre)
 
 
 @admin_bp.route('/matieres/ajouter', methods=['POST'])
@@ -410,7 +550,13 @@ def ajouter_matiere():
 def affectations():
     annee    = AnneeScolaire.get_active()
     semestre = Semestre.query.filter_by(est_actif=True).first()
-    aff_list = AffectationEnseignement.query.filter_by(est_active=True).all() if semestre else []
+    if semestre:
+        aff_list = (AffectationEnseignement.query
+                    .filter_by(est_active=True, semestre_id=semestre.id)
+                    .order_by(AffectationEnseignement.date_affectation.desc())
+                    .all())
+    else:
+        aff_list = []
     profs    = Professeur.query.filter_by(est_actif=True).all()
     sections = Section.query.filter_by(annee_scolaire_id=annee.id if annee else 0).all()
     matieres = Matiere.query.filter_by(est_active=True).all()
@@ -424,16 +570,14 @@ def affectations():
 @admin_requis
 def ajouter_affectation():
     try:
-        aff = AffectationEnseignement(
-            professeur_id    = int(request.form['professeur_id']),
-            matiere_id       = int(request.form['matiere_id']),
-            section_id       = int(request.form['section_id']),
-            semestre_id      = int(request.form['semestre_id']),
-            date_affectation = datetime.now(timezone.utc).date(),
+        _upsert_affectation(
+            professeur_id=int(request.form['professeur_id']),
+            matiere_id=int(request.form['matiere_id']),
+            section_id=int(request.form['section_id']),
+            semestre_id=int(request.form['semestre_id']),
         )
-        db.session.add(aff)
         db.session.commit()
-        flash('Affectation créée.', 'success')
+        flash('Affectation enregistrée.', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Erreur : {str(e)}', 'danger')
@@ -523,6 +667,10 @@ def uploader_edt():
 
         if not fichier or fichier.filename == '':
             raise Exception('Aucun fichier sélectionné.')
+
+        from app.utils.helpers import allowed_file
+        if not allowed_file(fichier.filename, 'document'):
+            raise Exception('Seuls les fichiers PDF sont acceptés pour l\'emploi du temps.')
 
         chemin = sauvegarder_fichier(fichier, 'emplois_temps', f'{type_pdf}_{spe_id}')
         if not chemin:

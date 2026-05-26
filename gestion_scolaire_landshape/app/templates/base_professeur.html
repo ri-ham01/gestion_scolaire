@@ -160,20 +160,23 @@
 
     <div class="sidebar-divider"></div>
     <div class="sidebar-section-label">Contenu & Ressources</div>
-    <a href="{{ url_for('professeur.cours') }}" class="sidebar-link {% if request.endpoint == 'professeur.cours' %}active{% endif %}">
-      <i class="fa-solid fa-book-open"></i> Déposer un cours
-    </a>
-    <a href="{{ url_for('professeur.devoirs') }}" class="sidebar-link {% if request.endpoint == 'professeur.devoirs' %}active{% endif %}">
-      <i class="fa-solid fa-file-arrow-up"></i> Travaux & Devoirs
-    </a>
-    <a href="{{ url_for('professeur.posts') }}" class="sidebar-link {% if request.endpoint == 'professeur.posts' %}active{% endif %}">
-      <i class="fa-solid fa-newspaper"></i> Mes Publications
+    <a href="{{ url_for('professeur.corrections') }}" class="sidebar-link {% if request.endpoint == 'professeur.corrections' %}active{% endif %}">
+      <i class="fa-solid fa-file-circle-check"></i> Corrections d'Examens
     </a>
 
     <div class="sidebar-divider"></div>
     <div class="sidebar-section-label">Communication</div>
-    <a href="{{ url_for('professeur.chat') }}" class="sidebar-link {% if 'chat' in request.endpoint or 'conversation' in request.endpoint %}active{% endif %}">
+    <a href="{{ url_for('professeur.messages') }}" class="sidebar-link {% if 'chat' in request.endpoint or 'conversation' in request.endpoint or 'messages' in request.endpoint %}active{% endif %}">
       <i class="fa-solid fa-message"></i> Messages
+    </a>
+    <a href="{{ url_for('professeur.parents') }}" class="sidebar-link {% if request.endpoint == 'professeur.parents' %}active{% endif %}">
+      <i class="fa-solid fa-user-group"></i> Parents d'élèves
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Espace Études</div>
+    <a href="{{ url_for('espace_etudes.professeur_dashboard') }}" class="sidebar-link" style="color: #ec4899;">
+      <i class="fa-solid fa-graduation-cap"></i> Aller à l'Espace Études
     </a>
 
     <div style="flex:1;"></div>
