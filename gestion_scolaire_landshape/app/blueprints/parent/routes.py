@@ -30,8 +30,18 @@ def dashboard():
     enfants = parent.get_enfants()
     notifs_count = Notification.query.filter_by(
         destinataire_id=current_user.id, est_lu=False).count()
+        
+    # Messages non lus
+    unread_messages_count = Message.query.join(Conversation).filter(
+        Conversation.participant_a_id == current_user.id,
+        Message.expediteur_utilisateur_id != current_user.id,
+        Message.est_lu == False
+    ).count()
+
     return render_template('parent/dashboard.html',
-                           parent=parent, enfants=enfants, notifs_count=notifs_count)
+                           parent=parent, enfants=enfants, 
+                           notifs_count=notifs_count,
+                           unread_messages_count=unread_messages_count)
 
 
 # ── Absences ──────────────────────────────────────────────────
@@ -129,12 +139,17 @@ def releve():
     parent  = get_parent()
     enfants = parent.get_enfants()
     releves_par_enfant = {}
+    notes_par_enfant = {}
+    from app.models.evaluation import Note
     for etu in enfants:
         releves_par_enfant[etu.id] = ReleverNotes.query.filter_by(
             etudiant_id=etu.id).all()
+        # Fetch real-time notes
+        notes_par_enfant[etu.id] = Note.query.filter_by(etudiant_id=etu.id).all()
     return render_template('parent/releve.html',
                            parent=parent, enfants=enfants,
-                           releves=releves_par_enfant)
+                           releves=releves_par_enfant,
+                           notes_par_enfant=notes_par_enfant)
 
 
 @parent_bp.route('/releve/telecharger/<string:token>')
@@ -169,16 +184,15 @@ def chat():
     sem = Semestre.query.filter_by(est_actif=True).first()
     for etu in enfants:
         insc = etu.get_inscription_active()
-        if insc and sem:
+        if insc:
             affs = AffectationEnseignement.query.filter_by(
-                section_id=insc.section_id,
-                semestre_id=sem.id,
-                est_active=True
+                section_id=insc.section_id
             ).all()
-            profs_par_enfant[etu.id] = [
-                {'prof': a.professeur, 'matiere': a.matiere, 'aff_id': a.id}
-                for a in affs
-            ]
+            profs_uniques = {}
+            for a in affs:
+                if a.professeur_id not in profs_uniques:
+                    profs_uniques[a.professeur_id] = {'prof': a.professeur, 'matiere': a.matiere, 'aff_id': a.id}
+            profs_par_enfant[etu.id] = list(profs_uniques.values())
     convs = Conversation.query.filter_by(
         participant_a_id=current_user.id,
         participant_a_role='parent'
@@ -245,3 +259,54 @@ def envoyer_message():
         return jsonify({'ok': True})
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)}), 400
+
+
+# ── Modification Profil Parent & Enfant ───────────────────────
+@parent_bp.route('/modifier', methods=['GET', 'POST'])
+@login_required
+@parent_requis
+def modifier_profil():
+    parent = get_parent()
+    if request.method == 'POST':
+        try:
+            parent.nom        = request.form.get('nom', '').strip().upper()
+            parent.prenom     = request.form.get('prenom', '').strip().capitalize()
+            parent.profession = request.form.get('profession', '').strip()
+            parent.adresse    = request.form.get('adresse', '').strip()
+            parent.telephone  = request.form.get('telephone', '').strip()
+            db.session.commit()
+            flash('Vos informations ont été mises à jour avec succès.', 'success')
+            return redirect(url_for('parent.dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erreur : {str(e)}', 'danger')
+            
+    return render_template('parent/modifier.html', parent=parent)
+
+
+@parent_bp.route('/modifier-enfant/<int:etu_id>', methods=['GET', 'POST'])
+@login_required
+@parent_requis
+def modifier_enfant(etu_id):
+    parent = get_parent()
+    enfants = parent.get_enfants()
+    enfant = next((e for e in enfants if e.id == etu_id), None)
+    if not enfant:
+        abort(403)
+        
+    if request.method == 'POST':
+        try:
+            enfant.nom            = request.form.get('nom', '').strip().upper()
+            enfant.prenom         = request.form.get('prenom', '').strip().capitalize()
+            dn = request.form.get('date_naissance')
+            if dn:
+                enfant.date_naissance = datetime.strptime(dn, '%Y-%m-%d').date()
+            enfant.lieu_naissance = request.form.get('lieu_naissance', '').strip()
+            db.session.commit()
+            flash(f'Les informations de {enfant.prenom} ont été mises à jour.', 'success')
+            return redirect(url_for('parent.dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erreur : {str(e)}', 'danger')
+            
+    return render_template('parent/modifier.html', parent=parent, enfant=enfant)

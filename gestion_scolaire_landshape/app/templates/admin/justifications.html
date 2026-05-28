@@ -33,7 +33,7 @@
             <small class="text-muted">{{ pres.etudiant.utilisateur.username }}</small>
           </td>
           <td>
-            {% if pres.justification_fichier_url %}
+            {% if pres.fichier_justification %}
                 {% if pres.etudiant.parents %}
                     {{ pres.etudiant.parents[0].parent.nom }} {{ pres.etudiant.parents[0].parent.prenom }}
                 {% else %}
@@ -44,8 +44,8 @@
             {% endif %}
           </td>
           <td style="text-align: center;">
-            {% if pres.justification_fichier_url %}
-            <a href="{{ url_for('static', filename=pres.justification_fichier_url.replace('\\', '/').split('static/')[-1]) }}"
+            {% if pres.fichier_justification %}
+            <a href="{{ url_for('static', filename=pres.fichier_justification.replace('\\', '/').split('static/')[-1]) }}"
               target="_blank" class="btn btn-sm" style="background: rgba(255,255,255,0.1); color: #fff; padding: 0.4rem 0.8rem; border-radius: 6px;" title="Voir le document">
               <i class="fa-solid fa-file-pdf"></i> Ouvrir
             </a>

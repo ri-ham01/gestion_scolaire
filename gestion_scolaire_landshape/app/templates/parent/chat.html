@@ -1,111 +1,173 @@
-{% extends 'base.html' %}
+{% extends 'base_parent.html' %}
 {% block title %}Messagerie — EduNova{% endblock %}
 
-{% block content %}
-<div class="page-header">
-  <div class="section-inner">
-    <h1><i class="fa-solid fa-comments"></i> Messagerie Parents-Professeurs</h1>
-    <p class="text-muted">Communiquez directement avec les enseignants de vos enfants.</p>
-  </div>
-</div>
-
-<div class="section-inner" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; align-items: start;">
-
-  <!-- Sidebar : Démarrer une nouvelle discussion -->
-  <div class="card glass-card">
-    <h3 style="margin-bottom: 1.5rem; color: var(--c-nova-cyan);"><i class="fa-solid fa-address-book"></i> Équipe
-      Pédagogique</h3>
-
-    {% for enfant in enfants %}
-    <div style="margin-bottom: 1.5rem;">
-      <h4 style="margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
-        <i class="fa-solid fa-child" style="color: var(--c-aurora-indigo);"></i> Profs de {{ enfant.prenom }}
-      </h4>
-
-      {% set profs = profs_par_enfant.get(enfant.id, []) %}
-      {% if profs %}
-      <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.8rem;">
-        {% for item in profs %}
-        <li
-          style="background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <strong>{{ item.prof.nom }} {{ item.prof.prenom }}</strong><br>
-            <small class="text-muted">{{ item.matiere.nom }}</small>
-          </div>
-          <a href="{{ url_for('parent.nouvelle_conversation', prof_user_id=item.prof.utilisateur_id, etu_id=enfant.id) }}"
-            class="btn btn-primary btn-sm" title="Contacter">
-            <i class="fa-solid fa-paper-plane"></i>
-          </a>
-        </li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="text-muted" style="font-size: 0.9rem;">Aucun professeur assigné ce semestre.</p>
-      {% endif %}
+{% block parent_content %}
+<div class="chat-container solid-card">
+  
+  <!-- Sidebar: Contacts -->
+  <div class="chat-sidebar border-end">
+    <div class="sidebar-header p-3 border-bottom bg-light">
+      <h5 class="mb-0 text-dark fw-bold"><i class="fa-solid fa-address-book text-primary me-2"></i> Équipe Pédagogique</h5>
     </div>
-    {% else %}
-    <p class="text-muted">Aucun enfant lié.</p>
-    {% endfor %}
-  </div>
 
-  <!-- Main: Liste des conversations existantes -->
-  <div class="card glass-card">
-    <h3 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-message"></i> Vos Conversations</h3>
+    <div class="sidebar-content p-3">
+      {% for enfant in enfants %}
+      <div class="enfant-group mb-4">
+        <h6 class="text-uppercase text-muted small fw-bold mb-3 d-flex align-items-center">
+          <i class="fa-solid fa-child text-info me-2"></i> Professeurs de {{ enfant.prenom }}
+        </h6>
 
-    {% if convs %}
-    <div style="display: flex; flex-direction: column; gap: 1rem;">
-      {% for conv in convs %}
-      {% set unread = conv.messages.filter_by(est_lu=False, expediteur_role='professeur').count() %}
-      {% set etudiant = conv.etudiant %}
-      <a href="{{ url_for('parent.conversation_detail', conv_id=conv.id) }}" class="conv-item"
-        style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-        <div style="display: flex; gap: 1rem; align-items: center;">
-          <div
-            style="width: 45px; height: 45px; border-radius: 50%; background: var(--c-aurora-indigo); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold;">
-            <i class="fa-solid fa-user-tie"></i>
-          </div>
-          <div>
-            <h4 style="margin: 0; color: #fff;">Professeur (ID Utilisateur: {{ conv.participant_b_id }})</h4>
-            <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
-              Concerne : {{ etudiant.prenom }} {{ etudiant.nom }}
-            </p>
-            <small class="text-muted">
-              {% set last =
-              conv.messages.order_by(conv.messages.column_descriptions[0]['entity'].created_at.desc()).first() %}
-              {% if last %}
-              Dernier msg : {{ last.created_at.strftime('%d/%m %H:%M') }}
-              {% else %}
-              Nouvelle conversation
-              {% endif %}
-            </small>
-          </div>
+        {% set profs = profs_par_enfant.get(enfant.id, []) %}
+        {% if profs %}
+        <div class="list-group list-group-flush gap-2">
+          {% for item in profs %}
+          <a href="{{ url_for('parent.nouvelle_conversation', prof_user_id=item.prof.utilisateur_id, etu_id=enfant.id) }}" class="contact-item d-flex align-items-center p-2 rounded text-decoration-none text-dark hover-bg-light">
+            <div class="contact-avatar bg-primary-gradient text-white me-3">
+              {{ item.prof.nom[0] }}{{ item.prof.prenom[0] }}
+            </div>
+            <div class="flex-grow-1 min-w-0">
+              <h6 class="mb-0 text-truncate fw-semibold">{{ item.prof.nom }} {{ item.prof.prenom }}</h6>
+              <small class="text-muted text-truncate d-block"><i class="fa-solid fa-book me-1"></i> {{ item.matiere.nom }}</small>
+            </div>
+            <div class="ms-2 text-primary">
+              <i class="fa-regular fa-comment-dots"></i>
+            </div>
+          </a>
+          {% endfor %}
         </div>
-
-        {% if unread > 0 %}
-        <span class="badge"
-          style="background: var(--s-danger); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">{{
-          unread }}</span>
         {% else %}
-        <i class="fa-solid fa-chevron-right text-muted"></i>
+        <p class="text-muted small fst-italic">Aucun professeur assigné pour le moment.</p>
         {% endif %}
-      </a>
+      </div>
+      {% else %}
+      <p class="text-muted text-center mt-4">Aucun enfant lié.</p>
       {% endfor %}
     </div>
-    {% else %}
-    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
-      <i class="fa-regular fa-comments fa-3x mb-2"></i>
-      <p>Vous n'avez aucune conversation active.<br>Sélectionnez un professeur dans le panneau de gauche pour commencer.
-      </p>
+  </div>
+
+  <!-- Main: Conversations List -->
+  <div class="chat-main">
+    <div class="main-header p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
+      <h5 class="mb-0 text-dark fw-bold"><i class="fa-brands fa-rocketchat text-primary me-2"></i> Vos Messages</h5>
     </div>
-    {% endif %}
+
+    <div class="main-content p-0">
+      {% if convs %}
+      <div class="list-group list-group-flush">
+        {% for conv in convs %}
+        {% set unread = conv.messages.filter_by(est_lu=False, expediteur_role='professeur').count() %}
+        {% set etudiant = conv.etudiant_concerne %}
+        <a href="{{ url_for('parent.conversation_detail', conv_id=conv.id) }}" class="conversation-item list-group-item list-group-item-action d-flex align-items-center p-3 border-bottom {% if unread > 0 %}unread{% endif %}">
+          
+          <div class="conv-avatar bg-secondary text-white me-3 position-relative">
+            <i class="fa-solid fa-chalkboard-user"></i>
+            {% if unread > 0 %}
+            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+              <span class="visually-hidden">New alerts</span>
+            </span>
+            {% endif %}
+          </div>
+          
+          <div class="flex-grow-1 min-w-0">
+            <div class="d-flex justify-content-between align-items-baseline mb-1">
+              <h6 class="mb-0 fw-bold text-dark text-truncate">Professeur (ID: {{ conv.participant_b_id }})</h6>
+              
+              {% set last = conv.messages.order_by(conv.messages.column_descriptions[0]['entity'].date_envoi.desc()).first() %}
+              <small class="text-muted ms-2 text-nowrap">
+                {% if last %}
+                {{ last.date_envoi.strftime('%d/%m %H:%M') }}
+                {% endif %}
+              </small>
+            </div>
+            
+            <p class="mb-0 text-truncate text-muted small">
+              <span class="badge bg-light text-dark border me-1">{{ etudiant.prenom }}</span>
+              {% if last %}
+                {% if last.expediteur_role == 'parent' %}<i class="fa-solid fa-reply fa-xs me-1"></i> Vous: {% endif %}
+                {{ last.contenu }}
+              {% else %}
+                <span class="fst-italic">Nouvelle conversation</span>
+              {% endif %}
+            </p>
+          </div>
+          
+          {% if unread > 0 %}
+          <div class="ms-3">
+            <span class="badge rounded-pill bg-danger">{{ unread }}</span>
+          </div>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-chat h-100 d-flex flex-column align-items-center justify-content-center text-muted p-5 text-center">
+        <div class="empty-icon bg-light rounded-circle p-4 mb-3">
+          <i class="fa-regular fa-comments fa-4x text-primary opacity-50"></i>
+        </div>
+        <h5 class="text-dark">Aucun message pour le moment</h5>
+        <p>Sélectionnez un professeur dans le panneau de gauche pour démarrer une nouvelle discussion.</p>
+      </div>
+      {% endif %}
+    </div>
   </div>
 
 </div>
 
 <style>
-  .conv-item:hover {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border-color: var(--c-nova-cyan) !important;
-  }
+:root {
+  --primary-gradient: linear-gradient(135deg, #4f46e5, #06b6d4);
+}
+.solid-card {
+  background: white; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+.chat-container {
+  display: flex;
+  height: calc(100vh - 120px);
+  min-height: 500px;
+}
+.chat-sidebar {
+  width: 320px;
+  background: #f8fafc;
+  display: flex; flex-direction: column;
+}
+.chat-main {
+  flex-grow: 1;
+  display: flex; flex-direction: column;
+  background: white;
+}
+.sidebar-content, .main-content {
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.contact-avatar, .conv-avatar {
+  width: 45px; height: 45px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 1.1rem;
+}
+.bg-primary-gradient { background: var(--primary-gradient); }
+
+.hover-bg-light:hover { background-color: #f1f5f9; }
+.contact-item { transition: background-color 0.2s; border: 1px solid transparent; }
+.contact-item:hover { border-color: #e2e8f0; }
+
+.conversation-item {
+  transition: background-color 0.2s;
+  border-left: 3px solid transparent !important;
+}
+.conversation-item:hover { background-color: #f8fafc; }
+.conversation-item.unread {
+  background-color: #f0fdf4;
+  border-left-color: #22c55e !important;
+}
+.min-w-0 { min-width: 0; }
+
+@media (max-width: 768px) {
+  .chat-container { flex-direction: column; height: auto; }
+  .chat-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #dee2e6; max-height: 300px; }
+  .chat-main { min-height: 400px; }
+}
 </style>
 {% endblock %}

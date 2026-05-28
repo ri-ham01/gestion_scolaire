@@ -35,11 +35,20 @@ def dashboard():
         professeur_id=prof.id, est_active=True).all()
     total_students = sum(aff.section.inscriptions.count() for aff in affs)
     # Notifications non lues
-    from app.models.communication import Notification
+    from app.models.communication import Notification, Message, Conversation
     notifs_count = Notification.query.filter_by(
         destinataire_id=current_user.id, est_lu=False).count()
+        
+    # Messages non lus
+    unread_messages_count = Message.query.join(Conversation).filter(
+        Conversation.participant_b_id == current_user.id,
+        Message.expediteur_utilisateur_id != current_user.id,
+        Message.est_lu == False
+    ).count()
+
     return render_template('professeur/dashboard.html',
                            prof=prof, affs=affs, notifs_count=notifs_count,
+                           unread_messages_count=unread_messages_count,
                            total_students=total_students)
 
 @prof_bp.route('/mes-etudiants')

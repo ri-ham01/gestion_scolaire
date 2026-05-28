@@ -1,11 +1,14 @@
-{% extends 'base.html' %}
+{% extends 'base_parent.html' %}
 {% block title %}Absences de mes enfants — EduNova{% endblock %}
 
-{% block content %}
-<div class="page-header">
-  <div class="section-inner">
-    <h1><i class="fa-solid fa-calendar-xmark"></i> Suivi des Absences</h1>
-    <p class="text-muted">Consultez l'historique des absences et soumettez des justificatifs (médicaux ou autres).</p>
+{% block parent_content %}
+<div class="parent-page-header solid-header mb-4">
+  <div class="header-left">
+    <h1><i class="fa-solid fa-calendar-xmark text-danger"></i> Suivi des Absences</h1>
+    <p>Consultez l'historique des absences et soumettez des justificatifs (médicaux ou autres).</p>
+  </div>
+  <div class="header-right">
+    <a href="{{ url_for('parent.dashboard') }}" class="btn btn-outline-secondary btn-solid"><i class="fa-solid fa-arrow-left"></i> Retour</a>
   </div>
 </div>
 
@@ -15,93 +18,109 @@
   {% set presences = data.presences %}
   {% set compteur = data.compteur %}
 
-  <div class="card glass-card" style="margin-bottom: 2rem;">
-    <div
-      style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-      <div>
-        <h3 style="margin: 0; color: var(--c-nova-cyan);"><i class="fa-solid fa-user-graduate"></i> {{ etu.nom }} {{
-          etu.prenom }}</h3>
-        <p class="text-muted" style="margin-top: 0.2rem;">Matricule: {{ etu.matricule }}</p>
-      </div>
-
-      <!-- Compteur global -->
-      {% if compteur %}
-      <div style="display: flex; gap: 1rem;">
-        <div
-          style="background: rgba(0,0,0,0.3); padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-          <span style="font-size: 1.5rem; font-weight: bold; color: var(--s-warning);">{{
-            compteur.total_absences_non_justifiees }}</span><br>
-          <small class="text-muted">Non Justifiées</small>
+  <div class="card solid-card mb-5 overflow-hidden">
+    <!-- Header de l'enfant -->
+    <div class="child-header d-flex justify-content-between align-items-center flex-wrap p-4 border-bottom">
+      <div class="d-flex align-items-center gap-3">
+        <div class="avatar-lg bg-primary-gradient text-white">
+          <i class="fa-solid fa-user-graduate"></i>
         </div>
-        <div
-          style="background: rgba(0,0,0,0.3); padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-          <span style="font-size: 1.5rem; font-weight: bold; color: var(--c-nova-cyan);">{{
-            compteur.total_absences_justifiees }}</span><br>
-          <small class="text-muted">Justifiées</small>
+        <div>
+          <h3 class="mb-1 text-dark">{{ etu.nom }} {{ etu.prenom }}</h3>
+          <span class="text-muted font-monospace"><i class="fa-solid fa-id-card"></i> {{ etu.matricule }}</span>
+        </div>
+      </div>
+      
+      <!-- Compteurs -->
+      {% if compteur %}
+      <div class="absence-stats d-flex gap-3 mt-3 mt-md-0">
+        <div class="stat-box warning-box">
+          <span class="stat-number">{{ compteur.total_absences_non_justifiees }}</span>
+          <span class="stat-label">Non Justifiées</span>
+        </div>
+        <div class="stat-box success-box">
+          <span class="stat-number">{{ compteur.total_absences_justifiees }}</span>
+          <span class="stat-label">Justifiées</span>
         </div>
       </div>
       {% endif %}
     </div>
 
+    <!-- Alert Exclusion -->
+    {% if compteur and compteur.total_absences_non_justifiees > 0 %}
+    <div class="alert custom-alert-danger mx-4 mt-4">
+      <div class="d-flex align-items-center">
+        <i class="fa-solid fa-triangle-exclamation fa-2x me-3 text-danger"></i>
+        <div>
+          <strong>Rappel Important :</strong> À partir de <strong>10 absences non justifiées</strong>, l'étudiant est automatiquement exclu de l'année en cours et déclaré redoublant.
+          {% if compteur.total_absences_non_justifiees >= 7 %}
+            <br><span class="text-danger fw-bold">Attention ! L'étudiant est proche du seuil d'exclusion.</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Table des absences -->
-    <div style="overflow-x: auto;">
-      <table class="data-table" style="width: 100%; border-collapse: collapse;">
+    <div class="table-responsive p-0 mt-2">
+      <table class="table modern-table mb-0">
         <thead>
           <tr>
-            <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Date</th>
-            <th style="text-align: left; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Matière /
-              Enseignant</th>
-            <th style="text-align: center; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Statut
-              Justification</th>
-            <th style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Action</th>
+            <th>Date de l'absence</th>
+            <th>Matière / Enseignant</th>
+            <th class="text-center">Statut Justification</th>
+            <th class="text-end pe-4">Action</th>
           </tr>
         </thead>
         <tbody>
           {% for pres in presences %}
-          <tr>
-            <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
-              <i class="fa-solid fa-calendar" style="color: var(--text-muted);"></i> {{
-              pres.date_enregistrement.strftime('%d/%m/%Y') }}
+          <tr class="align-middle">
+            <td class="fw-semibold">
+              <div class="d-flex align-items-center gap-2">
+                <div class="date-icon"><i class="fa-regular fa-calendar text-primary"></i></div>
+                {{ pres.date_enregistrement.strftime('%d/%m/%Y') }}
+              </div>
             </td>
-            <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <td>
               {% if pres.seance and pres.seance.affectation %}
-              <strong>{{ pres.seance.affectation.matiere.nom }}</strong><br>
-              <small class="text-muted">Prof. {{ pres.seance.affectation.professeur.nom }}</small>
+              <div class="fw-bold text-dark">{{ pres.seance.affectation.matiere.nom }}</div>
+              <div class="text-muted small"><i class="fa-solid fa-chalkboard-user"></i> Prof. {{ pres.seance.affectation.professeur.nom }}</div>
               {% else %}
               <span class="text-muted">-</span>
               {% endif %}
             </td>
-            <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+            <td class="text-center">
               {% if pres.statut_justification == 'acceptee' %}
-              <span class="badge" style="background: rgba(34,197,94,0.2); color: var(--s-success);"><i
-                  class="fa-solid fa-check"></i> Acceptée</span>
+              <span class="badge badge-soft-success"><i class="fa-solid fa-check me-1"></i> Acceptée</span>
               {% elif pres.statut_justification == 'refusee' %}
-              <span class="badge" style="background: rgba(239,68,68,0.2); color: var(--s-danger);"><i
-                  class="fa-solid fa-xmark"></i> Refusée</span>
+              <span class="badge badge-soft-danger"><i class="fa-solid fa-xmark me-1"></i> Refusée</span>
               {% elif pres.statut_justification == 'en_attente' %}
-              <span class="badge" style="background: rgba(245,158,11,0.2); color: var(--s-warning);"><i
-                  class="fa-solid fa-hourglass-half"></i> En cours</span>
+              <span class="badge badge-soft-warning"><i class="fa-solid fa-hourglass-half me-1"></i> En cours</span>
               {% else %}
-              <span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-muted);">Non
-                justifiée</span>
+              <span class="badge badge-soft-secondary"><i class="fa-solid fa-circle-exclamation me-1"></i> Non justifiée</span>
               {% endif %}
             </td>
-            <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right;">
+            <td class="text-end pe-4">
               {% if not pres.statut_justification %}
-              <button class="btn btn-primary btn-sm"
+              <button class="btn btn-outline-primary btn-sm btn-action hover-lift"
                 onclick="ouvrirModalJustification({{ pres.id }}, '{{ pres.date_enregistrement.strftime('%d/%m/%Y') }}', '{{ pres.seance.affectation.matiere.nom if pres.seance and pres.seance.affectation else '' }}')">
                 <i class="fa-solid fa-upload"></i> Justifier
               </button>
               {% else %}
-              <span class="text-muted" style="font-size: 0.85rem;"><i class="fa-solid fa-lock"></i> Traité</span>
+              <span class="text-muted small"><i class="fa-solid fa-lock me-1"></i> Traité</span>
               {% endif %}
             </td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">
-              <i class="fa-solid fa-check-circle fa-2x mb-1" style="color: var(--s-success);"></i><br>
-              Aucune absence enregistrée pour le moment.
+            <td colspan="4" class="text-center py-5">
+              <div class="empty-state">
+                <div class="icon-circle bg-soft-success text-success mb-3 mx-auto">
+                  <i class="fa-solid fa-check fa-2x"></i>
+                </div>
+                <h5 class="text-dark">Assiduité parfaite</h5>
+                <p class="text-muted mb-0">Aucune absence enregistrée pour cet étudiant.</p>
+              </div>
             </td>
           </tr>
           {% endfor %}
@@ -113,58 +132,118 @@
 </div>
 
 <!-- Modal Upload Justification -->
-<dialog id="modalJustification" class="edunova-dialog"
-  style="width: 100%; max-width: 500px; padding: 2rem; border-radius: 16px; border: var(--border-glass); background: var(--bg-midnight-slate); color: var(--text-main);">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-    <h3 style="margin: 0;"><i class="fa-solid fa-file-medical"></i> Soumettre un justificatif</h3>
-    <button onclick="document.getElementById('modalJustification').close()" class="btn btn-glass"
-      style="padding: 0.5rem;"><i class="fa-solid fa-xmark"></i></button>
+<dialog id="modalJustification" class="modern-dialog">
+  <div class="dialog-content">
+    <div class="dialog-header border-bottom pb-3 mb-4 d-flex justify-content-between align-items-center">
+      <h4 class="mb-0 text-dark"><i class="fa-solid fa-file-medical text-primary me-2"></i> Soumettre un justificatif</h4>
+      <button onclick="document.getElementById('modalJustification').close()" class="btn-close-dialog">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="alert alert-info border-0 bg-soft-primary text-primary mb-4">
+      <i class="fa-solid fa-circle-info me-2"></i>
+      Absence du <strong id="modalDateInfo"></strong> en <strong id="modalMatiereInfo"></strong>.
+    </div>
+
+    <form id="formJustification" method="POST" enctype="multipart/form-data">
+      <div class="form-group mb-4">
+        <label class="form-label fw-semibold text-dark">Motif de l'absence <span class="text-danger">*</span></label>
+        <textarea name="justification" class="form-control" rows="3" placeholder="Raison médicale, urgence familiale..." required></textarea>
+      </div>
+
+      <div class="form-group mb-4">
+        <label class="form-label fw-semibold text-dark">Document justificatif <span class="text-danger">*</span></label>
+        <div class="file-upload-wrapper">
+          <input type="file" name="fichier" class="form-control" accept=".pdf" required>
+        </div>
+        <small class="text-muted mt-2 d-block"><i class="fa-solid fa-file-pdf me-1"></i> Format PDF uniquement (Max 5MB).</small>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-2">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalJustification').close()">Annuler</button>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane me-2"></i> Envoyer le justificatif</button>
+      </div>
+    </form>
   </div>
-
-  <p style="margin-bottom: 1rem; font-size: 0.9rem;">
-    Absence du <strong id="modalDateInfo" style="color: var(--c-nova-cyan);"></strong> en <strong
-      id="modalMatiereInfo"></strong>.
-  </p>
-
-  <form id="formJustification" method="POST" enctype="multipart/form-data">
-    <div class="form-group" style="margin-bottom: 1rem;">
-      <label class="form-label">Motif de l'absence <span style="color:var(--s-danger);">*</span></label>
-      <textarea name="justification" class="form-input" rows="3" placeholder="Raison médicale, familiale, etc..."
-        required></textarea>
-    </div>
-
-    <div class="form-group" style="margin-bottom: 1.5rem;">
-      <label class="form-label">Document justificatif (PDF, JPG, PNG) <span
-          style="color:var(--s-danger);">*</span></label>
-      <input type="file" name="fichier" class="form-input" accept=".pdf,.jpg,.jpeg,.png" style="padding: 0.5rem;"
-        required>
-      <small class="text-muted" style="display: block; margin-top: 0.5rem;"><i class="fa-solid fa-info-circle"></i>
-        Taille max 5MB.</small>
-    </div>
-
-    <div style="display: flex; justify-content: flex-end; gap: 1rem;">
-      <button type="button" class="btn btn-glass"
-        onclick="document.getElementById('modalJustification').close()">Annuler</button>
-      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Envoyer à
-        l'administration</button>
-    </div>
-  </form>
 </dialog>
 
 <script>
   function ouvrirModalJustification(presId, dateStr, matiereStr) {
     document.getElementById('modalDateInfo').innerText = dateStr;
     document.getElementById('modalMatiereInfo').innerText = matiereStr || 'Matière inconnue';
-    // Mettre à jour l'action du formulaire avec l'ID de présence
     document.getElementById('formJustification').action = "{{ url_for('parent.justifier_absence', pres_id=0) }}".replace('0', presId);
     document.getElementById('modalJustification').showModal();
   }
 </script>
 
 <style>
-  dialog::backdrop {
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-  }
+:root {
+  --primary-gradient: linear-gradient(135deg, var(--c-aurora-indigo), var(--c-nova-cyan));
+}
+.solid-header {
+  background: white;
+  padding: 2rem; border-radius: 16px; color: #1e293b;
+  display: flex; justify-content: space-between; align-items: center;
+  border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+.solid-header h1 { color: #1e293b; font-weight: 700; margin-bottom: 0.5rem; }
+.solid-header p { color: #64748b; margin-bottom: 0; }
+.solid-card {
+  background: white; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+}
+.btn-solid { border-radius: 50px; font-weight: 600; padding: 0.5rem 1.5rem; }
+.avatar-lg {
+  width: 50px; height: 50px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+}
+.bg-primary-gradient { background: var(--primary-gradient); }
+.stat-box {
+  padding: 0.75rem 1.5rem; border-radius: 12px; text-align: center;
+  min-width: 120px;
+}
+.warning-box { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); }
+.warning-box .stat-number { color: #d97706; }
+.success-box { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); }
+.success-box .stat-number { color: #16a34a; }
+.stat-number { display: block; font-size: 1.5rem; font-weight: 700; line-height: 1; margin-bottom: 0.25rem; }
+.stat-label { font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
+
+.custom-alert-danger {
+  background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2);
+  border-left: 4px solid #ef4444; color: #b91c1c; border-radius: 8px;
+}
+.modern-table th {
+  background: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; padding: 1rem; border-bottom: 2px solid #e2e8f0;
+}
+.modern-table td { padding: 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.date-icon { width: 35px; height: 35px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+
+.badge-soft-success { background: rgba(34,197,94,0.1); color: #16a34a; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; }
+.badge-soft-danger { background: rgba(239,68,68,0.1); color: #dc2626; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; }
+.badge-soft-warning { background: rgba(245,158,11,0.1); color: #d97706; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; }
+.badge-soft-secondary { background: #f1f5f9; color: #64748b; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; }
+
+.bg-soft-success { background: rgba(34, 197, 94, 0.1); }
+.icon-circle { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+.btn-action { border-radius: 8px; padding: 0.5rem 1rem; font-weight: 600; }
+.hover-lift { transition: transform 0.2s ease; }
+.hover-lift:hover { transform: translateY(-2px); }
+
+/* Dialog styling */
+.modern-dialog {
+  border: none; border-radius: 16px; padding: 0; max-width: 550px; width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  background: white;
+}
+.modern-dialog::backdrop { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
+.dialog-content { padding: 2rem; }
+.btn-close-dialog { background: none; border: none; color: #94a3b8; font-size: 1.25rem; cursor: pointer; transition: color 0.2s; }
+.btn-close-dialog:hover { color: #ef4444; }
+.form-control { border-radius: 8px; border: 1px solid #cbd5e1; padding: 0.75rem; }
+.form-control:focus { border-color: var(--c-aurora-indigo); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1); outline: none; }
+.bg-soft-primary { background: rgba(59, 130, 246, 0.05); }
 </style>
 {% endblock %}

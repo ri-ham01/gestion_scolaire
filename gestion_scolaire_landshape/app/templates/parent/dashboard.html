@@ -2,90 +2,363 @@
 {% block title %}Espace Parents — EduNova{% endblock %}
 
 {% block parent_content %}
-<div class="parent-page-header" style="background: url('{{ url_for('static', filename='images/parent-bg.jpg') }}') center/cover; position: relative;">
-  <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.75);"></div>
-  <div class="header-left" style="position: relative; z-index: 1;">
-    <h1><i class="fa-solid fa-house-user"></i> Bienvenue, {{ parent.prenom }} {{ parent.nom }}</h1>
-    <p>Suivez le parcours académique de vos enfants, leurs présences et leurs résultats.</p>
-    <div style="margin-top: 1rem; display: flex; gap: 1rem; font-size: 0.9rem;">
-      {% if parent.profession %}
-      <span class="badge" style="background: rgba(255,255,255,0.1);"><i class="fa-solid fa-briefcase"></i> {{ parent.profession }}</span>
-      {% endif %}
-      {% if parent.statut_emploi %}
-      <span class="badge" style="background: rgba(255,255,255,0.1);"><i class="fa-solid fa-user-tie"></i> {{ parent.statut_emploi | capitalize | replace('_', ' ') }}</span>
-      {% endif %}
+<div class="parent-dashboard">
+  
+  <!-- Hero Section -->
+  <div class="hero-section mb-5" style="background: linear-gradient(135deg, var(--c-aurora-indigo), var(--c-nova-cyan)); color: white; padding: 3rem; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+    <div class="hero-content relative z-10">
+      <div class="flex justify-between items-center flex-wrap gap-4">
+        <div>
+          <h1 class="hero-title"><i class="fa-solid fa-house-user"></i> Bienvenue, {{ parent.prenom }} {{ parent.nom }}</h1>
+          <p class="hero-subtitle">Suivez le parcours académique de vos enfants, leurs présences et leurs résultats en temps réel.</p>
+          <div class="hero-badges">
+            {% if parent.profession %}
+            <span class="badge hero-badge"><i class="fa-solid fa-briefcase"></i> {{ parent.profession }}</span>
+            {% endif %}
+            {% if parent.statut_emploi %}
+            <span class="badge hero-badge"><i class="fa-solid fa-user-tie"></i> {{ parent.statut_emploi | capitalize | replace('_', ' ') }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="hero-actions">
+          <a href="{{ url_for('parent.modifier_profil') }}" class="btn btn-outline-light btn-glow">
+            <i class="fa-solid fa-user-pen"></i> Modifier mon profil
+          </a>
+        </div>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="section-inner">
-  {% if notifs_count > 0 %}
-  <div class="flash info mb-2"
-    style="background: rgba(139, 92, 246, 0.2); border-left: 3px solid var(--c-aurora-indigo);">
-    <i class="fa-solid fa-bell"></i>
-    <span>Vous avez <strong>{{ notifs_count }}</strong> notification(s) non lue(s).</span>
-  </div>
-  {% endif %}
-
-  <!-- Enfants Cards -->
-  <h3 style="margin-bottom: 1.5rem; color: var(--c-nova-cyan);"><i class="fa-solid fa-children"></i> Vos Enfants</h3>
-  <div
-    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
-    {% for enfant in enfants %}
-    <div class="card glass-card" style="display: flex; flex-direction: column; padding: 1.5rem; position: relative;">
-      <div style="position: absolute; top: 1.5rem; right: 1.5rem; color: var(--text-muted); opacity: 0.5;">
-        <i class="fa-solid fa-graduation-cap fa-2x"></i>
+  <div class="section-inner px-3">
+    {% if notifs_count > 0 %}
+    <div class="alert custom-alert solid-panel mb-5 d-flex align-items-center">
+      <div class="alert-icon pulse">
+        <i class="fa-solid fa-bell"></i>
       </div>
-      <h4 style="margin-bottom: 0.5rem;">{{ enfant.nom }} {{ enfant.prenom }}</h4>
-      <p class="text-muted" style="margin-bottom: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem;">Matricule:
-        {{ enfant.matricule }}</p>
-      {% if enfant.date_naissance %}
-      <p class="text-muted" style="margin-bottom: 1.5rem; font-size: 0.85rem;">
-        <i class="fa-solid fa-calendar-day"></i> Né(e) le: {{ enfant.date_naissance.strftime('%d/%m/%Y') }} {% if enfant.lieu_naissance %}à {{ enfant.lieu_naissance }}{% endif %}
-      </p>
-      {% endif %}
+      <div>
+        <h5 class="mb-0">Notifications en attente</h5>
+        <span>Vous avez <strong>{{ notifs_count }}</strong> notification(s) non lue(s). Consultez-les dans votre espace personnel.</span>
+      </div>
+    </div>
+    {% endif %}
 
-      {% set insc = enfant.get_inscription_active() %}
-      {% if insc %}
-      <p style="margin-bottom: 0.5rem;"><i class="fa-solid fa-graduation-cap" style="color:var(--c-aurora-indigo);"></i>
-        <strong>Spécialité:</strong> {{ insc.section.specialite.nom }}
-      </p>
-      <p style="margin-bottom: 0.5rem;"><i class="fa-solid fa-layer-group" style="color:var(--c-nova-cyan);"></i>
-        <strong>Classe/Section:</strong> {{ insc.section.nom }}
-      </p>
-      <p style="margin-bottom: 1.5rem;"><i class="fa-solid fa-star" style="color:var(--s-warning);"></i>
-        <strong>Année d'étude:</strong> Niveau {{ insc.section.niveau.ordre }} ({{ insc.annee_scolaire.label }})
-      </p>
+    {% if unread_messages_count > 0 %}
+    <div class="alert custom-alert solid-panel mb-5 d-flex align-items-center" style="border-left-color: var(--bs-info);">
+      <div class="alert-icon pulse" style="background: rgba(13, 202, 240, 0.1); color: var(--bs-info); box-shadow: 0 0 0 0 rgba(13, 202, 240, 0.4);">
+        <i class="fa-solid fa-envelope"></i>
+      </div>
+      <div>
+        <h5 class="mb-0">Nouveaux messages</h5>
+        <span>Vous avez <strong>{{ unread_messages_count }}</strong> message(s) non lu(s) de la part des professeurs. <a href="{{ url_for('parent.chat') }}" class="alert-link">Consultez-les ici</a>.</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="section-header d-flex justify-content-between align-items-center mb-4">
+      <h3 class="section-title"><i class="fa-solid fa-children text-gradient"></i> Vos Enfants</h3>
+    </div>
+
+    <!-- Children Cards -->
+    <div class="children-grid">
+      {% for enfant in enfants %}
+      <div class="child-card solid-panel hover-lift">
+        <div class="card-glow"></div>
+        <div class="card-header d-flex justify-content-between align-items-start">
+          <div class="child-avatar">
+            <i class="fa-solid fa-user-graduate"></i>
+          </div>
+          <a href="{{ url_for('parent.modifier_enfant', etu_id=enfant.id) }}" class="btn btn-sm btn-icon edit-btn" title="Modifier les informations">
+            <i class="fa-solid fa-pen"></i>
+          </a>
+        </div>
+        
+        <div class="card-body px-0">
+          <h4 class="child-name">{{ enfant.nom }} {{ enfant.prenom }}</h4>
+          <p class="child-matricule text-muted"><i class="fa-solid fa-id-card"></i> {{ enfant.matricule }}</p>
+          
+          <div class="child-details mt-4">
+            {% if enfant.date_naissance %}
+            <div class="detail-item">
+              <span class="detail-icon"><i class="fa-solid fa-cake-candles"></i></span>
+              <span class="detail-text">{{ enfant.date_naissance.strftime('%d/%m/%Y') }} {% if enfant.lieu_naissance %}à {{ enfant.lieu_naissance }}{% endif %}</span>
+            </div>
+            {% endif %}
+
+            {% set insc = enfant.get_inscription_active() %}
+            {% if insc %}
+            <div class="detail-item highlight">
+              <span class="detail-icon"><i class="fa-solid fa-star"></i></span>
+              <span class="detail-text">Niveau {{ insc.section.niveau.ordre }} ({{ insc.annee_scolaire.label }})</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-icon"><i class="fa-solid fa-graduation-cap"></i></span>
+              <span class="detail-text">{{ insc.section.specialite.nom }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-icon"><i class="fa-solid fa-layer-group"></i></span>
+              <span class="detail-text">Section {{ insc.section.nom }}</span>
+            </div>
+            {% else %}
+            <div class="detail-item text-danger mt-3">
+              <span class="detail-icon"><i class="fa-solid fa-ban"></i></span>
+              <span class="detail-text">Aucune inscription active.</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card-footer px-0 pt-3 mt-3 border-top">
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('parent.absences') }}" class="btn btn-custom btn-absences flex-fill">
+              <i class="fa-solid fa-calendar-xmark"></i> Absences
+            </a>
+            <a href="{{ url_for('parent.releve') }}" class="btn btn-custom btn-results flex-fill">
+              <i class="fa-solid fa-file-contract"></i> Résultats
+            </a>
+          </div>
+        </div>
+      </div>
       {% else %}
-      <p class="text-muted" style="margin-bottom: 1.5rem;"><i class="fa-solid fa-ban"></i> Aucune inscription active.
-      </p>
-      {% endif %}
+      <div class="empty-state solid-panel w-100 text-center p-5">
+        <div class="empty-icon mb-3">
+          <i class="fa-solid fa-user-xmark fa-3x text-muted"></i>
+        </div>
+        <h5>Aucun enfant lié à votre compte</h5>
+        <p class="text-muted">Veuillez contacter l'administration de l'établissement pour mettre à jour vos informations.</p>
+      </div>
+      {% endfor %}
+    </div>
 
-      <div style="display: flex; gap: 0.5rem; margin-top: auto;">
-        <a href="{{ url_for('parent.absences') }}" class="btn btn-glass btn-sm" style="flex: 1; text-align: center;"><i
-            class="fa-solid fa-calendar-xmark"></i> Absences</a>
-        <a href="{{ url_for('parent.releve') }}" class="btn btn-glass btn-sm" style="flex: 1; text-align: center;"><i
-            class="fa-solid fa-file-contract"></i> Résultats</a>
+    <!-- Quick Actions -->
+    <div class="quick-actions-section mt-5 pt-3">
+      <h3 class="section-title mb-4"><i class="fa-solid fa-bolt text-warning"></i> Accès Rapides</h3>
+      <div class="d-flex gap-3 flex-wrap">
+        <a href="{{ url_for('parent.absences') }}" class="btn btn-action-card hover-lift">
+          <span class="icon-wrapper bg-soft-danger"><i class="fa-solid fa-file-signature text-danger"></i></span>
+          <span class="action-text">Justifier une absence</span>
+        </a>
+        <a href="{{ url_for('parent.chat') }}" class="btn btn-action-card hover-lift">
+          <span class="icon-wrapper bg-soft-primary"><i class="fa-solid fa-message text-primary"></i></span>
+          <span class="action-text">Contacter un professeur</span>
+        </a>
       </div>
     </div>
-    {% else %}
-    <div class="card glass-card"
-      style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-muted);">
-      <i class="fa-solid fa-user-xmark fa-2x mb-1"></i><br>
-      Aucun enfant n'est lié à votre compte. Veuillez contacter l'administration.
-    </div>
-    {% endfor %}
-  </div>
-
-  <!-- Quick Actions -->
-  <h3 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-bolt"></i> Accès Rapides</h3>
-  <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-    <a href="{{ url_for('parent.absences') }}" class="btn btn-primary"><i class="fa-solid fa-file-signature"></i>
-      Justifier une absence</a>
-    <a href="{{ url_for('parent.chat') }}" class="btn btn-glass"><i class="fa-solid fa-message"></i> Contacter un
-      professeur</a>
-    <a href="{{ url_for('public.emploi_du_temps') }}" class="btn btn-glass"><i class="fa-solid fa-calendar-days"></i>
-      Consulter l'emploi du temps</a>
   </div>
 </div>
+
+<style>
+/* Custom Dashboard CSS */
+:root {
+  --primary-gradient: linear-gradient(135deg, var(--c-aurora-indigo), var(--c-nova-cyan));
+  --solid-bg: #ffffff;
+  --solid-border: rgba(0, 0, 0, 0.05);
+  --solid-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.parent-dashboard {
+  padding-bottom: 3rem;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Solid Panel */
+.solid-panel {
+  background: var(--solid-bg);
+  border: 1px solid var(--solid-border);
+  border-radius: 16px;
+  box-shadow: var(--solid-shadow);
+}
+
+/* Hero Section */
+.hero-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.hero-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin-bottom: 1.5rem;
+}
+.hero-badges {
+  display: flex;
+  gap: 1rem;
+}
+.hero-badge {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-weight: 500;
+}
+
+/* Buttons */
+.btn-glow {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+.btn-glow:hover {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  color: white;
+  transform: translateY(-2px);
+}
+.btn-outline-light { border-color: rgba(255,255,255,0.7); }
+
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+/* Children Cards */
+.children-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+}
+.child-card {
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.card-glow {
+  position: absolute;
+  top: -50%; right: -50%;
+  width: 150px; height: 150px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, rgba(255,255,255,0) 70%);
+  border-radius: 50%;
+  z-index: 0;
+}
+.child-avatar {
+  width: 50px; height: 50px;
+  background: var(--primary-gradient);
+  border-radius: 12px;
+  display: flex;
+  align-items: center; justify-content: center;
+  color: white; font-size: 1.5rem;
+  box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3);
+}
+.edit-btn {
+  background: #f1f5f9;
+  color: #64748b;
+  border-radius: 50%;
+  width: 35px; height: 35px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s ease;
+}
+.edit-btn:hover {
+  background: #e2e8f0;
+  color: var(--c-aurora-indigo);
+  transform: rotate(15deg);
+}
+.child-name {
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 1rem; margin-bottom: 0.25rem;
+}
+.child-matricule {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+.detail-item {
+  display: flex; align-items: center;
+  margin-bottom: 0.75rem;
+  color: #475569;
+  font-size: 0.95rem;
+}
+.detail-icon {
+  width: 25px;
+  color: #94a3b8;
+}
+.highlight .detail-icon {
+  color: var(--s-warning);
+}
+.highlight .detail-text {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.btn-custom {
+  padding: 0.75rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  border: none;
+}
+.btn-absences {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+.btn-absences:hover {
+  background: #ef4444;
+  color: white;
+}
+.btn-results {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+.btn-results:hover {
+  background: #3b82f6;
+  color: white;
+}
+
+/* Quick Actions */
+.text-gradient {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.btn-action-card {
+  display: flex; align-items: center;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-radius: 14px;
+  text-decoration: none;
+  color: #1e293b;
+  font-weight: 600;
+  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+.icon-wrapper {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  margin-right: 1rem;
+}
+.bg-soft-danger { background: rgba(239, 68, 68, 0.1); }
+.bg-soft-primary { background: rgba(59, 130, 246, 0.1); }
+
+/* Alerts */
+.custom-alert {
+  border-left: 4px solid var(--c-aurora-indigo);
+}
+.alert-icon {
+  width: 45px; height: 45px;
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--c-aurora-indigo);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem;
+  margin-right: 1.25rem;
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+}
+.pulse {
+  animation: pulse 2s infinite;
+}
+</style>
 {% endblock %}

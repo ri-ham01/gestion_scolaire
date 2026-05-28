@@ -9,6 +9,14 @@
   </div>
 </div>
 
+{% if unread_messages_count > 0 %}
+<div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert" style="margin-bottom: 2rem;">
+  <i class="fa-solid fa-envelope me-2"></i> Vous avez <strong>{{ unread_messages_count }}</strong> nouveau(x) message(s) non lu(s).
+  <a href="{{ url_for('professeur.messages') }}" class="alert-link">Consulter vos messages</a>.
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
 <div>
   <!-- KPIs -->
   <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 2rem;">

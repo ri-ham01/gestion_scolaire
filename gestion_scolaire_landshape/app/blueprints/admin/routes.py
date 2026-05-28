@@ -716,11 +716,32 @@ def justifications():
 @login_required
 @admin_requis
 def accepter_justification(pres_id):
-    pres = Presence.query.get_or_404(pres_id)
+    from app.services.presence_service import accepter_justification as srv_accepter
+    from app.services.notif_service import envoyer_notification
+    
     try:
-        pres.accepter_justification(current_user.administrateur.id)
-        db.session.commit()
-        flash('Justification acceptée — absence annulée.', 'success')
+        pres = Presence.query.get_or_404(pres_id)
+        parent_id = pres.justifie_par_parent_id
+        
+        success = srv_accepter(pres_id, current_user.administrateur.id)
+        if success:
+            flash('Justification acceptée — absence annulée.', 'success')
+            
+            # Send notification to the parent
+            if parent_id:
+                parent = db.session.get(Parent, parent_id)
+                if parent and parent.utilisateur_id:
+                    envoyer_notification(
+                        destinataire_id=parent.utilisateur_id,
+                        destinataire_role='parent',
+                        type_notif='justification_acceptee',
+                        titre='Justification acceptée',
+                        contenu=f'Votre justificatif pour l\'absence de {pres.etudiant.prenom} a été approuvé. L\'absence n\'est plus comptabilisée comme non justifiée.',
+                        ref_table='presences',
+                        ref_id=pres_id
+                    )
+        else:
+            flash("Impossible d'accepter la justification.", 'warning')
     except Exception as e:
         db.session.rollback()
         flash(f'Erreur : {str(e)}', 'danger')
@@ -731,11 +752,32 @@ def accepter_justification(pres_id):
 @login_required
 @admin_requis
 def refuser_justification(pres_id):
-    pres = Presence.query.get_or_404(pres_id)
+    from app.services.presence_service import refuser_justification as srv_refuser
+    from app.services.notif_service import envoyer_notification
+    
     try:
-        pres.refuser_justification(current_user.administrateur.id)
-        db.session.commit()
-        flash('Justification refusée.', 'warning')
+        pres = Presence.query.get_or_404(pres_id)
+        parent_id = pres.justifie_par_parent_id
+        
+        success = srv_refuser(pres_id, current_user.administrateur.id)
+        if success:
+            flash('Justification refusée.', 'warning')
+            
+            # Send notification to the parent
+            if parent_id:
+                parent = db.session.get(Parent, parent_id)
+                if parent and parent.utilisateur_id:
+                    envoyer_notification(
+                        destinataire_id=parent.utilisateur_id,
+                        destinataire_role='parent',
+                        type_notif='justification_refusee',
+                        titre='Justification refusée',
+                        contenu=f'Votre justificatif pour l\'absence de {pres.etudiant.prenom} a été refusé. L\'absence reste comptabilisée comme non justifiée.',
+                        ref_table='presences',
+                        ref_id=pres_id
+                    )
+        else:
+            flash("Impossible de refuser la justification.", 'warning')
     except Exception as e:
         db.session.rollback()
         flash(f'Erreur : {str(e)}', 'danger')

@@ -2,11 +2,22 @@
 
 {% block head %}
 <style>
+/* ── Hide Global Animated Background for Parent Space ── */
+#bg-canvas {
+  display: none !important;
+}
+
+body {
+  background: #f8fafc !important; /* Clean light gray professional background */
+  color: #1e293b;
+}
+
 /* ── Parent Layout ── */
 .parent-layout {
   display: flex;
   gap: 0;
   min-height: calc(100vh - 70px);
+  background: #f8fafc; /* Solid professional background */
 }
 
 /* ── Sidebar ── */

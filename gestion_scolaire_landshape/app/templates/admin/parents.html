@@ -19,9 +19,9 @@
     <table class="glass-table">
       <thead>
         <tr>
-          <th>Parent</th>
-          <th>Contact</th>
-          <th>Enfants Liés</th>
+          <th>Parent & Profession</th>
+          <th>Contact & Identifiants</th>
+          <th>Enfants Liés (Étudiants)</th>
           <th style="text-align: right;">Actions</th>
         </tr>
       </thead>
@@ -30,19 +30,22 @@
         <tr>
           <td>
             <strong>{{ parent.nom }} {{ parent.prenom }}</strong><br>
-            <small class="text-muted"><i class="fa-solid fa-user"></i> {{ parent.utilisateur.username }}</small>
+            <small class="text-muted"><i class="fa-solid fa-briefcase"></i> {{ parent.profession or 'Non renseignée' }}</small>
           </td>
           <td>
-            <a href="mailto:{{ parent.email }}" style="color: var(--c-nova-cyan);"><i class="fa-solid fa-envelope"></i>
-              {{ parent.email }}</a><br>
-            {% if parent.telephone %}<span class="text-muted"><i class="fa-solid fa-phone"></i> {{ parent.telephone
-              }}</span>{% endif %}
+            <div style="margin-bottom: 0.5rem;">
+              <span class="text-muted small">Email:</span> <strong style="color: var(--c-nova-cyan);">{{ parent.email }}</strong>
+            </div>
+            <div style="margin-bottom: 0.5rem;">
+              <span class="text-muted small">Mot de passe:</span> <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.5);">123</span>
+            </div>
+            {% if parent.telephone %}<div><span class="text-muted small">Tél:</span> {{ parent.telephone }}</div>{% endif %}
           </td>
           <td>
             {% for pe in parent.etudiants_lies %}
             <span class="badge"
-              style="background: rgba(255,255,255,0.1); margin-bottom: 0.2rem; display: inline-block;">
-              {{ pe.etudiant.nom }} {{ pe.etudiant.prenom }} ({{ pe.lien }})
+              style="background: rgba(6, 182, 212, 0.1); color: var(--c-nova-cyan); border: 1px solid rgba(6,182,212,0.3); margin-bottom: 0.4rem; display: inline-block; padding: 0.5rem;">
+              <i class="fa-solid fa-user-graduate"></i> {{ pe.etudiant.prenom }} {{ pe.etudiant.nom }} <small class="text-muted">({{ pe.lien }})</small>
             </span><br>
             {% else %}
             <span class="text-muted">Aucun</span>

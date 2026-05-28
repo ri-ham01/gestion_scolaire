@@ -111,12 +111,35 @@ def notifier_absence(etudiant_id: int, seance_id: int) -> None:
 
 def notifier_message(conversation_id: int, expediteur_id: int,
                       destinataire_id: int, destinataire_role: str) -> None:
+    from app.models.communication import Conversation
+    from app.models.user import Utilisateur
+    
+    conv = db.session.get(Conversation, conversation_id)
+    exp = db.session.get(Utilisateur, expediteur_id)
+    
+    titre = 'Nouveau message'
+    contenu = 'Vous avez reçu un nouveau message.'
+    
+    if conv and exp:
+        if exp.role == 'parent' and destinataire_role == 'professeur':
+            titre = f'Nouveau message de {exp.parent.nom_complet}'
+            if conv.etudiant_concerne:
+                contenu = f'Vous avez reçu un message de {exp.parent.nom_complet} concernant son enfant {conv.etudiant_concerne.nom_complet}.'
+            else:
+                contenu = f'Vous avez reçu un message de {exp.parent.nom_complet}.'
+        elif exp.role == 'etudiant':
+            titre = f'Nouveau message de {exp.etudiant.nom_complet}'
+            contenu = f'Vous avez reçu un message de {exp.etudiant.nom_complet}.'
+        elif exp.role == 'professeur':
+            titre = f'Nouveau message du Prof. {exp.professeur.nom_complet}'
+            contenu = f'Le professeur {exp.professeur.nom_complet} vous a envoyé un message.'
+
     envoyer_notification(
         destinataire_id   = destinataire_id,
         destinataire_role = destinataire_role,
         type_notif        = 'message_recu',
-        titre             = 'Nouveau message',
-        contenu           = 'Vous avez reçu un nouveau message.',
+        titre             = titre,
+        contenu           = contenu,
         ref_table         = 'conversations',
         ref_id            = conversation_id,
     )

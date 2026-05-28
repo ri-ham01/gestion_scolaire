@@ -1,0 +1,121 @@
+{% extends 'base_parent.html' %}
+{% block title %}Modifier {% if enfant %}l'enfant{% else %}le profil{% endif %} — EduNova{% endblock %}
+
+{% block parent_content %}
+<div class="parent-page-header solid-header mb-4">
+  <div class="header-left">
+    <h1><i class="fa-solid fa-user-pen text-primary"></i> Modifier {% if enfant %}les informations de {{ enfant.prenom }}{% else %}mon profil{% endif %}</h1>
+    <p>Mettez à jour les informations en cas d'erreur de saisie.</p>
+  </div>
+  <div class="header-right">
+    <a href="{{ url_for('parent.dashboard') }}" class="btn btn-outline-secondary btn-solid"><i class="fa-solid fa-arrow-left"></i> Retour</a>
+  </div>
+</div>
+
+<div class="section-inner" style="max-width: 800px; margin: 0 auto;">
+  <div class="card solid-card p-4">
+    <form method="POST" action="{% if enfant %}{{ url_for('parent.modifier_enfant', etu_id=enfant.id) }}{% else %}{{ url_for('parent.modifier_profil') }}{% endif %}">
+      
+      <div class="form-group mb-3">
+        <label for="nom" class="form-label">Nom <span class="text-danger">*</span></label>
+        <input type="text" id="nom" name="nom" class="form-control" value="{% if enfant %}{{ enfant.nom }}{% else %}{{ parent.nom }}{% endif %}" required>
+      </div>
+      
+      <div class="form-group mb-3">
+        <label for="prenom" class="form-label">Prénom <span class="text-danger">*</span></label>
+        <input type="text" id="prenom" name="prenom" class="form-control" value="{% if enfant %}{{ enfant.prenom }}{% else %}{{ parent.prenom }}{% endif %}" required>
+      </div>
+
+      {% if enfant %}
+      <div class="row mb-3">
+        <div class="col-md-6 form-group">
+          <label for="date_naissance" class="form-label">Date de naissance</label>
+          <input type="date" id="date_naissance" name="date_naissance" class="form-control" value="{{ enfant.date_naissance.strftime('%Y-%m-%d') if enfant.date_naissance else '' }}">
+        </div>
+        <div class="col-md-6 form-group">
+          <label for="lieu_naissance" class="form-label">Lieu de naissance</label>
+          <input type="text" id="lieu_naissance" name="lieu_naissance" class="form-control" value="{{ enfant.lieu_naissance or '' }}">
+        </div>
+      </div>
+      {% else %}
+      <div class="form-group mb-3">
+        <label for="profession" class="form-label">Profession</label>
+        <input type="text" id="profession" name="profession" class="form-control" value="{{ parent.profession or '' }}">
+      </div>
+      
+      <div class="form-group mb-3">
+        <label for="telephone" class="form-label">Téléphone</label>
+        <input type="tel" id="telephone" name="telephone" class="form-control" value="{{ parent.telephone or '' }}">
+      </div>
+      
+      <div class="form-group mb-4">
+        <label for="adresse" class="form-label">Adresse</label>
+        <textarea id="adresse" name="adresse" class="form-control" rows="3">{{ parent.adresse or '' }}</textarea>
+      </div>
+      {% endif %}
+
+      <div class="form-actions text-end mt-4">
+        <a href="{{ url_for('parent.dashboard') }}" class="btn btn-secondary"><i class="fa-solid fa-xmark"></i> Annuler</a>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Enregistrer les modifications</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.solid-header {
+  background: white;
+  padding: 2rem; border-radius: 16px; color: #1e293b;
+  display: flex; justify-content: space-between; align-items: center;
+  border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+.solid-header h1 { color: #1e293b; font-weight: 700; margin-bottom: 0.5rem; }
+.solid-header p { color: #64748b; margin-bottom: 0; }
+.solid-card {
+  background: white; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+}
+.btn-solid { border-radius: 50px; font-weight: 600; padding: 0.5rem 1.5rem; }
+.form-label {
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.5rem;
+}
+.form-control {
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+}
+.form-control:focus {
+  border-color: var(--c-aurora-indigo);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+  outline: none;
+}
+.btn-primary {
+  background: linear-gradient(to right, var(--c-aurora-indigo), var(--c-nova-cyan));
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+}
+.btn-primary:hover {
+  opacity: 0.9;
+}
+.btn-secondary {
+  background: #f1f5f9;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  color: #475569;
+  font-weight: 600;
+  margin-right: 0.5rem;
+  transition: background 0.2s ease;
+}
+.btn-secondary:hover {
+  background: #e2e8f0;
+}
+</style>
+{% endblock %}

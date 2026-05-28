@@ -1,119 +1,142 @@
-{% extends 'base.html' %}
-{% block title %}Conversation — EduNova{% endblock %}
+{% extends 'base_parent.html' %}
+{% block title %}Discussion — EduNova{% endblock %}
 
-{% block content %}
-<div class="page-header">
-  <div class="section-inner">
-    <h1><i class="fa-regular fa-comments"></i> Discussion</h1>
-    <p class="text-muted">
-      {% set prof_id = conv.participant_b_id %}
-      Avec le Professeur (Utilisateur #{{ prof_id }}) concernant {{ conv.etudiant.prenom }} {{ conv.etudiant.nom }}
-    </p>
+{% block parent_content %}
+<div class="chat-wrapper solid-card mx-auto" style="max-width: 900px;">
+  
+  <!-- Chat Header -->
+  <div class="chat-header border-bottom p-3 bg-light d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center">
+      <a href="{{ url_for('parent.chat') }}" class="btn btn-sm btn-link text-muted me-3 hover-primary">
+        <i class="fa-solid fa-chevron-left fa-lg"></i>
+      </a>
+      <div class="header-avatar bg-secondary text-white me-3">
+        <i class="fa-solid fa-chalkboard-user"></i>
+      </div>
+      <div>
+        {% set prof_id = conv.participant_b_id %}
+        <h5 class="mb-0 text-dark fw-bold">Professeur <small class="text-muted">(ID: {{ prof_id }})</small></h5>
+        <small class="text-muted"><i class="fa-solid fa-child me-1"></i> Concerne {{ conv.etudiant_concerne.prenom }} {{ conv.etudiant_concerne.nom }}</small>
+      </div>
+    </div>
+    <div>
+      <button class="btn btn-sm btn-light rounded-circle"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+    </div>
   </div>
-</div>
 
-<div class="section-inner">
-  <div class="chat-container">
+  <!-- Chat Messages -->
+  <div class="chat-messages p-4" id="chatBox">
+    {% set date_str = '' %}
+    {% for msg in msgs %}
+      {% set msg_date = msg.date_envoi.strftime('%d/%m/%Y') %}
+      {% if msg_date != date_str %}
+        <div class="date-divider my-3 text-center">
+          <span class="badge bg-light text-muted border px-3 py-2 rounded-pill">{{ msg_date }}</span>
+        </div>
+        {% set date_str = msg_date %}
+      {% endif %}
 
-    <div class="chat-messages" id="chatBox">
-      {% for msg in msgs %}
-      <div
-        class="message {% if msg.expediteur_utilisateur_id == current_user.id %}message-sent{% else %}message-received{% endif %}">
-        <div class="message-content">
+      <div class="message-wrapper d-flex flex-column {% if msg.expediteur_utilisateur_id == current_user.id %}align-items-end{% else %}align-items-start{% endif %} mb-3">
+        
+        <div class="message-bubble {% if msg.expediteur_utilisateur_id == current_user.id %}sent{% else %}received{% endif %} shadow-sm">
           {{ msg.contenu }}
         </div>
-        <div class="message-meta">
-          {{ msg.created_at.strftime('%H:%M') }}
+        
+        <div class="message-meta text-muted mt-1 small">
+          {{ msg.date_envoi.strftime('%H:%M') }}
           {% if msg.expediteur_utilisateur_id == current_user.id %}
-          {% if msg.est_lu %}<i class="fa-solid fa-check-double text-primary"></i>{% else %}<i
-            class="fa-solid fa-check text-muted"></i>{% endif %}
+            {% if msg.est_lu %}
+              <i class="fa-solid fa-check-double text-primary ms-1"></i>
+            {% else %}
+              <i class="fa-solid fa-check text-muted ms-1"></i>
+            {% endif %}
           {% endif %}
         </div>
+        
       </div>
-      {% else %}
-      <div class="text-center text-muted" style="margin-top: 2rem;">
-        <p>Envoyez le premier message pour démarrer la discussion.</p>
+    {% else %}
+    <div class="empty-state text-center my-5 py-5 text-muted">
+      <div class="bg-light rounded-circle d-inline-flex p-4 mb-3">
+        <i class="fa-solid fa-hand-wave fa-3x text-warning"></i>
       </div>
-      {% endfor %}
+      <h5 class="text-dark">Dites bonjour !</h5>
+      <p>Envoyez le premier message pour démarrer la discussion concernant {{ conv.etudiant_concerne.prenom }}.</p>
     </div>
+    {% endfor %}
+  </div>
 
-    <form class="chat-input-area" id="chatForm">
-      <input type="hidden" id="convId" value="{{ conv.id }}">
-      <input type="text" id="msgInput" class="form-input" placeholder="Tapez votre message..." required
-        autocomplete="off" style="border-radius: 20px;">
-      <button type="submit" class="btn btn-primary"
-        style="border-radius: 50%; width: 45px; height: 45px; padding: 0; display: flex; justify-content: center; align-items: center;">
+  <!-- Chat Input -->
+  <form class="chat-input-area p-3 bg-light border-top" id="chatForm">
+    <input type="hidden" id="convId" value="{{ conv.id }}">
+    <div class="input-group">
+      <button type="button" class="btn btn-light border input-group-text bg-white text-muted rounded-start-pill px-3 hover-primary">
+        <i class="fa-solid fa-paperclip"></i>
+      </button>
+      <input type="text" id="msgInput" class="form-control border-start-0 border-end-0 shadow-none py-2 px-3" placeholder="Tapez votre message..." required autocomplete="off">
+      <button type="submit" class="btn btn-primary rounded-end-pill px-4 btn-send">
         <i class="fa-solid fa-paper-plane"></i>
       </button>
-    </form>
+    </div>
+  </form>
 
-  </div>
 </div>
 
 <style>
-  .chat-container {
-    display: flex;
-    flex-direction: column;
-    height: 60vh;
-    background: var(--bg-card-glass);
-    border: var(--border-glass);
-    border-radius: 16px;
-    overflow: hidden;
-  }
+:root {
+  --primary-gradient: linear-gradient(135deg, #4f46e5, #06b6d4);
+  --msg-sent: #4f46e5;
+  --msg-received: #f1f5f9;
+}
+.solid-card {
+  background: white; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+.chat-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  min-height: 500px;
+}
+.header-avatar {
+  width: 45px; height: 45px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+}
 
-  .chat-messages {
-    flex: 1;
-    padding: 1.5rem;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
+/* Chat Messages Area */
+.chat-messages {
+  flex-grow: 1;
+  overflow-y: auto;
+  background-color: #fafafa;
+  background-image: url('data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%23e2e8f0" fill-opacity="0.4" fill-rule="evenodd"%3E%3Ccircle cx="3" cy="3" r="3"/%3E%3Ccircle cx="13" cy="13" r="3"/%3E%3C/g%3E%3C/svg%3E');
+}
+.message-wrapper { max-width: 100%; }
+.message-bubble {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  max-width: 75%;
+  word-wrap: break-word;
+}
+.message-bubble.sent {
+  background: var(--msg-sent);
+  color: white;
+  border-radius: 18px 18px 0px 18px;
+}
+.message-bubble.received {
+  background: var(--msg-received);
+  color: #1e293b;
+  border-radius: 18px 18px 18px 0px;
+  border: 1px solid #e2e8f0;
+}
 
-  .message {
-    max-width: 70%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .message-sent {
-    align-self: flex-end;
-  }
-
-  .message-received {
-    align-self: flex-start;
-  }
-
-  .message-content {
-    padding: 0.8rem 1.2rem;
-    border-radius: 16px;
-    color: #fff;
-  }
-
-  .message-sent .message-content {
-    background: var(--c-aurora-indigo);
-    border-bottom-right-radius: 4px;
-  }
-
-  .message-received .message-content {
-    background: rgba(255, 255, 255, 0.1);
-    border-bottom-left-radius: 4px;
-  }
-
-  .message-meta {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-top: 0.2rem;
-    text-align: right;
-  }
-
-  .chat-input-area {
-    padding: 1rem;
-    background: rgba(0, 0, 0, 0.3);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex;
-    gap: 1rem;
-  }
+/* Input Area */
+.chat-input-area { background: #f8fafc; }
+.input-group { box-shadow: 0 2px 10px rgba(0,0,0,0.02); border-radius: 50px; }
+.form-control:focus { box-shadow: none; border-color: #dee2e6; }
+.btn-send { background: var(--primary-gradient); border: none; transition: transform 0.1s; }
+.btn-send:active { transform: scale(0.95); }
+.hover-primary:hover { color: #4f46e5 !important; }
 </style>
 {% endblock %}
 
@@ -123,35 +146,31 @@
     const chatBox = document.getElementById('chatBox');
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    // Si on utilise SocketIO (Optionnel mais recommandé pour le temps réel)
     if (typeof io !== 'undefined') {
       const socket = io();
       const convId = document.getElementById('convId').value;
 
-      // Rejoindre la room de la conversation
       socket.emit('join_conversation', { conv_id: convId });
 
       socket.on('nouveau_message', function (data) {
         if (data.conv_id == convId && data.expediteur_id != "{{ current_user.id }}") {
-          const msgDiv = document.createElement('div');
-          msgDiv.className = 'message message-received';
-          msgDiv.innerHTML = `
-          <div class="message-content">${data.contenu}</div>
-          <div class="message-meta">${data.heure}</div>
-        `;
-          chatBox.appendChild(msgDiv);
+          const msgWrap = document.createElement('div');
+          msgWrap.className = 'message-wrapper d-flex flex-column align-items-start mb-3';
+          msgWrap.innerHTML = `
+            <div class="message-bubble received shadow-sm">${data.contenu}</div>
+            <div class="message-meta text-muted mt-1 small">${data.heure}</div>
+          `;
+          chatBox.appendChild(msgWrap);
           chatBox.scrollTop = chatBox.scrollHeight;
         }
       });
 
-      // Indiquer qu'on tape
       const msgInput = document.getElementById('msgInput');
       msgInput.addEventListener('input', () => {
         socket.emit('typing', { conv_id: convId, user_id: "{{ current_user.id }}" });
       });
     }
 
-    // Envoi via AJAX classique (en plus de ou au lieu de Socket.io direct)
     document.getElementById('chatForm').addEventListener('submit', function (e) {
       e.preventDefault();
       const input = document.getElementById('msgInput');
@@ -167,16 +186,18 @@
         body: formData
       }).then(res => res.json()).then(data => {
         if (data.ok) {
-          // Ajouter le message à la vue immédiatement
-          const msgDiv = document.createElement('div');
-          msgDiv.className = 'message message-sent';
+          const emptyState = document.querySelector('.empty-state');
+          if (emptyState) emptyState.remove();
+
+          const msgWrap = document.createElement('div');
+          msgWrap.className = 'message-wrapper d-flex flex-column align-items-end mb-3';
           const d = new Date();
           const timeStr = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
-          msgDiv.innerHTML = `
-          <div class="message-content">${contenu}</div>
-          <div class="message-meta">${timeStr} <i class="fa-solid fa-check text-muted"></i></div>
-        `;
-          chatBox.appendChild(msgDiv);
+          msgWrap.innerHTML = `
+            <div class="message-bubble sent shadow-sm">${contenu}</div>
+            <div class="message-meta text-muted mt-1 small">${timeStr} <i class="fa-solid fa-check text-muted ms-1"></i></div>
+          `;
+          chatBox.appendChild(msgWrap);
           chatBox.scrollTop = chatBox.scrollHeight;
           input.value = '';
         }

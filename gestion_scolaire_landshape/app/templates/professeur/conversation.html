@@ -7,7 +7,7 @@
     <h1><i class="fa-regular fa-comments"></i> Discussion</h1>
     <p class="text-muted">
       Avec {% if conv.participant_a_role == 'parent' %}le Parent{% else %}l'Étudiant(e){% endif %} de 
-      <strong style="color: var(--c-nova-cyan);">{{ conv.etudiant.prenom }} {{ conv.etudiant.nom }}</strong>
+      <strong style="color: var(--c-nova-cyan);">{{ conv.etudiant_concerne.prenom }} {{ conv.etudiant_concerne.nom }}</strong>
     </p>
   </div>
 </div>
@@ -22,7 +22,7 @@
           {{ msg.contenu }}
         </div>
         <div class="message-meta">
-          {{ msg.created_at.strftime('%H:%M') }}
+          {{ msg.date_envoi.strftime('%H:%M') }}
           {% if msg.expediteur_utilisateur_id == current_user.id %}
             {% if msg.est_lu %}<i class="fa-solid fa-check-double text-primary"></i>{% else %}<i class="fa-solid fa-check text-muted"></i>{% endif %}
           {% endif %}

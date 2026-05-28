@@ -1,62 +1,196 @@
-{% extends 'base.html' %}
+{% extends 'base_parent.html' %}
 {% block title %}Résultats et Relevés — EduNova{% endblock %}
 
-{% block content %}
-<div class="page-header">
-  <div class="section-inner">
-    <h1><i class="fa-solid fa-file-contract"></i> Résultats & Relevés</h1>
-    <p class="text-muted">Consultez et téléchargez les bulletins officiels de vos enfants.</p>
+{% block parent_content %}
+<div class="parent-page-header solid-header mb-4">
+  <div class="header-left">
+    <h1><i class="fa-solid fa-file-contract text-info"></i> Résultats & Relevés</h1>
+    <p>Consultez et téléchargez les bulletins officiels et relevés de notes de vos enfants.</p>
+  </div>
+  <div class="header-right">
+    <a href="{{ url_for('parent.dashboard') }}" class="btn btn-outline-secondary btn-solid"><i class="fa-solid fa-arrow-left"></i> Retour</a>
   </div>
 </div>
 
 <div class="section-inner">
   {% for enfant in enfants %}
-  <div class="card glass-card" style="margin-bottom: 2rem;">
-    <div
-      style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
-      <h3 style="margin: 0; color: var(--c-aurora-indigo);"><i class="fa-solid fa-user-graduate"></i> {{ enfant.nom }}
-        {{ enfant.prenom }}</h3>
-      <span class="badge" style="background: rgba(255,255,255,0.1);"><i class="fa-solid fa-id-card"></i> {{
-        enfant.matricule }}</span>
+  <div class="card solid-card mb-5 overflow-hidden">
+    <!-- Header de l'enfant -->
+    <div class="child-header d-flex justify-content-between align-items-center p-4 border-bottom bg-light-gradient">
+      <div class="d-flex align-items-center gap-3">
+        <div class="avatar-lg bg-info-gradient text-white shadow-sm">
+          <i class="fa-solid fa-user-graduate"></i>
+        </div>
+        <div>
+          <h3 class="mb-1 text-dark">{{ enfant.nom }} {{ enfant.prenom }}</h3>
+          <span class="badge bg-secondary-soft text-secondary font-monospace"><i class="fa-solid fa-id-card"></i> {{ enfant.matricule }}</span>
+        </div>
+      </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
-      {% set enfant_releves = releves.get(enfant.id, []) %}
-      {% for releve in enfant_releves %}
-      <div
-        style="background: rgba(0,0,0,0.2); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 12px; padding: 1.5rem; text-align: center; transition: all 0.3s ease;"
-        class="releve-card">
-        <i class="fa-solid fa-file-pdf fa-3x" style="color: var(--s-danger); margin-bottom: 1rem;"></i>
-        <h4 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Bulletin de Notes</h4>
-        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">
-          Semestre: <strong>{{ releve.semestre.label }}</strong><br>
-          Publié le: {{ releve.date_generation.strftime('%d/%m/%Y') }}
-        </p>
-        <a href="{{ url_for('parent.telecharger_releve', token=releve.qr_code_token) }}"
-          class="btn btn-primary btn-block">
-          <i class="fa-solid fa-download"></i> Télécharger
-        </a>
+    <!-- Section Notes en temps réel -->
+    <div class="p-4 bg-white">
+      <h4 class="mb-4 text-dark"><i class="fa-solid fa-chart-line text-primary me-2"></i> Notes en cours (Temps réel)</h4>
+      <div class="table-responsive">
+        <table class="table modern-table mb-0">
+          <thead>
+            <tr>
+              <th>Matière</th>
+              <th>Devoir 1</th>
+              <th>Devoir 2</th>
+              <th>Examen</th>
+              <th>Moyenne</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set enfant_notes = notes_par_enfant.get(enfant.id, []) %}
+            {% for note in enfant_notes %}
+            <tr>
+              <td class="fw-bold text-dark">{{ note.affectation.matiere.nom if note.affectation and note.affectation.matiere else '-' }}</td>
+              <td>{{ note.devoir1 if note.devoir1 is not none else '-' }}</td>
+              <td>{{ note.devoir2 if note.devoir2 is not none else '-' }}</td>
+              <td>{{ note.examen if note.examen is not none else '-' }}</td>
+              <td class="fw-bold {% if note.moyenne and note.moyenne >= 10 %}text-success{% elif note.moyenne %}text-danger{% endif %}">
+                {{ note.moyenne if note.moyenne is not none else '-' }}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="text-center py-4 text-muted">
+                <i class="fa-solid fa-info-circle me-2"></i> Aucune note saisie pour le moment.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
-      {% else %}
-      <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 2rem;">
-        <i class="fa-solid fa-folder-open fa-2x mb-1"></i><br>
-        Aucun relevé officiel n'a encore été publié pour cet étudiant.
+    </div>
+
+    <!-- Relevés Grid -->
+    <div class="p-4 border-top">
+      <h4 class="mb-4 text-dark"><i class="fa-solid fa-file-pdf text-danger me-2"></i> Bulletins Officiels (PDF)</h4>
+      <div class="row g-4">
+        {% set enfant_releves = releves.get(enfant.id, []) %}
+        {% for releve in enfant_releves %}
+        <div class="col-md-6 col-lg-4">
+          <div class="releve-card card h-100 border-0 shadow-sm hover-lift">
+            <div class="card-body text-center p-4">
+              <div class="pdf-icon-wrapper mx-auto mb-3">
+                <i class="fa-solid fa-file-pdf fa-3x text-danger"></i>
+              </div>
+              <h4 class="card-title text-dark fw-bold mb-2">Bulletin de Notes</h4>
+              
+              <div class="releve-details mb-4 text-muted small text-start bg-light p-3 rounded">
+                <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                  <span>Semestre:</span>
+                  <strong class="text-dark">{{ releve.semestre.label if releve.semestre else '-' }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span>Publié le:</span>
+                  <strong class="text-dark">{{ releve.date_generation.strftime('%d/%m/%Y') }}</strong>
+                </div>
+              </div>
+
+              <!-- Authenticity QR Note -->
+              <div class="qr-note small text-muted mb-3">
+                <i class="fa-solid fa-qrcode text-primary"></i> Document certifié avec code QR.
+              </div>
+
+              <a href="{{ url_for('parent.telecharger_releve', token=releve.qr_code_token) }}" class="btn btn-primary w-100 btn-download">
+                <i class="fa-solid fa-download me-2"></i> Télécharger (PDF)
+              </a>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+          <div class="empty-state">
+            <div class="icon-circle bg-soft-secondary text-secondary mb-3 mx-auto">
+              <i class="fa-solid fa-folder-open fa-2x"></i>
+            </div>
+            <h5 class="text-dark">Aucun relevé disponible</h5>
+            <p class="text-muted mb-0">Les relevés de notes seront publiés à la fin du semestre.</p>
+          </div>
+        </div>
+        {% endfor %}
       </div>
-      {% endfor %}
     </div>
   </div>
   {% else %}
-  <div class="card glass-card" style="text-align: center; padding: 3rem;">
-    <p class="text-muted"><i class="fa-solid fa-user-xmark fa-2x mb-2"></i><br>Aucun enfant rattaché à votre compte.</p>
+  <div class="empty-state solid-panel w-100 text-center p-5">
+    <div class="empty-icon mb-3">
+      <i class="fa-solid fa-user-xmark fa-3x text-muted"></i>
+    </div>
+    <h5>Aucun enfant lié à votre compte</h5>
+    <p class="text-muted">Veuillez contacter l'administration de l'établissement.</p>
   </div>
   {% endfor %}
 </div>
 
 <style>
-  .releve-card:hover {
-    transform: translateY(-5px);
-    background: rgba(0, 0, 0, 0.4);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-  }
+:root {
+  --info-gradient: linear-gradient(135deg, #0ea5e9, #38bdf8);
+}
+.solid-header {
+  background: white;
+  padding: 2rem; border-radius: 16px; color: #1e293b;
+  display: flex; justify-content: space-between; align-items: center;
+  border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+.solid-header h1 { color: #1e293b; font-weight: 700; margin-bottom: 0.5rem; }
+.solid-header p { color: #64748b; margin-bottom: 0; }
+.solid-card {
+  background: white; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+}
+.solid-panel {
+  background: white; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+}
+.modern-table th {
+  background: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; padding: 1rem; border-bottom: 2px solid #e2e8f0;
+}
+.modern-table td { padding: 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.btn-solid { border-radius: 50px; font-weight: 600; padding: 0.5rem 1.5rem; }
+.bg-light-gradient { background: linear-gradient(to right, #f8fafc, white); }
+.bg-info-gradient { background: var(--info-gradient); }
+.avatar-lg {
+  width: 50px; height: 50px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+}
+.bg-secondary-soft { background: #f1f5f9; }
+
+.releve-card {
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+.hover-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08) !important;
+  border-color: rgba(14, 165, 233, 0.3);
+}
+.pdf-icon-wrapper {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: rgba(239, 68, 68, 0.1);
+  display: flex; align-items: center; justify-content: center;
+}
+.btn-download {
+  border-radius: 10px; font-weight: 600; padding: 0.75rem;
+  background: var(--info-gradient); border: none;
+  transition: opacity 0.2s;
+}
+.btn-download:hover { opacity: 0.9; }
+
+.qr-note {
+  background: #f0f9ff;
+  color: #0369a1;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px dashed #7dd3fc;
+}
+
+.icon-circle { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.bg-soft-secondary { background: #f1f5f9; }
 </style>
 {% endblock %}
